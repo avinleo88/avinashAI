@@ -150,6 +150,7 @@ NAME_MAP = {
     "TATACOMM.NS":"Tata Communications","SUZLON.NS":"Suzlon Energy",
     "APOLLOHOSP.NS":"Apollo Hospitals","MAXHEALTH.NS":"Max Healthcare",
     "FORTIS.NS":"Fortis Healthcare",
+    "HINDPETRO.NS":"HPCL","BPCL.NS":"BPCL","IOC.NS":"Indian Oil","GAIL.NS":"GAIL","PETRONET.NS":"Petronet LNG","OIL.NS":"Oil India",
 }
 
 
