@@ -312,16 +312,38 @@ def index():
 
 @app.route("/proxy")
 def proxy():
-    import requests as req
+    import re as _re
     url = request.args.get("url", "")
-    if not url.startswith("https://query") and not url.startswith("https://finance.yahoo"):
-        return "Invalid URL", 400
+    # extract symbol and range from Yahoo Finance chart URL
+    m = _re.search(r'/chart/([^?]+)\?.*range=([^&]+)', url)
+    if not m:
+        return json.dumps({"error": "bad url"}), 400, {"Access-Control-Allow-Origin": "*"}
+    symbol, period = m.group(1), m.group(2)
     try:
-        r = req.get(url, headers={"User-Agent": "Mozilla/5.0"}, timeout=10)
-        return Response(r.content, content_type="application/json",
+        ticker = yf.Ticker(symbol)
+        hist = ticker.history(period=period)
+        if hist.empty:
+            return json.dumps({"chart":{"result":None,"error":"no data"}}), 200, {"Access-Control-Allow-Origin": "*"}
+        closes  = hist["Close"].tolist()
+        volumes = hist["Volume"].tolist()
+        timestamps = [int(t.timestamp()) for t in hist.index]
+        info = {}
+        try: info = ticker.fast_info
+        except: pass
+        payload = {"chart":{"result":[{
+            "meta": {
+                "symbol": symbol,
+                "currency": "INR",
+                "longName": getattr(info, "longName", symbol) if hasattr(info, "longName") else symbol,
+                "shortName": symbol,
+            },
+            "timestamp": timestamps,
+            "indicators": {"quote":[{"close": closes, "volume": volumes}]}
+        }],"error":None}}
+        return Response(json.dumps(payload), content_type="application/json",
                         headers={"Access-Control-Allow-Origin": "*"})
     except Exception as e:
-        return str(e), 502
+        return json.dumps({"error": str(e)}), 502, {"Access-Control-Allow-Origin": "*"}
 
 
 @app.route("/ask", methods=["POST"])
