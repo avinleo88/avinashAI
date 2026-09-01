@@ -85,7 +85,34 @@ SECTOR_STOCKS = {
     "energy":  ["RELIANCE.NS","ONGC.NS","NTPC.NS","POWERGRID.NS"],
 }
 
-POPULAR = {
+NAME_MAP = {
+    "HDFCBANK.NS":"HDFC Bank", "ICICIBANK.NS":"ICICI Bank",
+    "SBIN.NS":"State Bank of India", "KOTAKBANK.NS":"Kotak Mahindra Bank",
+    "AXISBANK.NS":"Axis Bank", "TCS.NS":"Tata Consultancy Services",
+    "INFY.NS":"Infosys", "WIPRO.NS":"Wipro", "HCLTECH.NS":"HCL Technologies",
+    "TECHM.NS":"Tech Mahindra", "RELIANCE.NS":"Reliance Industries",
+    "ONGC.NS":"ONGC", "NTPC.NS":"NTPC", "POWERGRID.NS":"Power Grid Corp",
+    "SUNPHARMA.NS":"Sun Pharmaceutical", "DRREDDY.NS":"Dr. Reddy's Labs",
+    "CIPLA.NS":"Cipla", "DIVISLAB.NS":"Divi's Laboratories",
+    "MARUTI.NS":"Maruti Suzuki", "TATAMOTORS.NS":"Tata Motors",
+    "M&M.NS":"Mahindra & Mahindra", "BAJAJ-AUTO.NS":"Bajaj Auto",
+    "HEROMOTOCO.NS":"Hero MotoCorp", "EICHERMOT.NS":"Eicher Motors",
+    "HINDUNILVR.NS":"Hindustan Unilever", "ITC.NS":"ITC",
+    "NESTLEIND.NS":"Nestle India", "BRITANNIA.NS":"Britannia Industries",
+    "TATASTEEL.NS":"Tata Steel", "JSWSTEEL.NS":"JSW Steel",
+    "HINDALCO.NS":"Hindalco Industries", "BAJFINANCE.NS":"Bajaj Finance",
+    "TITAN.NS":"Titan Company", "ASIANPAINT.NS":"Asian Paints",
+    "ULTRACEMCO.NS":"UltraTech Cement", "LT.NS":"Larsen & Toubro",
+    "TATAPOWER.NS":"Tata Power", "YESBANK.NS":"Yes Bank",
+    "ZOMATO.NS":"Zomato", "BHARTIARTL.NS":"Bharti Airtel",
+    "COALINDIA.NS":"Coal India", "APOLLOHOSP.NS":"Apollo Hospitals",
+    "ADANIPORTS.NS":"Adani Ports", "PAYTM.NS":"Paytm",
+    "LTIM.NS":"LTIMindtree", "TATACHEM.NS":"Tata Chemicals",
+    "TATACONSUM.NS":"Tata Consumer", "TATAELXSI.NS":"Tata Elxsi",
+    "TATACOMM.NS":"Tata Communications",
+}
+
+
     "tcs":"TCS.NS","infosys":"INFY.NS","wipro":"WIPRO.NS",
     "reliance":"RELIANCE.NS","hdfc bank":"HDFCBANK.NS","hdfc":"HDFCBANK.NS",
     "icici bank":"ICICIBANK.NS","icici":"ICICIBANK.NS",
@@ -327,15 +354,12 @@ def proxy():
         closes  = hist["Close"].tolist()
         volumes = hist["Volume"].tolist()
         timestamps = [int(t.timestamp()) for t in hist.index]
-        info = {}
-        try: info = ticker.fast_info
-        except: pass
         payload = {"chart":{"result":[{
             "meta": {
                 "symbol": symbol,
                 "currency": "INR",
-                "longName": getattr(info, "longName", symbol) if hasattr(info, "longName") else symbol,
-                "shortName": symbol,
+                "longName": NAME_MAP.get(symbol, symbol.replace(".NS","").replace(".BO","")),
+                "shortName": NAME_MAP.get(symbol, symbol.replace(".NS","").replace(".BO","")),
             },
             "timestamp": timestamps,
             "indicators": {"quote":[{"close": closes, "volume": volumes}]}
