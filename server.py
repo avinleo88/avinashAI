@@ -113,6 +113,7 @@ NAME_MAP = {
 }
 
 
+POPULAR = {
     "tcs":"TCS.NS","infosys":"INFY.NS","wipro":"WIPRO.NS",
     "reliance":"RELIANCE.NS","hdfc bank":"HDFCBANK.NS","hdfc":"HDFCBANK.NS",
     "icici bank":"ICICIBANK.NS","icici":"ICICIBANK.NS",
