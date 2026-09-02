@@ -445,7 +445,7 @@ async function buildResponse(query, onStatus) {
   var stockEntries = Object.entries(STOCKS).sort(function(a,b) { return b[0].length - a[0].length; });
   for (var i = 0; i < stockEntries.length; i++) {
     var name = stockEntries[i][0], sym = stockEntries[i][1];
-    if (q.includes(name) && found.indexOf(sym) === -1) found.push(sym);
+    if (new RegExp("\\b" + name.replace(/[.*+?^${}()|[\]\\]/g, "\\$&") + "\\b").test(q) && found.indexOf(sym) === -1) found.push(sym);
   }
   // explicit .NS/.BO
   var nsMatches = query.toUpperCase().match(/\b([A-Z0-9-]{2,12}\.(?:NS|BO))\b/g) || [];
