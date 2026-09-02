@@ -3,7 +3,7 @@ Stock Agent — Free Version (No API Key)
 Pure technical analysis using yfinance + rule-based signals.
 """
 
-import os, json, time
+import os, json, time, csv, io, threading
 import yfinance as yf
 import warnings
 warnings.filterwarnings("ignore")
@@ -14,6 +14,36 @@ from datetime import datetime
 
 app = Flask(__name__, static_folder=".")
 CORS(app)
+
+# ── NSE symbol search index ───────────────────────────────────────────────────
+_NSE_INDEX = {}   # lowercase name/symbol -> "SYMBOL.NS"
+_NSE_NAMES = {}   # "SYMBOL.NS" -> "Company Full Name"
+
+def _load_nse_list():
+    import requests as req
+    try:
+        r = req.get(
+            "https://archives.nseindia.com/content/equities/EQUITY_L.csv",
+            headers={"User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36"},
+            timeout=20
+        )
+        reader = csv.DictReader(io.StringIO(r.text))
+        count = 0
+        for row in reader:
+            sym  = row.get("SYMBOL", "").strip()
+            name = row.get("NAME OF COMPANY", "").strip()
+            if not sym or not name:
+                continue
+            full = sym + ".NS"
+            _NSE_NAMES[full] = name.title()
+            _NSE_INDEX[sym.lower()]  = full
+            _NSE_INDEX[name.lower()] = full
+            count += 1
+        print(f"NSE list loaded: {count} stocks")
+    except Exception as e:
+        print(f"NSE list unavailable: {e}")
+
+threading.Thread(target=_load_nse_list, daemon=True).start()
 
 # ── Stock data ────────────────────────────────────────────────────────────────
 def get_stock_data(symbol: str, period: str = "3mo") -> dict:
@@ -377,6 +407,34 @@ def build_response(query: str):
 @app.route("/")
 def index():
     return send_from_directory(".", "index.html")
+
+
+@app.route("/search")
+def search():
+    q = request.args.get("q", "").lower().strip()
+    if not q or len(q) < 2:
+        return Response(json.dumps([]), content_type="application/json",
+                        headers={"Access-Control-Allow-Origin": "*"})
+    results = []
+    # exact symbol match first
+    if q.upper() + ".NS" in _NSE_NAMES:
+        sym = q.upper() + ".NS"
+        results.append({"symbol": sym, "name": NAME_MAP.get(sym) or _NSE_NAMES.get(sym, sym)})
+    # exact name match
+    if q in _NSE_INDEX and not results:
+        sym = _NSE_INDEX[q]
+        results.append({"symbol": sym, "name": NAME_MAP.get(sym) or _NSE_NAMES.get(sym, sym)})
+    # partial matches
+    if not results:
+        for name, sym in _NSE_INDEX.items():
+            if q in name:
+                entry = {"symbol": sym, "name": NAME_MAP.get(sym) or _NSE_NAMES.get(sym, name.title())}
+                if entry not in results:
+                    results.append(entry)
+            if len(results) >= 5:
+                break
+    return Response(json.dumps(results[:5]), content_type="application/json",
+                    headers={"Access-Control-Allow-Origin": "*"})
 
 
 @app.route("/proxy")

@@ -315,6 +315,17 @@ function fetchAll(symbols, range) {
       return { symbol: s, result: result };
     });
   }));
+
+// Search NSE for a stock symbol by name — calls Railway /search endpoint
+async function searchSymbol(query) {
+  var backend = BACKEND_URL || "http://localhost:5050";
+  try {
+    var r = await fetch(backend + "/search?q=" + encodeURIComponent(query.toLowerCase()),
+                        { signal: AbortSignal.timeout(8000) });
+    var results = await r.json();
+    return results.length > 0 ? results[0] : null;
+  } catch(e) { return null; }
+}
 }
 
 function parseResult(result) {
@@ -556,6 +567,16 @@ async function buildResponse(query, onStatus) {
     emit();
     onStatus("Fetching " + unique.map(function(s) { return s.replace(".NS","").replace(".BO",""); }).join(", ") + " simultaneously...");
     var stockFetched = await fetchAll(unique, "3mo");
+    // If all fetches failed (unknown stock), search NSE database for the real symbol
+    var allNull = stockFetched.every(function(item) { return !item.result; });
+    if (allNull) {
+      onStatus("Searching NSE database for \"" + query + "\"...");
+      var searched = await searchSymbol(query);
+      if (searched) {
+        unique = [searched.symbol];
+        stockFetched = await fetchAll(unique, "3mo");
+      }
+    }
     var stockResults = [];
     stockFetched.forEach(function(item) {
       if (!item.result) { emit("Could not fetch **" + item.symbol + "** — try again."); emit(); return; }
