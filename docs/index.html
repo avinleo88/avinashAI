@@ -577,6 +577,8 @@ async function buildResponse(query, onStatus) {
         stockFetched = await fetchAll(unique, "3mo");
       }
     }
+    // Save context for follow-up questions ("is it safe?", "compare it with X")
+    _ctx.stocks = unique; _ctx.sector = null;
     var stockResults = [];
     stockFetched.forEach(function(item) {
       if (!item.result) { emit("Could not fetch **" + item.symbol + "** — try again."); emit(); return; }
@@ -658,6 +660,53 @@ var inp     = document.getElementById("inp");
 var sendBtn = document.getElementById("sendBtn");
 var msgId   = 0;
 
+// Conversation context — remember last stocks for follow-up questions
+var _ctx = { stocks: [], sector: null };
+
+function _greetMsg() {
+  return [
+    "## Hi! I'm StockAgent 👋",
+    "I analyse NSE/BSE stocks using live data. Try asking:",
+    "- **\"Should I buy Reliance?\"** — get a BUY / HOLD / AVOID signal",
+    "- **\"TCS vs Infosys\"** — side-by-side comparison",
+    "- **\"Banking sector\"** — full sector overview with top pick",
+    "- **\"Market overview\"** — Sensex & Nifty snapshot",
+    "- Any company name or NSE symbol — all ~2000 NSE stocks supported",
+  ].join("\n");
+}
+
+function _helpMsg() {
+  return [
+    "## What I can do",
+    "",
+    "**Stock analysis** — type any company name or NSE symbol",
+    "> \"HDFC Bank\", \"Zomato\", \"TATAMOTORS.NS\", \"Should I buy Wipro?\"",
+    "",
+    "**Compare stocks** — up to 4 at once",
+    "> \"TCS vs Infosys vs Wipro\"",
+    "",
+    "**Sector analysis** — IT, Banking, Pharma, Auto, FMCG, Energy...",
+    "> \"IT sector\", \"banking stocks\", \"pharma\"",
+    "",
+    "**Market snapshot** — Sensex & Nifty",
+    "> \"Market overview\", \"how is market today\"",
+    "",
+    "**Explain indicators** — RSI, MACD, SMA, 52-week range",
+    "> \"What is RSI?\", \"explain MACD\"",
+    "",
+    "*Covers all ~2000 NSE-listed stocks · Data delayed ~15 min · Educational use only*"
+  ].join("\n");
+}
+
+function _explainMsg(q) {
+  if (/\brsi\b/i.test(q)) return "**RSI (Relative Strength Index)** measures price momentum on a 0–100 scale.\n- **Below 30** = oversold — stock may bounce (potential buy zone)\n- **Above 70** = overbought — may correct soon (be cautious)\n- **30–70** = neutral territory\n\nI use RSI(14), calculated over the last 14 trading days.";
+  if (/\bmacd\b/i.test(q)) return "**MACD** (Moving Average Convergence Divergence) tracks trend direction and momentum.\n- **Positive MACD** = bullish (price trending up)\n- **Negative MACD** = bearish (price trending down)\n- Crossovers between MACD and signal line can indicate trend reversals.";
+  if (/\bsma\b|moving average/i.test(q)) return "**SMA (Simple Moving Average)** smooths price over a period to show the underlying trend.\n- **SMA20** = 20-day average (short-term trend)\n- **SMA50** = 50-day average (medium-term trend)\n- **Price > SMA20 > SMA50** = bullish alignment — a strong positive sign.";
+  if (/52.?w(eek)?|52w/i.test(q)) return "**52-Week Range** shows the stock's highest and lowest price over the past year.\n- **0–20% of range** = near 52W low — potential value zone\n- **85–100% of range** = near 52W high — may be due for a pullback\n- **Mid-range** = neutral position";
+  if (/\bvolume\b/i.test(q)) return "**Volume** is the number of shares traded in a session.\n- **>1.5× average** = strong conviction behind the price move\n- **<0.5× average** = low interest, price move less reliable\n- Always look for high volume confirming a breakout or breakdown.";
+  return null;
+}
+
 inp.addEventListener("input", function() {
   inp.style.height = "auto";
   inp.style.height = Math.min(inp.scrollHeight, 120) + "px";
@@ -695,6 +744,28 @@ async function sendMsg() {
   sendBtn.disabled = true;
   addUserBubble(text);
   var bubble = createBotBubble();
+  var q = text.toLowerCase().trim();
+
+  // --- Intent: greeting ---
+  if (/^(hi+|hello+|hey+|good\s*(morning|evening|afternoon|night|day)|namaste|hii+)\b/i.test(q)) {
+    bubble.innerHTML = md(_greetMsg()); sendBtn.disabled = false; inp.focus(); return;
+  }
+  // --- Intent: help ---
+  if (/\bhelp\b|what can you do|how (do i|to) use|what (do|can) you\b/i.test(q)) {
+    bubble.innerHTML = md(_helpMsg()); sendBtn.disabled = false; inp.focus(); return;
+  }
+  // --- Intent: explain a financial term ---
+  if (/\b(what (is|are|does)|explain|define|meaning of)\b/i.test(q)) {
+    var expl = _explainMsg(q);
+    if (expl) { bubble.innerHTML = md(expl); sendBtn.disabled = false; inp.focus(); return; }
+  }
+
+  // --- Context: resolve follow-up pronouns ("is it safe?", "should I buy it?") ---
+  var resolvedText = text;
+  if (_ctx.stocks.length > 0 && /\b(it|this|that|them|the stock|the company)\b/i.test(q) && !/\b(market|nifty|sensex)\b/i.test(q)) {
+    var ctxSyms = _ctx.stocks.map(function(s) { return s.replace(/\.(NS|BO)$/i,""); }).join(" ");
+    resolvedText = ctxSyms + " " + text;
+  }
 
   // pulse "still fetching" every 5s so UI never looks frozen
   var dots = 0;
@@ -707,7 +778,7 @@ async function sendMsg() {
   }, 2000);
 
   try {
-    var result = await buildResponse(text, function(status) {
+    var result = await buildResponse(resolvedText, function(status) {
       lastStatus = status;
       bubble.innerHTML = '<div class="status-row"><div class="spin"></div><span style="font-size:.78rem;color:var(--cyan)">' + status + '</span></div>';
       scrollBottom();
