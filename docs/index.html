@@ -196,18 +196,12 @@
   <span class="market-loading">Loading market data…</span>
 </div>
 
-<div class="chips">
+<div class="chips" id="chipsBar">
   <div class="chip" onclick="showLiveMarket()">📡 Live Market</div>
   <div class="chip" onclick="showTopMovers()">📈 Top Movers</div>
   <div class="chip" onclick="showSectorHeatmap()">🌡️ Sectors</div>
   <div class="chip" onclick="ask('Market overview today')">📊 Market overview</div>
-  <div class="chip" onclick="ask('TCS vs Infosys')">🔍 TCS vs Infosys</div>
-  <div class="chip" onclick="ask('Banking sector analysis')">🏦 Banking sector</div>
-  <div class="chip" onclick="ask('Reliance')">⚡ Reliance</div>
-  <div class="chip" onclick="ask('Yes Bank')">🏧 Yes Bank</div>
-  <div class="chip" onclick="ask('IT sector analysis')">💻 IT sector</div>
-  <div class="chip" onclick="ask('Zomato')">🍔 Zomato</div>
-  <div class="chip" onclick="ask('Pharma sector analysis')">💊 Pharma sector</div>
+  <span id="dynamicChips"></span>
 </div>
 
 <div class="chat" id="chat">
@@ -990,6 +984,27 @@ function showSectorHeatmap() {
     });
 }
 
+function loadTrendingChips() {
+  var backend = BACKEND_URL || "http://localhost:5050";
+  fetch(backend + "/top-movers")
+    .then(function(r) { return r.json(); })
+    .then(function(d) {
+      if (!d || !d.gainers || !d.losers) return;
+      var container = document.getElementById("dynamicChips");
+      if (!container) return;
+      var picks = d.gainers.slice(0, 2).concat(d.losers.slice(0, 2));
+      container.innerHTML = picks.map(function(s) {
+        var up = s.change_pct >= 0;
+        var arrow = up ? "▲" : "▼";
+        var color = up ? "var(--green)" : "var(--red)";
+        var shortName = s.name.split(" ")[0];
+        var label = '<span style="color:' + color + '">' + arrow + ' ' + shortName + ' ' + Math.abs(s.change_pct).toFixed(1) + '%</span>';
+        return '<div class="chip" onclick="ask(\'' + s.name.replace(/'/g, "") + '\')">' + label + '</div>';
+      }).join("");
+    })
+    .catch(function() {});
+}
+
 function loadMarketSummary() {
   var backend = BACKEND_URL || "http://localhost:5050";
   fetch(backend + "/market-summary")
@@ -1017,7 +1032,9 @@ function loadMarketSummary() {
 }
 
 loadMarketSummary();
+loadTrendingChips();
 setInterval(loadMarketSummary, 60000);
+setInterval(loadTrendingChips, 300000);
 </script>
 </body>
 </html>
