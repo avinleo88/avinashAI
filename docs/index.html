@@ -615,7 +615,16 @@ async function buildResponse(query, onStatus) {
       "RETURN","GET","TOP","RECOMMEND","RECOMMENDATIONS","PICKS","PICK","LIST","WHICH",
       "THESE","THOSE","5","10","3","INDIA","INDIAN","NSE","BSE","NIFTY","SENSEX","RUPEE",
       "INR","LARGE","SMALL","MID","CAP","GENERAL","OVERALL","SOME","ADVICE","SUGGESTION",
-      "SUGGESTIONS","PORTFOLIO","WATCHLIST","ANY","ALL","PLEASE","JUST","WANT"]);
+      "SUGGESTIONS","PORTFOLIO","WATCHLIST","ANY","ALL","PLEASE","JUST","WANT",
+      "YOU","YOUR","WE","THEY","HE","SHE","THINK","FEEL","OPINION","THOUGHTS","THOUGHT",
+      "VIEW","VIEWS","CONSIDER","SAY","KNOW","TELL","LOOKING","LOOK","WONDERING","WONDER",
+      "THINK","FEEL","LIKE","HAVE","HAS","HAD","BEEN","BE","AM","ARE","WAS","WERE",
+      "ON","UP","DOWN","WITH","BY","AS","IF","THEN","SO","BUT","NOT","NO","YES",
+      "ALSO","EVEN","STILL","ALREADY","REALLY","VERY","QUITE","MUCH","MORE","LESS",
+      "LATEST","RECENT","CURRENT","NEW","OLD","LONG","SHORT","HIGH","LOW",
+      "GIVE","ME","US","HIM","HER","THEM","THEIR","ITS","OUR","THIS","THAT",
+      "BUYING","SELLING","HOLDING","INVESTING","THINKING","DOING","GOING","CONSIDERING",
+      "SECTOR","COMPANY","COMPANIES","RUPEES","PERCENT","WORTH","POINT","POINTS"]);
     var tokens = query.toUpperCase().split(/\s+/)
       .map(function(w) { return w.replace(/[^A-Z0-9&-]/g, ""); })
       .filter(function(w) { return w.length >= 2 && !STOP.has(w); });
