@@ -489,7 +489,8 @@ async function buildResponse(query, onStatus) {
       "I","ME","MY","ANALYSIS","ANALYSE","ANALYZE","STOCK","STOCKS","SHARE","SHARES","MARKET",
       "TELL","SHOW","GIVE","VS","OR","AND","FOR","IN","AT","OF","TO","FROM","CAN","WILL",
       "DO","DOES","IT","GOOD","BAD","BEST","SAFE","RISK","NOW","TODAY","PRICE","INVEST",
-      "RETURN","GET","TOP","RECOMMEND","PICKS","PICK","LIST","WHICH","THESE","THOSE","5","10","3"]);
+      "RETURN","GET","TOP","RECOMMEND","PICKS","PICK","LIST","WHICH","THESE","THOSE","5","10","3",
+      "INDIA","INDIAN","NSE","BSE","NIFTY","SENSEX","RUPEE","INR","LARGE","SMALL","MID","CAP"]);
     var tokens = query.toUpperCase().split(/\s+/)
       .map(function(w) { return w.replace(/[^A-Z0-9&-]/g, ""); })
       .filter(function(w) { return w.length >= 2 && !STOP.has(w); });
@@ -511,13 +512,13 @@ async function buildResponse(query, onStatus) {
   }
 
   var isMarket  = /market|nifty|sensex|overview|index/.test(q);
-  var isTopPicks = /top\s*\d*\s*(stock|share|pick|buy|invest|recommend)/i.test(query);
+  var isTopPicks = /\b(top|best|give me|recommend)\b[\s\w]*\b(stock|share|pick)\b|\b(stock|share)\b[\s\w]*\b(top|best)\b/i.test(query);
 
   emit("**" + now + "**");
   emit();
 
   // Top stock picks — fetch live movers and analyse top gainers with strong signals
-  if (isTopPicks && found.length === 0 && !sectorKey) {
+  if (isTopPicks && !sectorKey) {
     emit("## Top Stock Picks");
     emit();
     onStatus("Scanning Nifty 50 for top movers...");
