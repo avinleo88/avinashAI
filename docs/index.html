@@ -29,60 +29,81 @@
     }
     .topbar {
       display:flex; align-items:center; justify-content:space-between;
-      padding:14px 24px; border-bottom:1px solid var(--border);
-      background:rgba(7,10,18,0.9); backdrop-filter:blur(12px); flex-shrink:0;
+      padding:12px 24px; border-bottom:1px solid var(--border);
+      background:rgba(7,10,18,0.95); backdrop-filter:blur(12px); flex-shrink:0;
     }
     .logo { display:flex; align-items:center; gap:10px; }
     .logo-icon {
-      width:34px; height:34px; border-radius:10px;
-      background:linear-gradient(135deg,rgba(0,229,255,0.2),rgba(168,85,247,0.2));
-      border:1px solid rgba(0,229,255,0.25);
-      display:flex; align-items:center; justify-content:center; font-size:1rem;
+      width:32px; height:32px; border-radius:9px;
+      background:linear-gradient(135deg,rgba(0,229,255,0.25),rgba(168,85,247,0.25));
+      border:1px solid rgba(0,229,255,0.3);
+      display:flex; align-items:center; justify-content:center; font-size:0.95rem;
     }
     .logo-text {
-      font-weight:700; font-size:1rem;
+      font-weight:700; font-size:0.95rem;
       background:linear-gradient(120deg,#fff 40%,var(--cyan));
       -webkit-background-clip:text; -webkit-text-fill-color:transparent; background-clip:text;
     }
-    .logo-sub { font-size:0.65rem; color:var(--muted); letter-spacing:0.1em; }
+    .logo-sub { font-size:0.62rem; color:var(--muted); letter-spacing:0.08em; }
+    .topbar-right { display:flex; align-items:center; gap:12px; }
+    .market-time { font-size:0.68rem; color:var(--muted); font-variant-numeric:tabular-nums; }
     .status-pill {
-      display:flex; align-items:center; gap:6px; padding:5px 12px; border-radius:20px;
-      background:rgba(0,255,163,0.08); border:1px solid rgba(0,255,163,0.15);
-      font-size:0.72rem; color:var(--green);
+      display:flex; align-items:center; gap:5px; padding:4px 10px; border-radius:20px;
+      background:rgba(0,255,163,0.07); border:1px solid rgba(0,255,163,0.18);
+      font-size:0.68rem; color:var(--green); font-weight:500;
     }
-    .dot { width:6px; height:6px; border-radius:50%; background:var(--green); box-shadow:0 0 6px var(--green); animation:pulse 2s infinite; }
+    .dot { width:5px; height:5px; border-radius:50%; background:var(--green); box-shadow:0 0 5px var(--green); animation:pulse 2s infinite; }
     @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.3} }
+
+    /* ── Scrolling ticker ─────────────────────────────────────────────────── */
+    .market-bar {
+      height:32px; border-bottom:1px solid var(--border);
+      background:rgba(0,0,0,0.25); flex-shrink:0;
+      overflow:hidden; position:relative;
+    }
+    .market-bar::before, .market-bar::after {
+      content:""; position:absolute; top:0; width:48px; height:100%; z-index:2; pointer-events:none;
+    }
+    .market-bar::before { left:0;  background:linear-gradient(to right, rgba(0,0,0,0.4), transparent); }
+    .market-bar::after  { right:0; background:linear-gradient(to left,  rgba(0,0,0,0.4), transparent); }
+    .market-ticker {
+      display:flex; align-items:center; height:100%;
+      animation:ticker 40s linear infinite;
+      white-space:nowrap; will-change:transform;
+    }
+    .market-ticker:hover { animation-play-state:paused; }
+    @keyframes ticker { 0%{transform:translateX(0)} 100%{transform:translateX(-50%)} }
+    .market-item {
+      display:inline-flex; align-items:center; gap:8px;
+      padding:0 20px; border-right:1px solid var(--border);
+      font-size:0.72rem; height:100%;
+    }
+    .market-label { color:var(--muted); font-weight:500; letter-spacing:0.02em; }
+    .market-price { color:var(--text); font-weight:600; font-variant-numeric:tabular-nums; }
+    .market-chg { font-weight:600; font-variant-numeric:tabular-nums; font-size:0.7rem; }
+    .market-chg.up   { color:var(--green); }
+    .market-chg.down { color:var(--red); }
+    .market-loading { color:var(--muted); font-size:0.72rem; padding:0 16px; line-height:32px; }
+
+    /* ── Chips ────────────────────────────────────────────────────────────── */
     .chips {
-      display:flex; gap:8px; padding:10px 24px;
+      display:flex; align-items:center; gap:6px; padding:8px 24px;
       border-bottom:1px solid var(--border);
       overflow-x:auto; flex-shrink:0; scrollbar-width:none;
     }
     .chips::-webkit-scrollbar { display:none; }
     .chip {
-      padding:6px 14px; background:var(--surf); border:1px solid var(--border);
-      border-radius:20px; font-size:0.75rem; color:var(--muted);
-      cursor:pointer; white-space:nowrap; flex-shrink:0; transition:all 0.2s;
+      display:inline-flex; align-items:center; gap:5px;
+      padding:5px 12px; border-radius:20px; font-size:0.73rem;
+      cursor:pointer; white-space:nowrap; flex-shrink:0; transition:all 0.18s;
+      background:var(--surf); border:1px solid var(--border); color:var(--muted);
     }
-    .chip:hover { border-color:rgba(0,229,255,0.35); color:var(--cyan); background:rgba(0,229,255,0.05); }
-    .market-bar {
-      display:flex; align-items:center; gap:0; padding:0 24px;
-      border-bottom:1px solid var(--border);
-      background:rgba(0,0,0,0.2); flex-shrink:0; overflow-x:auto;
-      scrollbar-width:none; height:36px;
+    .chip:hover { border-color:rgba(0,229,255,0.4); color:var(--cyan); background:rgba(0,229,255,0.06); }
+    .chip.primary {
+      background:rgba(0,229,255,0.07); border-color:rgba(0,229,255,0.2); color:rgba(0,229,255,0.85);
     }
-    .market-bar::-webkit-scrollbar { display:none; }
-    .market-item {
-      display:flex; align-items:center; gap:8px;
-      padding:0 16px; border-right:1px solid var(--border);
-      white-space:nowrap; font-size:0.74rem; height:100%;
-    }
-    .market-item:last-child { border-right:none; }
-    .market-label { color:var(--muted); font-weight:500; }
-    .market-price { color:var(--text); font-weight:600; font-variant-numeric:tabular-nums; }
-    .market-chg { font-weight:500; font-variant-numeric:tabular-nums; }
-    .market-chg.up   { color:var(--green); }
-    .market-chg.down { color:var(--red); }
-    .market-loading { color:var(--muted); font-size:0.72rem; padding:0 12px; }
+    .chip.primary:hover { background:rgba(0,229,255,0.12); border-color:rgba(0,229,255,0.45); color:var(--cyan); }
+    .chip-divider { width:1px; height:18px; background:var(--border); flex-shrink:0; margin:0 2px; }
     .movers-grid { display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-top:4px; }
     .movers-col h4 { font-size:0.78rem; font-weight:600; margin-bottom:8px; }
     .movers-col.gainers h4 { color:var(--green); }
@@ -186,10 +207,13 @@
     <div class="logo-icon">📈</div>
     <div>
       <div class="logo-text">StockAgent</div>
-      <div class="logo-sub">NSE / BSE · Free · No Setup Required</div>
+      <div class="logo-sub">NSE / BSE · LIVE · FREE</div>
     </div>
   </div>
-  <div class="status-pill"><div class="dot"></div> Live</div>
+  <div class="topbar-right">
+    <div class="market-time" id="istTime"></div>
+    <div class="status-pill"><div class="dot"></div> Live</div>
+  </div>
 </div>
 
 <div class="market-bar" id="marketBar">
@@ -197,9 +221,10 @@
 </div>
 
 <div class="chips" id="chipsBar">
-  <div class="chip" onclick="showLiveMarket()">📡 Live Market</div>
-  <div class="chip" onclick="showTopMovers()">📈 Top Movers</div>
-  <div class="chip" onclick="showSectorHeatmap()">🌡️ Sectors</div>
+  <div class="chip primary" onclick="showLiveMarket()">📡 Live Market</div>
+  <div class="chip primary" onclick="showTopMovers()">📈 Top Movers</div>
+  <div class="chip primary" onclick="showSectorHeatmap()">🌡️ Sectors</div>
+  <div class="chip-divider"></div>
   <div class="chip" onclick="ask('Market overview today')">📊 Market overview</div>
   <span id="dynamicChips"></span>
 </div>
@@ -1101,6 +1126,15 @@ function loadTrendingChips() {
     .catch(function() {});
 }
 
+function updateISTClock() {
+  var el = document.getElementById("istTime");
+  if (!el) return;
+  var now = new Date().toLocaleString("en-IN", { timeZone:"Asia/Kolkata", hour:"2-digit", minute:"2-digit", second:"2-digit", hour12:true });
+  el.textContent = "IST " + now;
+}
+updateISTClock();
+setInterval(updateISTClock, 1000);
+
 function loadMarketSummary() {
   var backend = BACKEND_URL || "http://localhost:5050";
   fetch(backend + "/market-summary")
@@ -1111,7 +1145,7 @@ function loadMarketSummary() {
         bar.innerHTML = '<span class="market-loading">Market data unavailable</span>';
         return;
       }
-      bar.innerHTML = data.map(function(d) {
+      var items = data.map(function(d) {
         var up = d.change >= 0;
         var sign = up ? "▲" : "▼";
         var cls = up ? "up" : "down";
@@ -1121,6 +1155,8 @@ function loadMarketSummary() {
           '<span class="market-chg ' + cls + '">' + sign + ' ' + Math.abs(d.change_pct).toFixed(2) + '%</span>' +
         '</div>';
       }).join("");
+      // Duplicate for seamless infinite scroll
+      bar.innerHTML = '<div class="market-ticker">' + items + items + '</div>';
     })
     .catch(function() {
       document.getElementById("marketBar").innerHTML = '<span class="market-loading">Market data unavailable</span>';
