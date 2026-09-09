@@ -83,6 +83,18 @@
     .market-chg.up   { color:var(--green); }
     .market-chg.down { color:var(--red); }
     .market-loading { color:var(--muted); font-size:0.72rem; padding:0 12px; }
+    .movers-grid { display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-top:4px; }
+    .movers-col h4 { font-size:0.78rem; font-weight:600; margin-bottom:8px; }
+    .movers-col.gainers h4 { color:var(--green); }
+    .movers-col.losers  h4 { color:var(--red); }
+    .mover-row { display:flex; justify-content:space-between; align-items:center; padding:5px 0; border-bottom:1px solid var(--border); font-size:0.78rem; }
+    .mover-row:last-child { border-bottom:none; }
+    .mover-name { color:var(--text); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; max-width:130px; }
+    .mover-pct  { font-weight:600; font-variant-numeric:tabular-nums; flex-shrink:0; }
+    .heatmap-grid { display:grid; grid-template-columns:repeat(4,1fr); gap:8px; margin-top:4px; }
+    .heat-tile { border-radius:10px; padding:12px 8px; text-align:center; cursor:default; }
+    .heat-tile .ht-name { font-size:0.78rem; font-weight:600; color:#fff; }
+    .heat-tile .ht-pct  { font-size:0.85rem; font-weight:700; color:#fff; margin-top:4px; }
     .chat {
       flex:1; overflow-y:auto; padding:24px;
       display:flex; flex-direction:column; gap:18px;
@@ -186,6 +198,8 @@
 
 <div class="chips">
   <div class="chip" onclick="showLiveMarket()">📡 Live Market</div>
+  <div class="chip" onclick="showTopMovers()">📈 Top Movers</div>
+  <div class="chip" onclick="showSectorHeatmap()">🌡️ Sectors</div>
   <div class="chip" onclick="ask('Market overview today')">📊 Market overview</div>
   <div class="chip" onclick="ask('TCS vs Infosys')">🔍 TCS vs Infosys</div>
   <div class="chip" onclick="ask('Banking sector analysis')">🏦 Banking sector</div>
@@ -867,6 +881,112 @@ function showLiveMarket() {
     .catch(function() {
       var bubble = document.getElementById("liveMarketBubble");
       if (bubble) bubble.innerHTML = "⚠️ Could not fetch market data.";
+    });
+}
+
+function showTopMovers() {
+  var backend = BACKEND_URL || "http://localhost:5050";
+  var chat = document.getElementById("chat");
+  var welcome = chat.querySelector(".welcome");
+  if (welcome) welcome.remove();
+
+  var userRow = document.createElement("div");
+  userRow.className = "row";
+  userRow.innerHTML = '<div style="margin-left:auto;max-width:70%"><div class="bubble user">📈 Top Movers</div></div>';
+  chat.appendChild(userRow);
+
+  var uid = "topMoversBubble_" + Date.now();
+  var botRow = document.createElement("div");
+  botRow.className = "row";
+  botRow.innerHTML = '<div class="avatar">A</div><div class="bubble bot" id="' + uid + '"><span class="muted">Fetching Nifty 50 movers…</span></div>';
+  chat.appendChild(botRow);
+  chat.scrollTop = chat.scrollHeight;
+
+  fetch(backend + "/top-movers")
+    .then(function(r) { return r.json(); })
+    .then(function(d) {
+      var bubble = document.getElementById(uid);
+      if (!d || (!d.gainers && !d.losers)) { bubble.innerHTML = "⚠️ Could not fetch movers."; return; }
+
+      function rows(list, up) {
+        return list.map(function(s) {
+          var sign = up ? "▲" : "▼";
+          var color = up ? "var(--green)" : "var(--red)";
+          return '<div class="mover-row">' +
+            '<span class="mover-name">' + s.name + '</span>' +
+            '<span class="mover-pct" style="color:' + color + '">' + sign + ' ' + Math.abs(s.change_pct).toFixed(2) + '%</span>' +
+          '</div>';
+        }).join("");
+      }
+
+      bubble.innerHTML =
+        '<div style="font-weight:700;margin-bottom:10px;font-size:0.95rem">📈 Top Movers — Nifty 50</div>' +
+        '<div class="movers-grid">' +
+          '<div class="movers-col gainers"><h4>▲ Top Gainers</h4>' + rows(d.gainers, true) + '</div>' +
+          '<div class="movers-col losers"><h4>▼ Top Losers</h4>'  + rows(d.losers, false) + '</div>' +
+        '</div>' +
+        '<div style="margin-top:10px;font-size:0.7rem;color:var(--muted)">Nifty 50 constituents · Live data</div>';
+      chat.scrollTop = chat.scrollHeight;
+    })
+    .catch(function() {
+      var b = document.getElementById(uid);
+      if (b) b.innerHTML = "⚠️ Could not fetch movers.";
+    });
+}
+
+function showSectorHeatmap() {
+  var backend = BACKEND_URL || "http://localhost:5050";
+  var chat = document.getElementById("chat");
+  var welcome = chat.querySelector(".welcome");
+  if (welcome) welcome.remove();
+
+  var userRow = document.createElement("div");
+  userRow.className = "row";
+  userRow.innerHTML = '<div style="margin-left:auto;max-width:70%"><div class="bubble user">🌡️ Sector Heatmap</div></div>';
+  chat.appendChild(userRow);
+
+  var uid = "sectorBubble_" + Date.now();
+  var botRow = document.createElement("div");
+  botRow.className = "row";
+  botRow.innerHTML = '<div class="avatar">A</div><div class="bubble bot" id="' + uid + '"><span class="muted">Fetching sector data…</span></div>';
+  chat.appendChild(botRow);
+  chat.scrollTop = chat.scrollHeight;
+
+  fetch(backend + "/sector-summary")
+    .then(function(r) { return r.json(); })
+    .then(function(data) {
+      var bubble = document.getElementById(uid);
+      if (!data || !data.length) { bubble.innerHTML = "⚠️ Could not fetch sector data."; return; }
+
+      function tileColor(pct) {
+        var clamped = Math.max(-4, Math.min(4, pct));
+        if (clamped >= 0) {
+          var intensity = Math.round((clamped / 4) * 180);
+          return "rgba(0," + (100 + intensity) + "," + Math.round(60 + intensity * 0.3) + ",0.55)";
+        } else {
+          var intensity = Math.round((Math.abs(clamped) / 4) * 180);
+          return "rgba(" + (100 + intensity) + ",0," + Math.round(30 + intensity * 0.2) + ",0.55)";
+        }
+      }
+
+      var tiles = data.map(function(s) {
+        var up = s.change_pct >= 0;
+        var sign = up ? "▲" : "▼";
+        return '<div class="heat-tile" style="background:' + tileColor(s.change_pct) + ';border:1px solid rgba(255,255,255,0.1)">' +
+          '<div class="ht-name">' + s.sector + '</div>' +
+          '<div class="ht-pct">' + sign + ' ' + Math.abs(s.change_pct).toFixed(2) + '%</div>' +
+        '</div>';
+      }).join("");
+
+      bubble.innerHTML =
+        '<div style="font-weight:700;margin-bottom:10px;font-size:0.95rem">🌡️ Sector Heatmap</div>' +
+        '<div class="heatmap-grid">' + tiles + '</div>' +
+        '<div style="margin-top:10px;font-size:0.7rem;color:var(--muted)">Based on top stocks per sector · Live data</div>';
+      chat.scrollTop = chat.scrollHeight;
+    })
+    .catch(function() {
+      var b = document.getElementById(uid);
+      if (b) b.innerHTML = "⚠️ Could not fetch sector data.";
     });
 }
 

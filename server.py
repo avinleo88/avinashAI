@@ -109,11 +109,25 @@ def get_stock_data(symbol: str, period: str = "3mo") -> dict:
 SECTOR_STOCKS = {
     "it":      ["TCS.NS","INFY.NS","WIPRO.NS","HCLTECH.NS","TECHM.NS"],
     "banking": ["HDFCBANK.NS","ICICIBANK.NS","SBIN.NS","KOTAKBANK.NS","AXISBANK.NS"],
-    "pharma":  ["SUNPHARMA.NS","DRREDDY.NS","CIPLA.NS","DIVISLAB.NS"],
-    "auto":    ["MARUTI.NS","TATAMOTORS.NS","M&M.NS","BAJAJ-AUTO.NS"],
-    "fmcg":    ["HINDUNILVR.NS","ITC.NS","NESTLEIND.NS","BRITANNIA.NS"],
-    "energy":  ["RELIANCE.NS","ONGC.NS","NTPC.NS","POWERGRID.NS"],
+    "pharma":  ["SUNPHARMA.NS","DRREDDY.NS","CIPLA.NS","DIVISLAB.NS","APOLLOHOSP.NS"],
+    "auto":    ["MARUTI.NS","TATAMOTORS.NS","M&M.NS","BAJAJ-AUTO.NS","EICHERMOT.NS"],
+    "fmcg":    ["HINDUNILVR.NS","ITC.NS","NESTLEIND.NS","BRITANNIA.NS","TATACONSUM.NS"],
+    "energy":  ["RELIANCE.NS","ONGC.NS","NTPC.NS","POWERGRID.NS","BPCL.NS"],
+    "metal":   ["TATASTEEL.NS","JSWSTEEL.NS","HINDALCO.NS","COALINDIA.NS","ADANIENT.NS"],
+    "infra":   ["LT.NS","ADANIPORTS.NS","ULTRACEMCO.NS","GRASIM.NS","BHARTIARTL.NS"],
 }
+
+NIFTY50_SYMS = [
+    "RELIANCE.NS","TCS.NS","HDFCBANK.NS","INFY.NS","ICICIBANK.NS",
+    "HINDUNILVR.NS","ITC.NS","SBIN.NS","BHARTIARTL.NS","KOTAKBANK.NS",
+    "LT.NS","AXISBANK.NS","ASIANPAINT.NS","MARUTI.NS","TITAN.NS",
+    "SUNPHARMA.NS","ULTRACEMCO.NS","BAJFINANCE.NS","WIPRO.NS","NESTLEIND.NS",
+    "POWERGRID.NS","NTPC.NS","TECHM.NS","HCLTECH.NS","ONGC.NS",
+    "TATAMOTORS.NS","TATASTEEL.NS","ADANIENT.NS","ADANIPORTS.NS","BAJAJFINSV.NS",
+    "COALINDIA.NS","DRREDDY.NS","EICHERMOT.NS","GRASIM.NS","HEROMOTOCO.NS",
+    "INDUSINDBK.NS","JSWSTEEL.NS","M&M.NS","CIPLA.NS","DIVISLAB.NS",
+    "APOLLOHOSP.NS","BPCL.NS","BRITANNIA.NS","HINDALCO.NS","TATACONSUM.NS",
+]
 
 NAME_MAP = {
     "HDFCBANK.NS":"HDFC Bank","ICICIBANK.NS":"ICICI Bank",
@@ -404,6 +418,63 @@ def build_response(query: str):
 
 
 # ── Routes ────────────────────────────────────────────────────────────────────
+@app.route("/top-movers")
+def top_movers():
+    try:
+        data = yf.download(NIFTY50_SYMS, period="2d", progress=False, auto_adjust=True)
+        closes = data["Close"]
+        if closes.empty:
+            return json.dumps({"gainers": [], "losers": []}), 200, {"Access-Control-Allow-Origin": "*"}
+        changes = []
+        for sym in closes.columns:
+            col = closes[sym].dropna()
+            if len(col) >= 2:
+                cur  = float(col.iloc[-1])
+                prev = float(col.iloc[-2])
+                pct  = round(((cur - prev) / prev) * 100, 2) if prev else 0
+                changes.append({
+                    "symbol": sym,
+                    "name": NAME_MAP.get(sym, sym.replace(".NS", "")),
+                    "price": round(cur, 2),
+                    "change_pct": pct,
+                })
+        changes.sort(key=lambda x: x["change_pct"], reverse=True)
+        return Response(json.dumps({"gainers": changes[:5], "losers": list(reversed(changes[-5:]))}),
+                        content_type="application/json",
+                        headers={"Access-Control-Allow-Origin": "*"})
+    except Exception as e:
+        return json.dumps({"error": str(e)}), 502, {"Access-Control-Allow-Origin": "*"}
+
+
+@app.route("/sector-summary")
+def sector_summary():
+    try:
+        all_syms = list({s for syms in SECTOR_STOCKS.values() for s in syms})
+        data = yf.download(all_syms, period="2d", progress=False, auto_adjust=True)
+        closes = data["Close"]
+        result = []
+        LABELS = {"it":"IT","banking":"Banking","pharma":"Pharma","auto":"Auto",
+                  "fmcg":"FMCG","energy":"Energy","metal":"Metal","infra":"Infra"}
+        for key, syms in SECTOR_STOCKS.items():
+            pcts = []
+            for sym in syms:
+                if sym in closes.columns:
+                    col = closes[sym].dropna()
+                    if len(col) >= 2:
+                        cur  = float(col.iloc[-1])
+                        prev = float(col.iloc[-2])
+                        if prev:
+                            pcts.append(((cur - prev) / prev) * 100)
+            if pcts:
+                avg = round(sum(pcts) / len(pcts), 2)
+                result.append({"sector": LABELS.get(key, key.title()), "change_pct": avg})
+        result.sort(key=lambda x: x["change_pct"], reverse=True)
+        return Response(json.dumps(result), content_type="application/json",
+                        headers={"Access-Control-Allow-Origin": "*"})
+    except Exception as e:
+        return json.dumps({"error": str(e)}), 502, {"Access-Control-Allow-Origin": "*"}
+
+
 @app.route("/market-summary")
 def market_summary():
     indices = [
