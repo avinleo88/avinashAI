@@ -349,12 +349,34 @@ const STOCKS = {
 }
 
 const SECTORS = {
-  "it":      ["TCS.NS","INFY.NS","WIPRO.NS","HCLTECH.NS","TECHM.NS"],
-  "banking": ["HDFCBANK.NS","ICICIBANK.NS","SBIN.NS","KOTAKBANK.NS","AXISBANK.NS"],
-  "pharma":  ["SUNPHARMA.NS","DRREDDY.NS","CIPLA.NS","DIVISLAB.NS"],
-  "auto":    ["MARUTI.NS","TATAMOTORS.NS","M&M.NS","BAJAJ-AUTO.NS"],
-  "fmcg":    ["HINDUNILVR.NS","ITC.NS","NESTLEIND.NS","BRITANNIA.NS"],
-  "energy":  ["RELIANCE.NS","ONGC.NS","NTPC.NS","POWERGRID.NS"],
+  "it":       ["TCS.NS","INFY.NS","WIPRO.NS","HCLTECH.NS","TECHM.NS","LTIM.NS","PERSISTENT.NS"],
+  "banking":  ["HDFCBANK.NS","ICICIBANK.NS","SBIN.NS","KOTAKBANK.NS","AXISBANK.NS","BANKBARODA.NS","INDUSINDBK.NS"],
+  "pharma":   ["SUNPHARMA.NS","DRREDDY.NS","CIPLA.NS","DIVISLAB.NS","AUROPHARMA.NS","LUPIN.NS","BIOCON.NS"],
+  "auto":     ["MARUTI.NS","TATAMOTORS.NS","M&M.NS","BAJAJ-AUTO.NS","EICHERMOT.NS","HEROMOTOCO.NS","TVSMOTOR.NS"],
+  "fmcg":     ["HINDUNILVR.NS","ITC.NS","NESTLEIND.NS","BRITANNIA.NS","DABUR.NS","MARICO.NS","GODREJCP.NS"],
+  "energy":   ["RELIANCE.NS","ONGC.NS","BPCL.NS","GAIL.NS","IOC.NS"],
+  "power":    ["NTPC.NS","POWERGRID.NS","TATAPOWER.NS","ADANIPOWER.NS","TORNTPOWER.NS","CESC.NS"],
+  "metal":    ["TATASTEEL.NS","JSWSTEEL.NS","HINDALCO.NS","VEDL.NS","SAIL.NS","NATIONALUM.NS"],
+  "defence":  ["HAL.NS","BEL.NS","BDL.NS","MAZDOCK.NS","GRSE.NS","BEML.NS","COCHINSHIP.NS"],
+  "telecom":  ["BHARTIARTL.NS","IDEA.NS","TATACOMM.NS","INDUSTOWER.NS","HFCL.NS"],
+  "realty":   ["DLF.NS","GODREJPROP.NS","OBEROIRLTY.NS","PRESTIGE.NS","BRIGADE.NS","SOBHA.NS"],
+  "cement":   ["ULTRACEMCO.NS","AMBUJACEM.NS","ACC.NS","SHREECEM.NS","RAMCOCEM.NS"],
+  "infra":    ["LT.NS","ADANIPORTS.NS","GMRAIRPORT.NS","IRB.NS","NBCC.NS"],
+};
+
+const SECTOR_ALIASES = {
+  "defense": "defence", "defence sector": "defence", "defense sector": "defence",
+  "real estate": "realty", "property": "realty", "realty sector": "realty",
+  "telecommunications": "telecom", "telecom sector": "telecom",
+  "oil": "energy", "oil and gas": "energy", "oil & gas": "energy",
+  "power sector": "power", "electricity": "power",
+  "metals": "metal", "steel": "metal", "mining": "metal",
+  "infrastructure": "infra", "infra sector": "infra",
+  "cement sector": "cement",
+  "pharma sector": "pharma", "healthcare": "pharma", "health": "pharma",
+  "bank": "banking", "banks": "banking", "finance": "banking", "financial": "banking",
+  "automobile": "auto", "automobiles": "auto", "automotive": "auto", "vehicles": "auto",
+  "technology": "it", "tech": "it", "software": "it", "it sector": "it",
 };
 
 // Fetch one symbol — races both proxies simultaneously, uses whichever wins
@@ -515,6 +537,12 @@ async function buildResponse(query, onStatus) {
   function emit(t) { lines.push(t !== undefined ? t : ""); }
 
   var sectorKey = Object.keys(SECTORS).find(function(k) { return new RegExp("\\b" + k + "\\b").test(q); });
+  if (!sectorKey) {
+    var aliasMatch = Object.keys(SECTOR_ALIASES).find(function(a) {
+      return new RegExp("\\b" + a.replace(/\s+/g, "\\s+") + "\\b", "i").test(q);
+    });
+    if (aliasMatch) sectorKey = SECTOR_ALIASES[aliasMatch];
+  }
 
   // ── Intent detection FIRST (before tokenizer pollutes found) ──────────────
   var isMarket = /\b(market|nifty|sensex|overview|index|indices)\b/.test(q);
@@ -726,8 +754,6 @@ async function buildResponse(query, onStatus) {
   // Sector — ALL stocks fetched in parallel
   if (sectorKey) {
     var sectorLabel = sectorKey.charAt(0).toUpperCase() + sectorKey.slice(1);
-    emit("## " + sectorLabel + " Sector — Comparison");
-    emit();
     onStatus("Fetching all " + sectorLabel + " stocks in parallel...");
     var sectorFetched = await fetchAll(SECTORS[sectorKey], "3mo");
     var sectorResults = [];
@@ -741,7 +767,86 @@ async function buildResponse(query, onStatus) {
 
     if (sectorResults.length === 0) {
       emit("Could not fetch stock data — try again in a moment.");
+
+    } else if (isTopPicks) {
+      // Sector + BUY intent — show only BUY/STRONG BUY stocks as cards
+      var count = parseInt((q.match(/\d+/) || ["5"])[0]) || 5;
+      var sectorBuys = sectorResults.filter(function(r) { return r.sig.score >= 2; }).slice(0, count);
+      emit("## Best " + sectorLabel + " Stocks to Buy");
+      emit();
+      emit("> **RSI** *(Relative Strength Index)* — Momentum on a 0–100 scale. **Below 30** = oversold, potential entry point. **Above 70** = overbought, correction risk. Sweet spot: 40–60.");
+      emit("> **SMA** *(Simple Moving Average)* — Average closing price over the last 20 or 50 days. Price **above** SMA = bullish trend. Price **below** SMA = bearish trend.");
+      emit("> **MACD** *(Moving Avg Convergence Divergence)* — Measures momentum direction. **Positive** = bullish momentum building. **Negative** = bearish momentum.");
+      emit();
+      if (sectorBuys.length === 0) {
+        emit("No BUY signals in the " + sectorLabel + " sector right now — the sector looks cautious. Try the comparison view by asking \"" + sectorLabel + " sector\".");
+      } else {
+        emit("*Found **" + sectorBuys.length + "** stocks with strong buy signals in the " + sectorLabel + " sector:*");
+        emit();
+        sectorBuys.forEach(function(r, idx) {
+          var d = r.d, sig = r.sig;
+          var verdictLabel = sig.score >= 4 ? "STRONG BUY" : "BUY";
+          var arrow = d.changePct >= 0 ? "+" : "";
+          emit("### " + (idx + 1) + ". " + d.name);
+          emit("**Price:** " + ipr(d.current) + "  " + arrow + d.changePct + "%");
+          emit();
+          emit("| Indicator | Value | Signal |");
+          emit("|---|---|---|");
+          emit("| RSI(14) | " + d.rsi + " | " + (d.rsi < 30 ? "Oversold — potential entry" : d.rsi > 70 ? "Overbought — be cautious" : "Neutral") + " |");
+          emit("| vs SMA20 | " + ipr(d.sma20) + " | " + (d.current > d.sma20 ? "Above — bullish" : "Below — bearish") + " |");
+          emit("| vs SMA50 | " + ipr(d.sma50) + " | " + (d.current > d.sma50 ? "Above — bullish" : "Below — bearish") + " |");
+          emit("| MACD | " + d.macd + " | " + (d.macd > 0 ? "Bullish momentum" : "Bearish momentum") + " |");
+          emit("| 52W Position | " + d.w52pct + "% | " + (d.w52pct < 30 ? "Near low — value zone" : d.w52pct > 80 ? "Near high" : "Mid-range") + " |");
+          emit();
+          emit("**Verdict: " + verdictLabel + "** (Score: +" + sig.score + "/8)");
+          if (sig.flags.length) { emit(); sig.flags.forEach(function(f) { emit("- " + f); }); }
+          emit();
+          emit("---");
+          emit();
+        });
+      }
+      emit("⚠️ *Rule-based technical analysis only — not financial advice. Always do your own research.*");
+
+    } else if (isWorstPicks) {
+      // Sector + AVOID intent — show only AVOID/STRONG AVOID stocks as cards
+      var count = parseInt((q.match(/\d+/) || ["5"])[0]) || 5;
+      var sectorAvoids = sectorResults.filter(function(r) { return r.sig.score <= -1; })
+                          .sort(function(a,b){return a.sig.score - b.sig.score;}).slice(0, count);
+      emit("## " + sectorLabel + " Stocks to Avoid");
+      emit();
+      if (sectorAvoids.length === 0) {
+        emit("No AVOID signals in the " + sectorLabel + " sector right now — most stocks look neutral or better.");
+      } else {
+        emit("*Found **" + sectorAvoids.length + "** stocks with weak signals in the " + sectorLabel + " sector:*");
+        emit();
+        sectorAvoids.forEach(function(r, idx) {
+          var d = r.d, sig = r.sig;
+          var verdictLabel = sig.score <= -4 ? "STRONG AVOID" : "AVOID";
+          var arrow = d.changePct >= 0 ? "+" : "";
+          emit("### " + (idx + 1) + ". " + d.name);
+          emit("**Price:** " + ipr(d.current) + "  " + arrow + d.changePct + "%");
+          emit();
+          emit("| Indicator | Value | Signal |");
+          emit("|---|---|---|");
+          emit("| RSI(14) | " + d.rsi + " | " + (d.rsi > 70 ? "Overbought — correction risk" : d.rsi < 30 ? "Oversold" : "Neutral") + " |");
+          emit("| vs SMA20 | " + ipr(d.sma20) + " | " + (d.current < d.sma20 ? "Below — bearish" : "Above — bullish") + " |");
+          emit("| vs SMA50 | " + ipr(d.sma50) + " | " + (d.current < d.sma50 ? "Below — bearish" : "Above — bullish") + " |");
+          emit("| MACD | " + d.macd + " | " + (d.macd < 0 ? "Bearish momentum" : "Bullish momentum") + " |");
+          emit("| 52W Position | " + d.w52pct + "% | " + (d.w52pct < 20 ? "Near 52W low — weak" : "Mid/high range") + " |");
+          emit();
+          emit("**Verdict: " + verdictLabel + "** (Score: " + sig.score + "/8)");
+          if (sig.warns.length) { emit(); sig.warns.forEach(function(w) { emit("- " + w); }); }
+          emit();
+          emit("---");
+          emit();
+        });
+      }
+      emit("⚠️ *Rule-based technical analysis only — not financial advice. Always do your own research.*");
+
     } else {
+      // Plain sector query — show full comparison table
+      emit("## " + sectorLabel + " Sector — Comparison");
+      emit();
       // Comparison table
       emit("| Stock | Price | Change | RSI | vs SMA20 | MACD | 52W% | 1M | Signal |");
       emit("|---|---|---|---|---|---|---|---|---|");
