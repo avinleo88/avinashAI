@@ -404,6 +404,33 @@ def build_response(query: str):
 
 
 # ── Routes ────────────────────────────────────────────────────────────────────
+@app.route("/market-summary")
+def market_summary():
+    indices = [
+        ("^NSEI",   "Nifty 50"),
+        ("^BSESN",  "Sensex"),
+        ("^NSEBANK","Nifty Bank"),
+        ("^CNXIT",  "Nifty IT"),
+        ("^NSMIDCP","Nifty Midcap"),
+    ]
+    result = []
+    for symbol, label in indices:
+        try:
+            t = yf.Ticker(symbol)
+            hist = t.history(period="2d")
+            if hist.empty or len(hist) < 1:
+                continue
+            cur  = round(hist["Close"].iloc[-1], 2)
+            prev = round(hist["Close"].iloc[-2], 2) if len(hist) > 1 else cur
+            chg  = round(cur - prev, 2)
+            pct  = round((chg / prev) * 100, 2) if prev else 0
+            result.append({"symbol": symbol, "label": label, "price": cur, "change": chg, "change_pct": pct})
+        except Exception:
+            continue
+    return Response(json.dumps(result), content_type="application/json",
+                    headers={"Access-Control-Allow-Origin": "*"})
+
+
 @app.route("/")
 def index():
     return send_from_directory(".", "index.html")
