@@ -347,6 +347,7 @@ function fetchAll(symbols, range) {
       return { symbol: s, result: result };
     });
   }));
+}
 
 // Search NSE for a stock symbol by name — calls Railway /search endpoint
 async function searchSymbol(query) {
@@ -357,7 +358,6 @@ async function searchSymbol(query) {
     var results = await r.json();
     return results.length > 0 ? results[0] : null;
   } catch(e) { return null; }
-}
 }
 
 function parseResult(result) {
@@ -486,9 +486,10 @@ async function buildResponse(query, onStatus) {
   // fallback: try any unknown word as WORD.NS (catches "suzlon", "tatapower", etc.)
   if (found.length === 0 && !sectorKey) {
     var STOP = new Set(["SHOULD","BUY","SELL","HOLD","ABOUT","WHAT","HOW","IS","THE","A","AN",
-      "I","ME","MY","ANALYSIS","ANALYSE","ANALYZE","STOCK","SHARE","MARKET","TELL","SHOW",
-      "GIVE","VS","OR","AND","FOR","IN","AT","OF","TO","FROM","CAN","WILL","DO","DOES",
-      "IT","GOOD","BAD","BEST","SAFE","RISK","NOW","TODAY","PRICE","INVEST","RETURN","GET"]);
+      "I","ME","MY","ANALYSIS","ANALYSE","ANALYZE","STOCK","STOCKS","SHARE","SHARES","MARKET",
+      "TELL","SHOW","GIVE","VS","OR","AND","FOR","IN","AT","OF","TO","FROM","CAN","WILL",
+      "DO","DOES","IT","GOOD","BAD","BEST","SAFE","RISK","NOW","TODAY","PRICE","INVEST",
+      "RETURN","GET","TOP","RECOMMEND","PICKS","PICK","LIST","WHICH","THESE","THOSE","5","10","3"]);
     var tokens = query.toUpperCase().split(/\s+/)
       .map(function(w) { return w.replace(/[^A-Z0-9&-]/g, ""); })
       .filter(function(w) { return w.length >= 2 && !STOP.has(w); });
@@ -509,10 +510,47 @@ async function buildResponse(query, onStatus) {
     }
   }
 
-  var isMarket = /market|nifty|sensex|overview|index/.test(q);
+  var isMarket  = /market|nifty|sensex|overview|index/.test(q);
+  var isTopPicks = /top\s*\d*\s*(stock|share|pick|buy|invest|recommend)/i.test(query);
 
   emit("**" + now + "**");
   emit();
+
+  // Top stock picks — fetch live movers and analyse top gainers with strong signals
+  if (isTopPicks && found.length === 0 && !sectorKey) {
+    emit("## Top Stock Picks");
+    emit();
+    onStatus("Scanning Nifty 50 for top movers...");
+    var backend = BACKEND_URL || "http://localhost:5050";
+    var moversData = null;
+    try {
+      var mr = await fetch(backend + "/top-movers", { signal: AbortSignal.timeout(15000) });
+      moversData = await mr.json();
+    } catch(e) {}
+    if (!moversData || !moversData.gainers || moversData.gainers.length === 0) {
+      emit("⚠️ Could not fetch live movers. Try again in a moment.");
+    } else {
+      var count = parseInt((q.match(/\d+/) || ["5"])[0]) || 5;
+      var candidates = moversData.gainers.slice(0, Math.min(count, 5)).map(function(g) { return g.symbol; });
+      emit("*Based on today's top Nifty 50 gainers — live technical analysis:*");
+      emit();
+      var fetched = await fetchAll(candidates, "3mo");
+      fetched.forEach(function(item) {
+        if (!item.result) return;
+        var d = parseResult(item.result);
+        if (!d) return;
+        var sig = analyse(d);
+        var arrow = d.change >= 0 ? "+" : "";
+        emit("### " + d.name);
+        emit("**Price:** " + ipr(d.current) + "  " + arrow + d.change + " (" + arrow + d.changePct + "%)");
+        emit("**Signal:** " + sig.verdict + " | RSI: " + d.rsi + " | vs 52w: " + d.w52Pct + "%");
+        emit();
+      });
+    }
+    emit("---");
+    emit("⚠️ *Rule-based analysis only — not financial advice. Do your own research.*");
+    return lines.join("\n");
+  }
 
   // Market overview — parallel fetch
   if (isMarket || (!sectorKey && found.length === 0)) {
@@ -595,11 +633,19 @@ async function buildResponse(query, onStatus) {
   // Individual stocks — ALL fetched in parallel
   } else if (found.length > 0) {
     var unique = found.filter(function(v, i, a) { return a.indexOf(v) === i; }).slice(0, 4);
+
+    // If none found in local dict, search NSE database first (smarter than blind tokenising)
+    if (unique.every(function(s) { return s.endsWith(".NS") && !Object.values(STOCKS).includes(s); })) {
+      onStatus("Searching NSE for \"" + query + "\"...");
+      var preSearch = await searchSymbol(query);
+      if (preSearch) unique = [preSearch.symbol];
+    }
+
     emit("## " + (unique.length > 1 ? "Comparison" : "Analysis"));
     emit();
     onStatus("Fetching " + unique.map(function(s) { return s.replace(".NS","").replace(".BO",""); }).join(", ") + " simultaneously...");
     var stockFetched = await fetchAll(unique, "3mo");
-    // If all fetches failed (unknown stock), search NSE database for the real symbol
+    // If all fetches still failed, try NSE search as last resort
     var allNull = stockFetched.every(function(item) { return !item.result; });
     if (allNull) {
       onStatus("Searching NSE database for \"" + query + "\"...");
