@@ -418,6 +418,108 @@ def build_response(query: str):
 
 
 # ── Routes ────────────────────────────────────────────────────────────────────
+@app.route("/recommendations")
+def recommendations():
+    try:
+        data = yf.download(NIFTY50_SYMS, period="3mo", progress=False, auto_adjust=True)
+        closes_all = data["Close"]
+        volumes_all = data["Volume"]
+        if closes_all.empty:
+            return json.dumps([]), 200, {"Access-Control-Allow-Origin": "*"}
+
+        results = []
+        for sym in closes_all.columns:
+            closes  = closes_all[sym].dropna()
+            volumes = volumes_all[sym].dropna() if sym in volumes_all.columns else None
+            if len(closes) < 22:
+                continue
+            cur  = float(closes.iloc[-1])
+            prev = float(closes.iloc[-2])
+
+            # RSI
+            delta = closes.diff()
+            gain  = delta.clip(lower=0).rolling(14).mean()
+            loss  = (-delta.clip(upper=0)).rolling(14).mean()
+            rs    = gain / loss
+            rsi   = round(float((100 - 100 / (1 + rs)).iloc[-1]), 1)
+
+            # SMA
+            sma20 = round(float(closes.rolling(20).mean().iloc[-1]), 2)
+            sma50 = round(float(closes.rolling(50).mean().iloc[-1]), 2) if len(closes) >= 50 else sma20
+
+            # MACD
+            ema12 = closes.ewm(span=12).mean()
+            ema26 = closes.ewm(span=26).mean()
+            macd  = round(float((ema12 - ema26).iloc[-1]), 2)
+
+            # 52W position
+            w52_hi = float(closes.max())
+            w52_lo = float(closes.min())
+            w52pct = round(((cur - w52_lo) / (w52_hi - w52_lo)) * 100, 1) if (w52_hi - w52_lo) else 50
+
+            # Volume ratio
+            vol_ratio = 1.0
+            if volumes is not None and len(volumes) >= 20:
+                avg_vol   = float(volumes.tail(20).mean())
+                cur_vol   = float(volumes.iloc[-1])
+                vol_ratio = round(cur_vol / avg_vol, 2) if avg_vol else 1
+
+            # 1-month return
+            ret_1m = round(((cur - float(closes.iloc[-22])) / float(closes.iloc[-22])) * 100, 2)
+
+            # Score — same logic as frontend analyse()
+            score, flags, warns = 0, [], []
+            if rsi < 30:   score += 2; flags.append(f"RSI {rsi} — oversold (buy zone)")
+            elif rsi < 45: score += 1; flags.append(f"RSI {rsi} — slightly oversold")
+            elif rsi > 70: score -= 2; warns.append(f"RSI {rsi} — overbought")
+            elif rsi > 60: score -= 1; warns.append(f"RSI {rsi} — approaching overbought")
+
+            if cur > sma20 and sma20 > sma50:   score += 2; flags.append("Price > SMA20 > SMA50 — bullish trend")
+            elif cur > sma20:                     score += 1; flags.append("Price above SMA20 — short-term bullish")
+            elif cur < sma20 and sma20 < sma50: score -= 2; warns.append("Price < SMA20 < SMA50 — bearish trend")
+            elif cur < sma20:                    score -= 1; warns.append("Price below SMA20 — bearish")
+
+            if macd > 0: score += 1; flags.append(f"MACD +{macd} — bullish momentum")
+            else:        score -= 1; warns.append(f"MACD {macd} — bearish momentum")
+
+            if w52pct < 20:   score += 1; flags.append(f"Near 52W low ({w52pct}%) — value zone")
+            elif w52pct > 85: score -= 1; warns.append(f"Near 52W high ({w52pct}%) — correction risk")
+
+            if vol_ratio > 1.5:  score += 1; flags.append(f"Volume {vol_ratio}x avg — strong interest")
+            elif vol_ratio < 0.5: score -= 1; warns.append(f"Volume {vol_ratio}x avg — low interest")
+
+            if ret_1m > 10:   score += 1; flags.append(f"1M return +{ret_1m}% — momentum")
+            elif ret_1m < -10: score -= 1; warns.append(f"1M return {ret_1m}% — weak")
+
+            verdict = "STRONG BUY" if score >= 4 else "BUY" if score >= 2 else "HOLD" if score >= 0 else "AVOID" if score >= -2 else "STRONG AVOID"
+            if score < 2:
+                continue  # only return BUY and STRONG BUY
+
+            results.append({
+                "symbol":    sym,
+                "name":      NAME_MAP.get(sym, sym.replace(".NS", "")),
+                "price":     round(cur, 2),
+                "change_pct": round(((cur - prev) / prev) * 100, 2) if prev else 0,
+                "score":     score,
+                "verdict":   verdict,
+                "rsi":       rsi,
+                "sma20":     sma20,
+                "sma50":     sma50,
+                "macd":      macd,
+                "w52pct":    w52pct,
+                "vol_ratio": vol_ratio,
+                "ret_1m":    ret_1m,
+                "flags":     flags,
+                "warns":     warns,
+            })
+
+        results.sort(key=lambda x: x["score"], reverse=True)
+        return Response(json.dumps(results[:10]), content_type="application/json",
+                        headers={"Access-Control-Allow-Origin": "*"})
+    except Exception as e:
+        return json.dumps({"error": str(e)}), 502, {"Access-Control-Allow-Origin": "*"}
+
+
 @app.route("/top-movers")
 def top_movers():
     try:

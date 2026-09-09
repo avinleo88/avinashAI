@@ -573,64 +573,40 @@ async function buildResponse(query, onStatus) {
   if (isTopPicks && !sectorKey) {
     emit("## Stock Recommendations");
     emit();
-    onStatus("Scanning Nifty 50 for buy signals...");
+    onStatus("Scanning all Nifty 50 stocks (3-month technicals)...");
     var backend = BACKEND_URL || "http://localhost:5050";
-    var moversData = null;
+    var recsData = null;
     try {
-      var mr = await fetch(backend + "/top-movers", { signal: AbortSignal.timeout(15000) });
-      moversData = await mr.json();
+      var rr = await fetch(backend + "/recommendations", { signal: AbortSignal.timeout(30000) });
+      recsData = await rr.json();
     } catch(e) {}
-    if (!moversData || !moversData.gainers || moversData.gainers.length === 0) {
-      emit("⚠️ Could not fetch live data. Try again in a moment.");
+    if (!recsData || recsData.length === 0) {
+      emit("⚠️ Could not fetch recommendations. Try again in a moment.");
     } else {
       var count = parseInt((q.match(/\d+/) || ["5"])[0]) || 5;
-      // Fetch top 8 gainers + top 3 losers (oversold stocks can be BUY too)
-      var candidates = moversData.gainers.slice(0, 8).concat(moversData.losers.slice(0, 3))
-        .map(function(g) { return g.symbol; })
-        .filter(function(v, i, a) { return a.indexOf(v) === i; });
-      onStatus("Analysing " + candidates.length + " stocks for buy signals...");
-      var fetched = await fetchAll(candidates, "3mo");
-
-      // Score and filter — only show BUY or STRONG BUY
-      var ranked = [];
-      fetched.forEach(function(item) {
-        if (!item.result) return;
-        var d = parseResult(item.result);
-        if (!d) return;
-        var sig = analyse(d);
-        ranked.push({ d: d, sig: sig });
+      var buys = recsData.slice(0, count);
+      emit("*Found **" + buys.length + "** stocks with strong buy signals — based on 3-month technical analysis across all Nifty 50 stocks:*");
+      emit();
+      buys.forEach(function(s, idx) {
+        var verdictLabel = s.score >= 4 ? "STRONG BUY" : "BUY";
+        var arrow = s.change_pct >= 0 ? "+" : "";
+        emit("### " + (idx + 1) + ". " + (s.name || s.symbol));
+        emit("**Price:** ₹" + s.price.toLocaleString("en-IN") + "  " + arrow + s.change_pct.toFixed(2) + "%");
+        emit();
+        emit("| Indicator | Value | Signal |");
+        emit("|---|---|---|");
+        emit("| RSI(14) | " + s.rsi + " | " + (s.rsi < 30 ? "Oversold — potential entry" : s.rsi > 70 ? "Overbought — be cautious" : "Neutral") + " |");
+        emit("| vs SMA20 | ₹" + s.sma20.toLocaleString("en-IN") + " | " + (s.price > s.sma20 ? "Above — bullish" : "Below — bearish") + " |");
+        emit("| vs SMA50 | ₹" + s.sma50.toLocaleString("en-IN") + " | " + (s.price > s.sma50 ? "Above — bullish" : "Below — bearish") + " |");
+        emit("| MACD | " + s.macd.toFixed(2) + " | " + (s.macd > 0 ? "Bullish momentum" : "Bearish momentum") + " |");
+        emit("| 52W Position | " + s.w52pct + "% | " + (s.w52pct < 30 ? "Near low — value zone" : s.w52pct > 80 ? "Near high" : "Mid-range") + " |");
+        emit("| 1M Return | " + s.ret_1m + "% | " + (s.ret_1m > 5 ? "Strong momentum" : s.ret_1m < -5 ? "Recent pullback" : "Stable") + " |");
+        emit();
+        emit("**Verdict: " + verdictLabel + "** (Score: +" + s.score + "/8)");
+        emit();
+        emit("---");
+        emit();
       });
-      ranked.sort(function(a, b) { return b.sig.score - a.sig.score; });
-      var buys = ranked.filter(function(r) { return r.sig.score >= 2; }).slice(0, count);
-
-      if (buys.length === 0) {
-        emit("No BUY signals found in today's top movers — the market looks cautious right now.");
-        emit();
-        emit("*Try checking back later, or ask about a specific sector.*");
-      } else {
-        emit("*Found **" + buys.length + "** stocks with positive signals from Nifty 50 — live analysis:*");
-        emit();
-        buys.forEach(function(r, idx) {
-          var d = r.d, sig = r.sig;
-          var arrow = d.change >= 0 ? "+" : "";
-          emit("### " + (idx + 1) + ". " + d.name);
-          emit("**Price:** " + ipr(d.current) + "  " + arrow + d.change + " (" + arrow + d.changePct + "%)");
-          emit();
-          emit("| Indicator | Value | Signal |");
-          emit("|---|---|---|");
-          emit("| RSI | " + d.rsi + " | " + (d.rsi < 30 ? "Oversold — potential entry" : d.rsi > 70 ? "Overbought — be cautious" : "Neutral") + " |");
-          emit("| vs SMA20 | " + ipr(d.sma20) + " | " + (d.current > d.sma20 ? "Above — bullish" : "Below — bearish") + " |");
-          emit("| vs SMA50 | " + ipr(d.sma50) + " | " + (d.current > d.sma50 ? "Above — bullish" : "Below — bearish") + " |");
-          emit("| MACD | " + d.macd + " | " + (d.macd > 0 ? "Bullish momentum" : "Bearish momentum") + " |");
-          emit("| 52W Position | " + d.w52pct + "% | " + (d.w52pct < 30 ? "Near low — value zone" : d.w52pct > 80 ? "Near high" : "Mid-range") + " |");
-          emit();
-          emit("**Verdict: " + sig.verdict + "** (Score: +" + sig.score + "/8)");
-          if (sig.flags.length) { emit(); sig.flags.forEach(function(f) { emit("- " + f); }); }
-          emit();
-          emit("---");
-          emit();
-        });
-      }
     }
     emit("⚠️ *Rule-based technical analysis only — not financial advice. Always do your own research.*");
     return lines.join("\n");
