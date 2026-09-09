@@ -519,23 +519,42 @@ async function buildResponse(query, onStatus) {
   // ── Intent detection FIRST (before tokenizer pollutes found) ──────────────
   var isMarket = /\b(market|nifty|sensex|overview|index|indices)\b/.test(q);
   var isTopPicks = (
-    /\b(top|best|good|strong|recommend|suggest)\b[\s\w]*\bstocks?\b/i.test(query) ||
-    /\bstocks?\b[\s\w]*\b(top|best|buy|invest|long[\s-]?term|short[\s-]?term|today)\b/i.test(query) ||
-    /\b(what|which)\b.*\bstocks?\b.*\b(buy|invest)\b/i.test(query) ||
-    /\b(what|which)\b[\s\w]*\b(buy|invest)\b/i.test(query) ||
-    /\bwhat (to buy|should i (buy|invest)|stocks? to (buy|invest|watch))\b/i.test(query) ||
-    /\b(give|show|list)\b[\s\w]*\b(stocks?|shares?|pick|buy|invest|recommend)\b/i.test(query) ||
-    /\b(recommendation|recommendations|advice|portfolio|watchlist)\b/i.test(query) ||
-    /\b(give|share|tell)\b[\s\w]*\b(general|overall|some)\b/i.test(query)
+    !/\bnot to (buy|invest)\b/i.test(query) && !/\bnegative\b/i.test(query) && (
+      /\b(top|best|good|strong|profitable|promising|recommend|suggest)\b.*\b(stocks?|shares?)\b/i.test(query) ||
+      /\b(stocks?|shares?)\b.*\b(top|best|buy|invest|worth|profitable|gain)\b/i.test(query) ||
+      /\b(what|which)\b.*\b(stocks?|shares?)\b.*\b(buy|invest|worth|good|pick)\b/i.test(query) ||
+      /\b(what|which)\b[\s\w]*\b(buy|invest)\b/i.test(query) ||
+      /\bwhat (to buy|should i (buy|invest)|stocks? to (buy|invest|watch))\b/i.test(query) ||
+      /\b(give|show|list)\b.*\b(stocks?|shares?|pick|buy|invest|recommend|investment)\b/i.test(query) ||
+      /\b(recommendation|recommendations|advice|portfolio|watchlist|investment ideas?)\b/i.test(query) ||
+      /\b(give|share|tell)\b[\s\w]*\b(general|overall|some)\b/i.test(query) ||
+      /\bworth (buying|investing)\b/i.test(query) ||
+      /\b(invest|buy).*\b(stocks?|shares?)\b/i.test(query) ||
+      /\b(stocks?|shares?)\b.*\binvest\b/i.test(query) ||
+      /\bgood investments?\b/i.test(query) ||
+      /\bwhere (should|can) i (put|invest)\b/i.test(query) ||
+      /\b(good|strong|high|positive|great)\b.*\breturns?\b/i.test(query)
+    )
   );
   var isWorstPicks = (
-    /\b(worst|bad|weak|avoid|dangerous|risky|falling|decline|bearish)\b.*\bstocks?\b/i.test(query) ||
-    /\bstocks?\b.*\b(worst|avoid|sell|bad|weak|bearish|falling|decline|risky)\b/i.test(query) ||
-    /\b(what|which)\b.*\b(worst|bad|avoid|weak)\b.*\bstocks?\b/i.test(query) ||
-    /\b(what|which)\b.*\bstocks?\b.*\b(avoid|sell|worst|bad|weak)\b/i.test(query) ||
-    /\bstocks? (to avoid|to sell|not to buy|i should (avoid|sell))\b/i.test(query) ||
-    /\b(avoid|underperform|underperforming|loser|losers)\b.*\bstocks?\b/i.test(query)
-  ) && !isTopPicks;
+    !isTopPicks && (
+      /\b(worst|bad|weak|avoid|dangerous|risky|falling|decline|declining|bearish|overvalued)\b.*\b(stocks?|shares?)\b/i.test(query) ||
+      /\b(stocks?|shares?)\b.*\b(worst|avoid|sell|bad|weak|bearish|falling|decline|declining|risky|losing|downtrend|dump|down|red)\b/i.test(query) ||
+      /\b(what|which)\b.*\b(worst|bad|avoid|weak|losing|declining|falling|overvalued|poorly)\b.*\b(stocks?|shares?)\b/i.test(query) ||
+      /\b(what|which)\b.*\b(stocks?|shares?)\b.*\b(avoid|sell|worst|bad|weak|losing|declining|falling|down|poorly|stay away)\b/i.test(query) ||
+      /\b(stocks?|shares?) (to avoid|to sell|not to buy|going down|in red|in a downtrend|losing)\b/i.test(query) ||
+      /\b(avoid|underperform|underperforming|loser|losers|downtrend|overvalued)\b.*\b(stocks?|shares?)\b/i.test(query) ||
+      /\bnot to (invest|buy)\b/i.test(query) ||
+      /\bstay away\b/i.test(query) ||
+      /\b(stocks?|shares?)\b.*\blosing\b/i.test(query) ||
+      /\bnegative\b.*\b(stocks?|shares?)\b/i.test(query) ||
+      /\b(stocks?|shares?)\b.*\bnegative\b/i.test(query) ||
+      /\b(stocks?|shares?)\b.*\bgoing down\b/i.test(query) ||
+      /\b(stocks?|shares?)\b.*\bin red\b/i.test(query) ||
+      /\bperforming badly\b/i.test(query) ||
+      /\b(stocks?|shares?)\b.*\bdump\b/i.test(query)
+    )
+  );
 
   // ── Stock matching from dict (fast path) ──────────────────────────────────
   var found = [];
