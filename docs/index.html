@@ -601,12 +601,12 @@ async function buildResponse(query, onStatus) {
         ranked.push({ d: d, sig: sig });
       });
       ranked.sort(function(a, b) { return b.sig.score - a.sig.score; });
-      var buys = ranked.filter(function(r) { return r.sig.score > 0; }).slice(0, count);
+      var buys = ranked.filter(function(r) { return r.sig.score >= 2; }).slice(0, count);
 
       if (buys.length === 0) {
-        emit("No strong BUY signals found in today's top movers. The market may be cautious right now.");
+        emit("No BUY signals found in today's top movers — the market looks cautious right now.");
         emit();
-        emit("*Try checking back later or ask about a specific sector.*");
+        emit("*Try checking back later, or ask about a specific sector.*");
       } else {
         emit("*Found **" + buys.length + "** stocks with positive signals from Nifty 50 — live analysis:*");
         emit();
