@@ -594,6 +594,10 @@ async function buildResponse(query, onStatus) {
       var buys = recsData.slice(0, count);
       emit("*Found **" + buys.length + "** stocks with strong buy signals — based on 3-month technical analysis across all Nifty 50 stocks:*");
       emit();
+      emit("> **RSI** *(Relative Strength Index)* — Momentum on a 0–100 scale. **Below 30** = oversold, potential entry point. **Above 70** = overbought, correction risk. Sweet spot: 40–60.");
+      emit("> **SMA** *(Simple Moving Average)* — Average closing price over the last 20 or 50 days. Price **above** SMA = bullish trend. Price **below** SMA = bearish trend.");
+      emit("> **MACD** *(Moving Avg Convergence Divergence)* — Measures momentum direction. **Positive** = bullish momentum building. **Negative** = bearish momentum.");
+      emit();
       buys.forEach(function(s, idx) {
         var verdictLabel = s.score >= 4 ? "STRONG BUY" : "BUY";
         var arrow = s.change_pct >= 0 ? "+" : "";
@@ -636,6 +640,10 @@ async function buildResponse(query, onStatus) {
       var count = parseInt((q.match(/\d+/) || ["5"])[0]) || 5;
       var avoids = avoidData.slice(0, count);
       emit("*Found **" + avoids.length + "** stocks with weak signals — based on 3-month technical analysis across all Nifty 50 stocks:*");
+      emit();
+      emit("> **RSI** *(Relative Strength Index)* — Momentum on a 0–100 scale. **Below 30** = oversold, potential entry point. **Above 70** = overbought, correction risk. Sweet spot: 40–60.");
+      emit("> **SMA** *(Simple Moving Average)* — Average closing price over the last 20 or 50 days. Price **above** SMA = bullish trend. Price **below** SMA = bearish trend.");
+      emit("> **MACD** *(Moving Avg Convergence Divergence)* — Measures momentum direction. **Positive** = bullish momentum building. **Negative** = bearish momentum.");
       emit();
       avoids.forEach(function(s, idx) {
         var verdictLabel = s.score <= -4 ? "STRONG AVOID" : "AVOID";
