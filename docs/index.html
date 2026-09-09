@@ -527,6 +527,13 @@ async function buildResponse(query, onStatus) {
     /\b(recommendation|recommendations|advice|portfolio|watchlist)\b/i.test(query) ||
     /\b(give|share|tell)\b[\s\w]*\b(general|overall|some)\b/i.test(query)
   );
+  var isWorstPicks = (
+    /\b(worst|bad|weak|avoid|dangerous|risky|falling|decline|bearish|sell)\b[\s\w]*\b(stock|share)\b/i.test(query) ||
+    /\b(stock|share)\b[\s\w]*\b(worst|avoid|sell|bad|weak|bearish|falling|decline|risky)\b/i.test(query) ||
+    /\b(what|which)\b[\s\w]*\b(stock|share)\b[\s\w]*\b(avoid|sell|worst|bad|weak)\b/i.test(query) ||
+    /\bstocks? (to avoid|to sell|not to buy|i should (avoid|sell))\b/i.test(query) ||
+    /\b(avoid|underperform|underperforming|loser|losers)\b[\s\w]*\b(stock|share|pick)\b/i.test(query)
+  ) && !isTopPicks;
 
   // ── Stock matching from dict (fast path) ──────────────────────────────────
   var found = [];
@@ -540,7 +547,7 @@ async function buildResponse(query, onStatus) {
   nsMatches.forEach(function(m) { if (found.indexOf(m) === -1) found.push(m); });
 
   // ── Tokenizer fallback — ONLY runs when no intent and no known stock found ──
-  if (found.length === 0 && !sectorKey && !isTopPicks && !isMarket) {
+  if (found.length === 0 && !sectorKey && !isTopPicks && !isWorstPicks && !isMarket) {
     var STOP = new Set(["SHOULD","BUY","SELL","HOLD","ABOUT","WHAT","HOW","IS","THE","A","AN",
       "I","ME","MY","ANALYSIS","ANALYSE","ANALYZE","STOCK","STOCKS","SHARE","SHARES","MARKET",
       "TELL","SHOW","GIVE","VS","OR","AND","FOR","IN","AT","OF","TO","FROM","CAN","WILL",
@@ -603,6 +610,49 @@ async function buildResponse(query, onStatus) {
         emit("| 1M Return | " + s.ret_1m + "% | " + (s.ret_1m > 5 ? "Strong momentum" : s.ret_1m < -5 ? "Recent pullback" : "Stable") + " |");
         emit();
         emit("**Verdict: " + verdictLabel + "** (Score: +" + s.score + "/8)");
+        emit();
+        emit("---");
+        emit();
+      });
+    }
+    emit("⚠️ *Rule-based technical analysis only — not financial advice. Always do your own research.*");
+    return lines.join("\n");
+  }
+
+    // Worst stocks — 3-month technical analysis, AVOID/STRONG AVOID only
+  if (isWorstPicks && !sectorKey) {
+    emit("## Stocks to Avoid");
+    emit();
+    onStatus("Scanning all Nifty 50 stocks for weak signals...");
+    var backend = BACKEND_URL || "http://localhost:5050";
+    var avoidData = null;
+    try {
+      var ar = await fetch(backend + "/avoid", { signal: AbortSignal.timeout(30000) });
+      avoidData = await ar.json();
+    } catch(e) {}
+    if (!avoidData || avoidData.length === 0) {
+      emit("⚠️ Could not fetch data. Try again in a moment.");
+    } else {
+      var count = parseInt((q.match(/\d+/) || ["5"])[0]) || 5;
+      var avoids = avoidData.slice(0, count);
+      emit("*Found **" + avoids.length + "** stocks with weak signals — based on 3-month technical analysis across all Nifty 50 stocks:*");
+      emit();
+      avoids.forEach(function(s, idx) {
+        var verdictLabel = s.score <= -4 ? "STRONG AVOID" : "AVOID";
+        var arrow = s.change_pct >= 0 ? "+" : "";
+        emit("### " + (idx + 1) + ". " + (s.name || s.symbol));
+        emit("**Price:** ₹" + s.price.toLocaleString("en-IN") + "  " + arrow + s.change_pct.toFixed(2) + "%");
+        emit();
+        emit("| Indicator | Value | Signal |");
+        emit("|---|---|---|");
+        emit("| RSI(14) | " + s.rsi + " | " + (s.rsi > 70 ? "Overbought — correction risk" : s.rsi < 30 ? "Oversold" : "Neutral") + " |");
+        emit("| vs SMA20 | ₹" + s.sma20.toLocaleString("en-IN") + " | " + (s.price < s.sma20 ? "Below — bearish" : "Above — bullish") + " |");
+        emit("| vs SMA50 | ₹" + s.sma50.toLocaleString("en-IN") + " | " + (s.price < s.sma50 ? "Below — bearish" : "Above — bullish") + " |");
+        emit("| MACD | " + s.macd.toFixed(2) + " | " + (s.macd < 0 ? "Bearish momentum" : "Bullish momentum") + " |");
+        emit("| 52W Position | " + s.w52pct + "% | " + (s.w52pct < 20 ? "Near 52W low — weak" : s.w52pct > 80 ? "Near high, risky entry" : "Mid-range") + " |");
+        emit("| 1M Return | " + s.ret_1m + "% | " + (s.ret_1m < -5 ? "Sharp decline" : s.ret_1m > 5 ? "Recent bounce" : "Flat") + " |");
+        emit();
+        emit("**Verdict: " + verdictLabel + "** (Score: " + s.score + "/8)");
         emit();
         emit("---");
         emit();
