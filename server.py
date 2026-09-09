@@ -587,6 +587,8 @@ def avoid():
                     "flags":     flags,
                     "warns":     warns,
                 })
+            except Exception:
+                continue
         results.sort(key=lambda x: x["score"])
         return Response(json.dumps(results[:10]), content_type="application/json",
                         headers={"Access-Control-Allow-Origin": "*"})
