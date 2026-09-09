@@ -472,7 +472,19 @@ async function buildResponse(query, onStatus) {
 
   var sectorKey = Object.keys(SECTORS).find(function(k) { return new RegExp("\\b" + k + "\\b").test(q); });
 
-  // find stocks (longest match first)
+  // ── Intent detection FIRST (before tokenizer pollutes found) ──────────────
+  var isMarket = /\b(market|nifty|sensex|overview|index|indices)\b/.test(q);
+  var isTopPicks = (
+    /\b(top|best|good|strong|recommend|suggest)\b[\s\w]*\b(stock|share|pick|buy|invest)\b/i.test(query) ||
+    /\b(stock|share)\b[\s\w]*\b(top|best|buy|invest|long[\s-]?term|short[\s-]?term|today)\b/i.test(query) ||
+    /\b(what|which)\b[\s\w]*\b(stock|share|buy|invest)\b/i.test(query) ||
+    /\bwhat (to buy|should i (buy|invest)|stocks? to (buy|invest|watch))\b/i.test(query) ||
+    /\b(give|show|list)\b[\s\w]*\b(stock|share|pick|buy|invest|recommend)\b/i.test(query) ||
+    /\b(recommendation|recommendations|advice|portfolio|watchlist)\b/i.test(query) ||
+    /\b(give|share|tell)\b[\s\w]*\b(general|overall|some)\b/i.test(query)
+  );
+
+  // ── Stock matching from dict (fast path) ──────────────────────────────────
   var found = [];
   var stockEntries = Object.entries(STOCKS).sort(function(a,b) { return b[0].length - a[0].length; });
   for (var i = 0; i < stockEntries.length; i++) {
@@ -483,42 +495,32 @@ async function buildResponse(query, onStatus) {
   var nsMatches = query.toUpperCase().match(/\b([A-Z0-9-]{2,12}\.(?:NS|BO))\b/g) || [];
   nsMatches.forEach(function(m) { if (found.indexOf(m) === -1) found.push(m); });
 
-  // fallback: try any unknown word as WORD.NS (catches "suzlon", "tatapower", etc.)
-  if (found.length === 0 && !sectorKey) {
+  // ── Tokenizer fallback — ONLY runs when no intent and no known stock found ──
+  if (found.length === 0 && !sectorKey && !isTopPicks && !isMarket) {
     var STOP = new Set(["SHOULD","BUY","SELL","HOLD","ABOUT","WHAT","HOW","IS","THE","A","AN",
       "I","ME","MY","ANALYSIS","ANALYSE","ANALYZE","STOCK","STOCKS","SHARE","SHARES","MARKET",
       "TELL","SHOW","GIVE","VS","OR","AND","FOR","IN","AT","OF","TO","FROM","CAN","WILL",
       "DO","DOES","IT","GOOD","BAD","BEST","SAFE","RISK","NOW","TODAY","PRICE","INVEST",
-      "RETURN","GET","TOP","RECOMMEND","PICKS","PICK","LIST","WHICH","THESE","THOSE","5","10","3",
-      "INDIA","INDIAN","NSE","BSE","NIFTY","SENSEX","RUPEE","INR","LARGE","SMALL","MID","CAP"]);
+      "RETURN","GET","TOP","RECOMMEND","RECOMMENDATIONS","PICKS","PICK","LIST","WHICH",
+      "THESE","THOSE","5","10","3","INDIA","INDIAN","NSE","BSE","NIFTY","SENSEX","RUPEE",
+      "INR","LARGE","SMALL","MID","CAP","GENERAL","OVERALL","SOME","ADVICE","SUGGESTION",
+      "SUGGESTIONS","PORTFOLIO","WATCHLIST","ANY","ALL","PLEASE","JUST","WANT"]);
     var tokens = query.toUpperCase().split(/\s+/)
       .map(function(w) { return w.replace(/[^A-Z0-9&-]/g, ""); })
       .filter(function(w) { return w.length >= 2 && !STOP.has(w); });
 
-    // single words: SUZLON -> SUZLON.NS
     tokens.forEach(function(w) {
       if (found.indexOf(w + ".NS") === -1) found.push(w + ".NS");
     });
-    // adjacent pairs joined: TATA + POWER -> TATAPOWER.NS
     for (var i = 0; i < tokens.length - 1; i++) {
       var joined = tokens[i] + tokens[i + 1] + ".NS";
-      if (found.indexOf(joined) === -1) found.unshift(joined); // try first
+      if (found.indexOf(joined) === -1) found.unshift(joined);
     }
-    // all tokens joined: TATA + CONSULTANCY + SERVICES -> TATACONSULTANCYSERVICES.NS
     if (tokens.length > 2) {
       var all = tokens.join("") + ".NS";
       if (found.indexOf(all) === -1) found.unshift(all);
     }
   }
-
-  var isMarket  = /\b(market|nifty|sensex|overview|index|indices)\b/.test(q);
-  var isTopPicks = (
-    /\b(top|best|good|strong|recommend|suggest)\b[\s\w]*\b(stock|share|pick|buy|invest)\b/i.test(query) ||
-    /\b(stock|share)\b[\s\w]*\b(top|best|buy|invest|long[\s-]?term|short[\s-]?term|today)\b/i.test(query) ||
-    /\b(what|which)\b[\s\w]*\b(stock|share|buy|invest)\b/i.test(query) ||
-    /\bwhat (to buy|should i (buy|invest)|stocks? to (buy|invest|watch))\b/i.test(query) ||
-    /\b(give me|show me|list)\b[\s\w]*\b(stock|share|pick|buy|invest)\b/i.test(query)
-  );
 
   emit("**" + now + "**");
   emit();
