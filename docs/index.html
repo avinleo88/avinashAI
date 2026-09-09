@@ -511,8 +511,14 @@ async function buildResponse(query, onStatus) {
     }
   }
 
-  var isMarket  = /market|nifty|sensex|overview|index/.test(q);
-  var isTopPicks = /\b(top|best|give me|recommend)\b[\s\w]*\b(stock|share|pick)\b|\b(stock|share)\b[\s\w]*\b(top|best)\b/i.test(query);
+  var isMarket  = /\b(market|nifty|sensex|overview|index|indices)\b/.test(q);
+  var isTopPicks = (
+    /\b(top|best|good|strong|recommend|suggest)\b[\s\w]*\b(stock|share|pick|buy|invest)\b/i.test(query) ||
+    /\b(stock|share)\b[\s\w]*\b(top|best|buy|invest|long[\s-]?term|short[\s-]?term|today)\b/i.test(query) ||
+    /\b(what|which)\b[\s\w]*\b(stock|share|buy|invest)\b/i.test(query) ||
+    /\bwhat (to buy|should i (buy|invest)|stocks? to (buy|invest|watch))\b/i.test(query) ||
+    /\b(give me|show me|list)\b[\s\w]*\b(stock|share|pick|buy|invest)\b/i.test(query)
+  );
 
   emit("**" + now + "**");
   emit();
@@ -569,7 +575,7 @@ async function buildResponse(query, onStatus) {
     });
     emit();
     if (!sectorKey && found.length === 0) {
-      emit("Ask me about a specific stock or sector for a detailed analysis!");
+      emit("Ask me about a specific stock, sector, or try **\"top 5 stocks to buy\"**.");
       return lines.join("\n");
     }
   }
@@ -654,17 +660,27 @@ async function buildResponse(query, onStatus) {
       if (searched) {
         unique = [searched.symbol];
         stockFetched = await fetchAll(unique, "3mo");
+      } else {
+        // Nothing found — give a helpful guided message
+        emit("I couldn't find a stock matching **\"" + query + "\"**.");
+        emit();
+        emit("**Try:**");
+        emit("- Company name: *Reliance, HDFC Bank, Infosys*");
+        emit("- NSE symbol: *TATAMOTORS.NS, ZOMATO.NS*");
+        emit("- Sector: *IT sector, banking, pharma*");
+        emit("- Market: *market overview, how is nifty today*");
+        emit("- Top picks: *top 5 stocks to buy*");
+        return lines.join("\n");
       }
     }
     // Save context for follow-up questions ("is it safe?", "compare it with X")
     _ctx.stocks = unique; _ctx.sector = null;
     var stockResults = [];
     stockFetched.forEach(function(item) {
-      if (!item.result) { emit("Could not fetch **" + item.symbol + "** — try again."); emit(); return; }
+      if (!item.result) return; // skip silently — already searched NSE
       var d = parseResult(item.result);
-      if (!d) { emit("No data for **" + item.symbol + "**."); emit(); return; }
+      if (!d) return;
       var sig = analyse(d);
-      stockResults.push({ d: d, sig: sig });
       var arrow = d.change >= 0 ? "+" : "";
       emit("### " + d.name);
       emit("**Price:** " + ipr(d.current) + "  " + arrow + d.change + " (" + arrow + d.changePct + "%)");
