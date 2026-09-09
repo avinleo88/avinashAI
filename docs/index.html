@@ -608,23 +608,102 @@ async function buildResponse(query, onStatus) {
 
   // ── Tokenizer fallback — ONLY runs when no intent and no known stock found ──
   if (found.length === 0 && !sectorKey && !isTopPicks && !isWorstPicks && !isMarket) {
-    var STOP = new Set(["SHOULD","BUY","SELL","HOLD","ABOUT","WHAT","HOW","IS","THE","A","AN",
-      "I","ME","MY","ANALYSIS","ANALYSE","ANALYZE","STOCK","STOCKS","SHARE","SHARES","MARKET",
-      "TELL","SHOW","GIVE","VS","OR","AND","FOR","IN","AT","OF","TO","FROM","CAN","WILL",
-      "DO","DOES","IT","GOOD","BAD","BEST","SAFE","RISK","NOW","TODAY","PRICE","INVEST",
-      "RETURN","GET","TOP","RECOMMEND","RECOMMENDATIONS","PICKS","PICK","LIST","WHICH",
-      "THESE","THOSE","5","10","3","INDIA","INDIAN","NSE","BSE","NIFTY","SENSEX","RUPEE",
-      "INR","LARGE","SMALL","MID","CAP","GENERAL","OVERALL","SOME","ADVICE","SUGGESTION",
-      "SUGGESTIONS","PORTFOLIO","WATCHLIST","ANY","ALL","PLEASE","JUST","WANT",
-      "YOU","YOUR","WE","THEY","HE","SHE","THINK","FEEL","OPINION","THOUGHTS","THOUGHT",
-      "VIEW","VIEWS","CONSIDER","SAY","KNOW","TELL","LOOKING","LOOK","WONDERING","WONDER",
-      "THINK","FEEL","LIKE","HAVE","HAS","HAD","BEEN","BE","AM","ARE","WAS","WERE",
-      "ON","UP","DOWN","WITH","BY","AS","IF","THEN","SO","BUT","NOT","NO","YES",
-      "ALSO","EVEN","STILL","ALREADY","REALLY","VERY","QUITE","MUCH","MORE","LESS",
-      "LATEST","RECENT","CURRENT","NEW","OLD","LONG","SHORT","HIGH","LOW",
-      "GIVE","ME","US","HIM","HER","THEM","THEIR","ITS","OUR","THIS","THAT",
-      "BUYING","SELLING","HOLDING","INVESTING","THINKING","DOING","GOING","CONSIDERING",
-      "SECTOR","COMPANY","COMPANIES","RUPEES","PERCENT","WORTH","POINT","POINTS"]);
+    var STOP = new Set([
+      // Articles, prepositions, conjunctions
+      "A","AN","THE","OF","IN","AT","TO","FOR","ON","BY","AS","WITH","FROM","INTO","ONTO","UPON",
+      "AND","OR","BUT","IF","SO","THEN","BECAUSE","ALTHOUGH","WHILE","WHEN","WHERE","WHETHER",
+      // Pronouns
+      "I","ME","MY","MINE","MYSELF","WE","US","OUR","OURS","OURSELVES",
+      "YOU","YOUR","YOURS","YOURSELF","HE","HIM","HIS","HIMSELF","SHE","HER","HERS","HERSELF",
+      "IT","ITS","ITSELF","THEY","THEM","THEIR","THEIRS","THEMSELVES","THIS","THAT","THESE","THOSE",
+      // Question words
+      "WHAT","WHICH","WHO","WHOM","WHOSE","HOW","WHY","WHEN","WHERE",
+      // Auxiliary verbs
+      "IS","AM","ARE","WAS","WERE","BE","BEEN","BEING",
+      "DO","DOES","DID","DONE","DOING",
+      "HAVE","HAS","HAD","HAVING",
+      "WILL","WOULD","SHALL","SHOULD","MAY","MIGHT","MUST","CAN","COULD",
+      "NEED","DARE","USED",
+      // Common verbs
+      "GET","GETTING","GOT","GIVE","GIVING","GIVEN",
+      "KNOW","KNOWING","KNEW","THINK","THINKING","THOUGHT",
+      "FEEL","FEELING","FELT","WANT","WANTING","WANTED",
+      "LOOK","LOOKING","LOOKED","SEE","SEEING","SAW","SEEN",
+      "SAY","SAYING","SAID","TELL","TELLING","TOLD",
+      "FIND","FINDING","FOUND","CHECK","CHECKING","CHECKED",
+      "SHOW","SHOWING","SHOWN","MAKE","MAKING","MADE",
+      "GO","GOING","GONE","WENT","COME","COMING","CAME",
+      "TAKE","TAKING","TAKEN","TOOK","LET","LETTING",
+      "LIKE","LIKING","LIKED","CONSIDER","CONSIDERING","CONSIDERED",
+      "HEAR","HEARING","HEARD","WATCH","WATCHING","WATCHED",
+      "WONDER","WONDERING","WONDERED","EXPLORE","EXPLORING",
+      "COMPARE","COMPARING","COMPARED","RESEARCH","RESEARCHING",
+      "TRACK","TRACKING","TRACKED","MONITOR","MONITORING",
+      "ANALYSE","ANALYZING","ANALYZE","ANALYSIS","ANALYSED",
+      // Financial action words (not stock names)
+      "INVEST","INVESTING","INVESTED","INVESTMENT","INVESTMENTS",
+      "BUY","BUYING","BOUGHT","SELL","SELLING","SOLD","HOLD","HOLDING","HELD",
+      "TRADE","TRADING","TRADED","TRADER",
+      // Adjectives / adverbs
+      "GOOD","BAD","BEST","WORST","BETTER","WORSE",
+      "HIGH","LOW","HIGHER","LOWER","HIGHEST","LOWEST",
+      "LARGE","SMALL","LARGE","MID","BIG","LITTLE",
+      "NEW","OLD","RECENT","LATEST","CURRENT","PREVIOUS","NEXT","LAST","FIRST",
+      "LONG","SHORT","STRONG","WEAK","SAFE","RISKY","RISK",
+      "REALLY","VERY","QUITE","MUCH","MORE","LESS","MOST","LEAST","QUITE",
+      "ACTUALLY","BASICALLY","CURRENTLY","GENERALLY","RECENTLY","PROBABLY",
+      "HONESTLY","SIMPLY","LITERALLY","SPECIFICALLY","PARTICULARLY","OVERALL",
+      "WELL","BADLY","QUICKLY","SLOWLY","HIGHLY","LARGELY","MOSTLY",
+      "STABLE","VOLATILE","ACTIVE","PASSIVE","POSITIVE","NEGATIVE",
+      "ALSO","EVEN","STILL","ALREADY","JUST","ONLY","ALSO","BOTH","EITHER",
+      "NOT","NO","YES","NEVER","ALWAYS","SOMETIMES","OFTEN","RARELY",
+      // Time words
+      "NOW","TODAY","TOMORROW","YESTERDAY",
+      "DAY","DAYS","WEEK","WEEKS","MONTH","MONTHS","YEAR","YEARS","QUARTER",
+      "DAILY","WEEKLY","MONTHLY","YEARLY","ANNUAL","QUARTERLY","ANNUALLY",
+      "TERM","FUTURE","PAST","PRESENT","RECENT","SOON","ALREADY","STILL",
+      // Finance / investing jargon (generic, not symbols)
+      "STOCK","STOCKS","SHARE","SHARES","MARKET","MARKETS",
+      "PRICE","PRICES","VALUE","VALUES","COST","COSTS",
+      "RETURN","RETURNS","PROFIT","PROFITS","LOSS","LOSSES",
+      "GROWTH","REVENUE","EARNINGS","RESULTS","RESULT","PERFORMANCE",
+      "TREND","TRENDS","SIGNAL","SIGNALS","VOLUME","CHART","CHARTS",
+      "INDICATOR","INDICATORS","RATIO","RATIOS","REPORT","REPORTS",
+      "ANALYST","ANALYSTS","EXPERT","EXPERTS","INVESTOR","INVESTORS",
+      "PORTFOLIO","WATCHLIST","FUND","FUNDS","INDEX","INDICES",
+      "ANALYSIS","ANALYSE","ANALYZE","RECOMMENDATION","RECOMMENDATIONS",
+      "ADVICE","SUGGESTION","SUGGESTIONS","PICKS","PICK","LIST",
+      "SECTOR","COMPANY","COMPANIES","INDUSTRY","INDUSTRIES",
+      // Common nouns in queries
+      "NEWS","INFORMATION","INFO","DETAIL","DETAILS","UPDATE","UPDATES",
+      "OPINION","OPINIONS","VIEW","VIEWS","THOUGHTS","THOUGHT",
+      "OVERVIEW","SUMMARY","REVIEW","REPORT","DATA","STATS","STATISTICS",
+      // India-specific
+      "INDIA","INDIAN","NSE","BSE","NIFTY","SENSEX","RUPEE","RUPEES","INR",
+      // Numbers as words
+      "ONE","TWO","THREE","FOUR","FIVE","SIX","SEVEN","EIGHT","NINE","TEN",
+      "5","10","3","2","4","6","7","8","9","1",
+      // Size / category
+      "CAP","LARGE","MID","SMALL","BLUE","CHIP","MEGA",
+      // Contractions (apostrophes stripped)
+      "IM","ITS","DONT","CANT","WONT","ISNT","ARENT","WASNT","HAVENT","HASNT",
+      "IVE","YOUVE","WEVE","THEYVE","HES","SHES","THEYRE","WERE",
+      // Misc filler
+      "PLEASE","THANKS","THANK","OK","OKAY","SURE","RIGHT","WRONG",
+      "SOME","ANY","ALL","EVERY","EACH","BOTH","FEW","MANY","MUCH",
+      "WANT","NEED","HELP","ABOUT","GENERAL","GENERAL","TOWARDS","AROUND",
+      "NEAR","CLOSE","OVER","UNDER","ABOVE","BELOW","BETWEEN","ACROSS",
+      "WHICH","THEIR","THERE","TOP","RECOMMEND","INVEST","GET","GENERAL",
+      "OVERALL","SOME","ANY","ALL","PLEASE","JUST","WANT","CAP",
+      "EXPLAIN","EXPLAINING","EXPLAINED","DESCRIBE","DESCRIBING",
+      "TALK","TALKING","TALKED","EVERYONE","EVERYBODY","NOBODY","SOMEONE","ANYONE",
+      "WORRIED","CONCERNED","CONCERNING","INTERESTING","INTEREST","LOOKS",
+      "PERFORMED","HAPPENING","HAPPENED","GOING","COMING",
+      "HISTORY","HISTORICAL","BACKGROUND","STORY",
+      "DIVIDEND","DIVIDENDS","BONUS","SPLIT","BUYBACK",
+      "OUTLOOK","FORECAST","PREDICTION","EXPECTATION","POTENTIAL","UPSIDE","DOWNSIDE",
+      "TARGET","TARGETS","PERCENT","PERCENTAGE","POINTS","WORTH",
+    ]);
     var tokens = query.toUpperCase().split(/\s+/)
       .map(function(w) { return w.replace(/[^A-Z0-9&-]/g, ""); })
       .filter(function(w) { return w.length >= 2 && !STOP.has(w); });
