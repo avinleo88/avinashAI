@@ -185,6 +185,7 @@
 </div>
 
 <div class="chips">
+  <div class="chip" onclick="showLiveMarket()">📡 Live Market</div>
   <div class="chip" onclick="ask('Market overview today')">📊 Market overview</div>
   <div class="chip" onclick="ask('TCS vs Infosys')">🔍 TCS vs Infosys</div>
   <div class="chip" onclick="ask('Banking sector analysis')">🏦 Banking sector</div>
@@ -818,6 +819,57 @@ async function sendMsg() {
 }
 
 // ── Market Summary Bar ────────────────────────────────────────────────────────
+function showLiveMarket() {
+  var backend = BACKEND_URL || "http://localhost:5050";
+  var chat = document.getElementById("chat");
+
+  // remove welcome screen if present
+  var welcome = chat.querySelector(".welcome");
+  if (welcome) welcome.remove();
+
+  // add user bubble
+  var userRow = document.createElement("div");
+  userRow.className = "row";
+  userRow.innerHTML = '<div style="margin-left:auto;max-width:70%"><div class="bubble user">📡 Live Market Summary</div></div>';
+  chat.appendChild(userRow);
+
+  // add loading bubble
+  var botRow = document.createElement("div");
+  botRow.className = "row";
+  botRow.innerHTML = '<div class="avatar">A</div><div class="bubble bot" id="liveMarketBubble"><span class="muted">Fetching live data…</span></div>';
+  chat.appendChild(botRow);
+  chat.scrollTop = chat.scrollHeight;
+
+  fetch(backend + "/market-summary")
+    .then(function(r) { return r.json(); })
+    .then(function(data) {
+      var bubble = document.getElementById("liveMarketBubble");
+      if (!data || !data.length) {
+        bubble.innerHTML = "⚠️ Market data unavailable right now.";
+        return;
+      }
+      var rows = data.map(function(d) {
+        var up = d.change >= 0;
+        var arrow = up ? "▲" : "▼";
+        var color = up ? "var(--green)" : "var(--red)";
+        return '<tr>' +
+          '<td style="padding:6px 16px 6px 0;color:var(--text);font-weight:600">' + d.label + '</td>' +
+          '<td style="padding:6px 16px 6px 0;font-variant-numeric:tabular-nums">₹' + d.price.toLocaleString("en-IN") + '</td>' +
+          '<td style="padding:6px 0;color:' + color + ';font-variant-numeric:tabular-nums">' + arrow + ' ' + Math.abs(d.change).toLocaleString("en-IN") + ' (' + Math.abs(d.change_pct).toFixed(2) + '%)</td>' +
+        '</tr>';
+      }).join("");
+      bubble.innerHTML =
+        '<div style="font-weight:700;margin-bottom:10px;font-size:0.95rem">📡 Live Market Summary</div>' +
+        '<table style="border-collapse:collapse;font-size:0.82rem;width:100%">' + rows + '</table>' +
+        '<div style="margin-top:10px;font-size:0.7rem;color:var(--muted)">Data from NSE · Refreshed just now</div>';
+      chat.scrollTop = chat.scrollHeight;
+    })
+    .catch(function() {
+      var bubble = document.getElementById("liveMarketBubble");
+      if (bubble) bubble.innerHTML = "⚠️ Could not fetch market data.";
+    });
+}
+
 function loadMarketSummary() {
   var backend = BACKEND_URL || "http://localhost:5050";
   fetch(backend + "/market-summary")
