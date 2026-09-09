@@ -519,20 +519,22 @@ async function buildResponse(query, onStatus) {
   // ── Intent detection FIRST (before tokenizer pollutes found) ──────────────
   var isMarket = /\b(market|nifty|sensex|overview|index|indices)\b/.test(q);
   var isTopPicks = (
-    /\b(top|best|good|strong|recommend|suggest)\b[\s\w]*\b(stock|share|pick|buy|invest)\b/i.test(query) ||
-    /\b(stock|share)\b[\s\w]*\b(top|best|buy|invest|long[\s-]?term|short[\s-]?term|today)\b/i.test(query) ||
-    /\b(what|which)\b[\s\w]*\b(stock|share|buy|invest)\b/i.test(query) ||
+    /\b(top|best|good|strong|recommend|suggest)\b[\s\w]*\bstocks?\b/i.test(query) ||
+    /\bstocks?\b[\s\w]*\b(top|best|buy|invest|long[\s-]?term|short[\s-]?term|today)\b/i.test(query) ||
+    /\b(what|which)\b.*\bstocks?\b.*\b(buy|invest)\b/i.test(query) ||
+    /\b(what|which)\b[\s\w]*\b(buy|invest)\b/i.test(query) ||
     /\bwhat (to buy|should i (buy|invest)|stocks? to (buy|invest|watch))\b/i.test(query) ||
-    /\b(give|show|list)\b[\s\w]*\b(stock|share|pick|buy|invest|recommend)\b/i.test(query) ||
+    /\b(give|show|list)\b[\s\w]*\b(stocks?|shares?|pick|buy|invest|recommend)\b/i.test(query) ||
     /\b(recommendation|recommendations|advice|portfolio|watchlist)\b/i.test(query) ||
     /\b(give|share|tell)\b[\s\w]*\b(general|overall|some)\b/i.test(query)
   );
   var isWorstPicks = (
-    /\b(worst|bad|weak|avoid|dangerous|risky|falling|decline|bearish|sell)\b[\s\w]*\b(stock|share)\b/i.test(query) ||
-    /\b(stock|share)\b[\s\w]*\b(worst|avoid|sell|bad|weak|bearish|falling|decline|risky)\b/i.test(query) ||
-    /\b(what|which)\b[\s\w]*\b(stock|share)\b[\s\w]*\b(avoid|sell|worst|bad|weak)\b/i.test(query) ||
+    /\b(worst|bad|weak|avoid|dangerous|risky|falling|decline|bearish)\b.*\bstocks?\b/i.test(query) ||
+    /\bstocks?\b.*\b(worst|avoid|sell|bad|weak|bearish|falling|decline|risky)\b/i.test(query) ||
+    /\b(what|which)\b.*\b(worst|bad|avoid|weak)\b.*\bstocks?\b/i.test(query) ||
+    /\b(what|which)\b.*\bstocks?\b.*\b(avoid|sell|worst|bad|weak)\b/i.test(query) ||
     /\bstocks? (to avoid|to sell|not to buy|i should (avoid|sell))\b/i.test(query) ||
-    /\b(avoid|underperform|underperforming|loser|losers)\b[\s\w]*\b(stock|share|pick)\b/i.test(query)
+    /\b(avoid|underperform|underperforming|loser|losers)\b.*\bstocks?\b/i.test(query)
   ) && !isTopPicks;
 
   // ── Stock matching from dict (fast path) ──────────────────────────────────
