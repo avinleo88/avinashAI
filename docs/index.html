@@ -437,7 +437,7 @@ const STOCKS = {
 
 const SECTORS = {
   "it":       ["TCS.NS","INFY.NS","WIPRO.NS","HCLTECH.NS","TECHM.NS","LTIM.NS","PERSISTENT.NS"],
-  "banking":  ["HDFCBANK.NS","ICICIBANK.NS","SBIN.NS","KOTAKBANK.NS","AXISBANK.NS","BANKBARODA.NS","INDUSINDBK.NS"],
+  "banking":  ["HDFCBANK.NS","ICICIBANK.NS","SBIN.NS","KOTAKBANK.NS","AXISBANK.NS","BANKBARODA.NS","INDUSINDBK.NS","BAJFINANCE.NS","BAJAJFINSV.NS"],
   "pharma":   ["SUNPHARMA.NS","DRREDDY.NS","CIPLA.NS","DIVISLAB.NS","AUROPHARMA.NS","LUPIN.NS","BIOCON.NS"],
   "auto":     ["MARUTI.NS","TATAMOTORS.NS","M&M.NS","BAJAJ-AUTO.NS","EICHERMOT.NS","HEROMOTOCO.NS","TVSMOTOR.NS"],
   "fmcg":     ["HINDUNILVR.NS","ITC.NS","NESTLEIND.NS","BRITANNIA.NS","DABUR.NS","MARICO.NS","GODREJCP.NS"],
@@ -1299,17 +1299,41 @@ function streamBubble(bubble, html) {
 }
 
 // ── Follow-up chips ────────────────────────────────────────────────────────
+// Return up to n sector peers of sym (excluding sym itself), as bare symbols
+function getSectorPeers(sym, n) {
+  n = n || 2;
+  for (var sec in SECTORS) {
+    var list = SECTORS[sec];
+    if (list.indexOf(sym) !== -1) {
+      return list.filter(function(s) { return s !== sym; }).slice(0, n)
+        .map(function(s) { return s.replace(/\.(NS|BO)$/i, ''); });
+    }
+  }
+  return [];
+}
+
 function addFollowups(bubble, query, result) {
   var q = query.toLowerCase();
   var chips = [];
   // Context-aware suggestions
   if (_ctx.stocks.length > 0) {
-    var sym = _ctx.stocks[0].replace(/\.(NS|BO)$/i, '');
-    chips.push('Compare ' + sym + ' vs competitors');
+    var sym = _ctx.stocks[0];
+    var symName = sym.replace(/\.(NS|BO)$/i, '');
+    var peers = getSectorPeers(sym, 2);
+    if (peers.length >= 1) {
+      chips.push(symName + ' vs ' + peers.join(' vs '));
+    }
+    // sector chip for the stock's sector
+    for (var sec in SECTORS) {
+      if (SECTORS[sec].indexOf(sym) !== -1) {
+        chips.push(sec.charAt(0).toUpperCase() + sec.slice(1) + ' sector');
+        break;
+      }
+    }
   }
   if (_ctx.sector) {
-    var sec = _ctx.sector.charAt(0).toUpperCase() + _ctx.sector.slice(1);
-    chips.push('Top picks in ' + sec);
+    var secLabel = _ctx.sector.charAt(0).toUpperCase() + _ctx.sector.slice(1);
+    chips.push('Best ' + secLabel + ' stocks to buy');
   }
   if (/top|best|buy|pick|recommend/i.test(q)) {
     chips.push('Stocks to avoid');
@@ -1323,10 +1347,9 @@ function addFollowups(bubble, query, result) {
   } else if (/sector|banking|it\b|pharma|auto|fmcg|energy|defence|power|metal|realty|telecom|cement|infra/i.test(q)) {
     chips.push('Top picks today');
     chips.push('Worst stocks to avoid');
-  } else {
+  } else if (_ctx.stocks.length === 0) {
     chips.push('Top picks today');
     chips.push('Market overview');
-    chips.push('Compare stocks');
   }
   // Deduplicate, limit to 3
   chips = chips.filter(function(v, i, a) { return a.indexOf(v) === i; }).slice(0, 3);
