@@ -1771,7 +1771,7 @@ function renderMFScreener(funds, category, bubble) {
 
 function parseSIPQuery(q) {
   var monthly = 5000, years = 10, rate = 12, fundQ = null, m;
-  m = q.match(/(?:₹|rs\.?\s*)?(\d[\d,]*)\s*(?:k\b)?.*?(?:per\s*month|monthly|\/month|\bpm\b)/i);
+  m = q.match(/(?:₹|rs\.?\s*)?(\d[\d,]*)\s*(?:k\b)?.*?(?:per\s*month|every\s*month|monthly|\/month|\bpm\b)/i);
   if (m) {
     monthly = parseInt(m[1].replace(/,/g,''));
     if (/\bk\b/i.test(m[0])) monthly *= 1000;
@@ -2182,7 +2182,7 @@ async function sendMsg() {
   var isMFCompare = isMFQuery && /\bvs\b|\bversus\b|\bcompare\b|\bbetter\b/i.test(q);
   var isSIP = /\bsip\s*calc/i.test(q) ||
     (/\bsip\b/i.test(q) && /\d/.test(q)) ||
-    (/\b(invest|monthly)\b/i.test(q) && /\d/.test(q) && /\b(year|yr)\b/i.test(q) && isMFQuery);
+    (/\b(invest|monthly|every\s*month|per\s*month)\b/i.test(q) && /\d/.test(q) && /\byears?\b/i.test(q) && isMFQuery);
 
   var _finishBubble = function(html, showFollowups) {
     streamBubble(bubble, html);
