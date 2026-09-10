@@ -2123,11 +2123,14 @@ async function sendMsg() {
   var screenerUniverse = /\bnifty\s*100\b|\bnext\s*50\b|\bwider\b|\bmore\s+stocks\b/i.test(q) ? 'nifty100' : 'nifty50';
 
   // --- Intent: mutual fund / SIP ---
+  var _MF_AMC = /\b(hdfc|sbi|axis|mirae|nippon|kotak|parag(\s*parikh)?|ppfas|icici(\s*pru(dential)?)?|uti|dsp|franklin|aditya(\s*birla)?|absl|sundaram|tata|quant|navi|motilal(\s*oswal)?|canara(\s*robeco)?|edelweiss|invesco|bandhan|hsbc|pgim|whiteoak|white\s*oak|bajaj(\s*finserv)?|baroda|mahindra|groww|lic|jm|itc?i?|union|idfc|l&t)\b/i;
+  var _MF_CAT  = /\b(large\s*cap|mid\s*cap|small\s*cap|flexi\s*cap|multi\s*cap|elss|debt|hybrid|index|bluechip|liquid|overnight|equity|balanced|dynamic)\b/i;
   var isMFQuery = /\b(mutual\s*fund|mf\b)\b/i.test(q) ||
-    /\b(hdfc|sbi|axis|mirae|nippon|kotak|parag|icici\s*pru|uti|dsp|franklin|aditya\s*birla|sundaram|tata|quant|navi)\b.*\b(fund|nav)\b/i.test(q) ||
+    (_MF_AMC.test(q) && /\b(fund|nav|direct|growth|idcw)\b/i.test(q)) ||
+    (_MF_AMC.test(q) && _MF_CAT.test(q)) ||
     /\b(flexi\s*cap|large\s*cap\s*fund|mid\s*cap\s*fund|small\s*cap\s*fund|elss|debt\s*fund)\b/i.test(q) ||
     /\b(nav|folio|amc)\b/i.test(q);
-  var _hasFundHouse = /\b(hdfc|sbi|axis|mirae|nippon|kotak|parag|icici|uti|dsp|franklin|aditya|birla|sundaram|tata|quant|navi|ppfas|invesco|motilal)\b/i.test(q);
+  var _hasFundHouse = _MF_AMC.test(q);
   var isMFScreener = !_hasFundHouse && (
     /\b(best|top)\b.*\b(large\s*.?cap|mid\s*.?cap|small\s*.?cap|flexi\s*.?cap|elss|debt|index|hybrid)\b.*\bfund/i.test(q) ||
     /\b(large\s*.?cap|mid\s*.?cap|small\s*.?cap|flexi\s*.?cap|elss)\b.*\bfund\b/i.test(q)
