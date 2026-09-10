@@ -260,6 +260,25 @@
     .row.bot:hover .copy-btn { opacity:1; }
     .copy-btn.copied { color:var(--green); border-color:rgba(0,255,163,0.3); }
 
+    /* ── Export button ───────────────────────────────────────────────────── */
+    .export-btn {
+      position:absolute; top:6px; right:66px; opacity:0; transition:opacity 0.15s;
+      background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.1);
+      border-radius:7px; padding:3px 8px; font-size:0.68rem; color:var(--muted);
+      cursor:pointer; display:flex; align-items:center; gap:4px; font-family:'Inter',sans-serif;
+    }
+    .export-btn:hover { background:rgba(168,85,247,0.1); border-color:rgba(168,85,247,0.3); color:var(--purple); }
+    .row.bot:hover .export-btn { opacity:1; }
+
+    /* ── News section ────────────────────────────────────────────────────── */
+    .news-section { margin-top:12px; padding-top:10px; border-top:1px solid rgba(255,255,255,0.06); }
+    .news-head { font-size:.68rem; font-weight:600; color:var(--muted); letter-spacing:.06em; text-transform:uppercase; margin-bottom:6px; }
+    .news-item { display:flex; flex-direction:column; padding:7px 0; border-bottom:1px solid rgba(255,255,255,0.05); text-decoration:none; cursor:pointer; }
+    .news-item:last-child { border-bottom:none; }
+    .news-item:hover .news-title { color:var(--cyan); }
+    .news-title { font-size:.78rem; color:var(--text); line-height:1.4; }
+    .news-meta  { font-size:.65rem; color:var(--muted); margin-top:2px; }
+
     /* ── New Chat button ──────────────────────────────────────────────────── */
     .new-chat-btn {
       display:flex; align-items:center; gap:5px; padding:5px 12px; border-radius:8px;
@@ -347,6 +366,7 @@
   <div class="chip" onclick="ask('Market overview today')">📊 Market overview</div>
   <div class="chip" onclick="ask('market sentiment')">🧭 Sentiment</div>
   <div class="chip" onclick="ask('screener: stocks with RSI below 35 above SMA50')">🔬 Screener</div>
+  <div class="chip" onclick="ask('nifty100 screener: buy signals above SMA50')">🔬 Nifty 100</div>
   <span id="dynamicChips"></span>
 </div>
 
@@ -1280,6 +1300,91 @@ inp.addEventListener("keydown", function(e) {
 
 function ask(t) { inp.value = t; sendMsg(); }
 
+// ── Multi-stock overlaid chart (normalized % change) ──────────────────────
+function drawMultiChart(series) {
+  var DPR = window.devicePixelRatio || 1;
+  var W = 400, H = 130;
+  var canvas = document.createElement('canvas');
+  canvas.width = W * DPR; canvas.height = H * DPR;
+  canvas.style.cssText = 'width:100%;max-width:' + W + 'px;height:' + H + 'px;display:block;border-radius:8px;';
+  var ctx = canvas.getContext('2d');
+  ctx.scale(DPR, DPR);
+
+  var COLORS = ['#00e5ff','#a855f7','#ffb300','#00ffa3'];
+  var PAD = { t:16, r:10, b:30, l:44 };
+  var pw = W - PAD.l - PAD.r, ph = H - PAD.t - PAD.b;
+
+  // Normalize all series to % change from first price
+  var normalized = series.map(function(s) {
+    var base = s.prices[0] || 1;
+    return s.prices.map(function(p) { return ((p - base) / base) * 100; });
+  });
+
+  // Global Y range
+  var allVals = normalized.reduce(function(acc, n) { return acc.concat(n); }, []);
+  var lo = Math.min.apply(null, allVals), hi = Math.max.apply(null, allVals);
+  var rng = hi - lo || 1;
+  lo -= rng * 0.1; hi += rng * 0.1; rng = hi - lo;
+  var maxLen = Math.max.apply(null, normalized.map(function(n) { return n.length; }));
+
+  function px(i) { return PAD.l + (i / Math.max(maxLen - 1, 1)) * pw; }
+  function py(v) { return PAD.t + ph - ((v - lo) / rng) * ph; }
+
+  // Background
+  ctx.fillStyle = 'rgba(0,0,0,0.25)'; ctx.beginPath();
+  ctx.roundRect ? ctx.roundRect(0, 0, W, H, 8) : ctx.rect(0, 0, W, H);
+  ctx.fill();
+
+  // Zero line
+  ctx.beginPath(); ctx.moveTo(PAD.l, py(0)); ctx.lineTo(PAD.l + pw, py(0));
+  ctx.strokeStyle = 'rgba(255,255,255,0.12)'; ctx.lineWidth = 0.5; ctx.setLineDash([4,4]); ctx.stroke();
+  ctx.setLineDash([]);
+
+  // Y-axis labels
+  ctx.fillStyle = 'rgba(255,255,255,0.3)'; ctx.font = '8px Inter,sans-serif'; ctx.textAlign = 'right';
+  [lo, (lo+hi)/2, hi].forEach(function(v) {
+    ctx.fillText((v >= 0 ? '+' : '') + v.toFixed(1) + '%', PAD.l - 4, py(v) + 3);
+  });
+
+  // X-axis label
+  ctx.fillStyle = 'rgba(255,255,255,0.2)'; ctx.font = '7px Inter,sans-serif'; ctx.textAlign = 'left';
+  ctx.fillText('30 days ago', PAD.l, H - PAD.b + 12);
+  ctx.textAlign = 'right';
+  ctx.fillText('Today', PAD.l + pw, H - PAD.b + 12);
+
+  // Draw each series
+  normalized.forEach(function(norm, si) {
+    var color = COLORS[si % COLORS.length];
+    ctx.beginPath();
+    ctx.moveTo(px(0), py(norm[0]));
+    for (var i = 1; i < norm.length; i++) ctx.lineTo(px(i), py(norm[i]));
+    ctx.strokeStyle = color; ctx.lineWidth = 1.8; ctx.lineJoin = 'round'; ctx.stroke();
+
+    // End dot + final % label
+    var lx = px(norm.length - 1), ly = py(norm[norm.length - 1]);
+    ctx.beginPath(); ctx.arc(lx, ly, 3, 0, Math.PI * 2);
+    ctx.fillStyle = color; ctx.fill();
+    var finalPct = norm[norm.length - 1];
+    ctx.fillStyle = color; ctx.font = 'bold 8px Inter,sans-serif';
+    ctx.textAlign = finalPct >= 0 ? 'left' : 'right';
+    ctx.fillText((finalPct >= 0 ? '+' : '') + finalPct.toFixed(1) + '%', lx + (finalPct >= 0 ? 5 : -5), ly + 3);
+  });
+
+  // Legend at bottom
+  var legendX = PAD.l;
+  series.forEach(function(s, i) {
+    var color = COLORS[i % COLORS.length];
+    ctx.beginPath(); ctx.moveTo(legendX, H - 8); ctx.lineTo(legendX + 14, H - 8);
+    ctx.strokeStyle = color; ctx.lineWidth = 2; ctx.stroke();
+    ctx.fillStyle = 'rgba(255,255,255,0.65)'; ctx.font = '8px Inter,sans-serif'; ctx.textAlign = 'left';
+    var name = (s.name || s.sym || '').split(' ')[0].replace('.NS','').replace('.BO','');
+    ctx.fillText(name, legendX + 17, H - 5);
+    legendX += 17 + ctx.measureText(name).width + 14;
+  });
+
+  return canvas;
+}
+
 // ── Sparkline canvas drawing ───────────────────────────────────────────────
 function drawSparkline(prices, color) {
   var DPR = window.devicePixelRatio || 1;
@@ -1321,28 +1426,92 @@ function drawSparkline(prices, color) {
   return canvas;
 }
 
-// Append sparklines to bubble after individual stock analysis
+// Append sparklines / comparison chart to bubble after individual stock analysis
 function appendSparklines(bubble) {
   var ph = _lastPriceHistory;
   var syms = Object.keys(ph);
   if (syms.length === 0) return;
-  var row = document.createElement('div');
-  row.className = 'charts-row';
-  syms.forEach(function(sym) {
-    var entry = ph[sym];
-    var prices = entry.prices;
+
+  var wrapper = document.createElement('div');
+  wrapper.className = 'charts-row';
+
+  if (syms.length >= 2) {
+    // Multi-stock: overlaid normalized comparison chart
+    var series = syms.map(function(sym) {
+      return { prices: ph[sym].prices, name: ph[sym].name || sym.replace('.NS','') };
+    });
+    var lbl = document.createElement('div');
+    lbl.className = 'chart-label';
+    lbl.style.cssText = 'font-size:.7rem;color:var(--muted);margin-bottom:6px;width:100%';
+    lbl.textContent = '📈 30-day performance (% change, normalised)';
+    wrapper.appendChild(lbl);
+    wrapper.style.flexDirection = 'column';
+    wrapper.appendChild(drawMultiChart(series));
+  } else {
+    // Single sparkline
+    var sym = syms[0];
+    var prices = ph[sym].prices;
     var trend = prices[prices.length - 1] >= prices[0];
     var color = trend ? '#00ffa3' : '#ff4d6d';
     var card = document.createElement('div');
     card.className = 'chart-card';
     var lbl = document.createElement('div');
     lbl.className = 'chart-label';
-    lbl.textContent = (entry.name || sym.replace('.NS','')) + ' · 30-day price';
+    lbl.textContent = (ph[sym].name || sym.replace('.NS','')) + ' · 30-day price';
     card.appendChild(lbl);
     card.appendChild(drawSparkline(prices, color));
-    row.appendChild(card);
-  });
-  bubble.insertBefore(row, bubble.querySelector('.followup-row') || null);
+    wrapper.appendChild(card);
+  }
+
+  bubble.insertBefore(wrapper, bubble.querySelector('.followup-row') || null);
+}
+
+// ── News headlines ─────────────────────────────────────────────────────────
+function timeAgo(ts) {
+  var diff = Date.now() - ts;
+  var h = Math.floor(diff / 3600000);
+  if (h < 1) return Math.floor(diff / 60000) + 'm ago';
+  if (h < 24) return h + 'h ago';
+  return Math.floor(h / 24) + 'd ago';
+}
+
+async function appendNewsAsync(bubble, stocks) {
+  if (!stocks || stocks.length === 0) return;
+  var backend = BACKEND_URL || 'http://localhost:5050';
+  try {
+    var fetches = stocks.slice(0, 2).map(function(sym) {
+      return fetch(backend + '/news?symbol=' + encodeURIComponent(sym), { signal: AbortSignal.timeout(8000) })
+        .then(function(r) { return r.json(); })
+        .then(function(data) { return Array.isArray(data) ? data : []; })
+        .catch(function() { return []; });
+    });
+    var allNews = await Promise.all(fetches);
+    var flat = [].concat.apply([], allNews).filter(function(n) { return n.title; });
+    if (flat.length === 0) return;
+
+    var section = document.createElement('div');
+    section.className = 'news-section';
+    var head = document.createElement('div');
+    head.className = 'news-head';
+    head.textContent = '📰 Latest News';
+    section.appendChild(head);
+
+    flat.slice(0, 4).forEach(function(n) {
+      var a = document.createElement('a');
+      a.className = 'news-item';
+      a.href = n.link || '#';
+      a.target = '_blank'; a.rel = 'noopener noreferrer';
+      var ago = n.published ? timeAgo(n.published * 1000) : '';
+      a.innerHTML = '<div class="news-title">' + esc(n.title) + '</div>' +
+        '<div class="news-meta">' + esc(n.publisher || '') + (ago ? ' · ' + ago : '') + '</div>';
+      section.appendChild(a);
+    });
+
+    // Insert before timestamp footer
+    var ts = bubble.querySelector('.resp-ts');
+    bubble.insertBefore(section, ts || null);
+    scrollBottom();
+  } catch(e) {}
 }
 
 // ── Sentiment gauge renderer ───────────────────────────────────────────────
@@ -1438,11 +1607,13 @@ function parseScreenerQuery(q) {
   return p;
 }
 
-function renderScreener(results, params, bubble) {
+function renderScreener(results, params, bubble, meta) {
+  meta = meta || { universe: 'nifty50', total_scanned: 45 };
   if (!results || results.length === 0) {
-    bubble.innerHTML = '<p>No stocks matched those filters in the Nifty 50 universe. Try relaxing the criteria.</p>';
+    bubble.innerHTML = '<p>No stocks matched those filters in the ' + (meta.universe === 'nifty100' ? 'Nifty 100' : 'Nifty 50') + ' universe. Try relaxing the criteria.</p>';
     return;
   }
+  var universeLabel = meta.universe === 'nifty100' ? 'Nifty 100' : 'Nifty 50';
   var desc = [];
   if (params.min_rsi && params.max_rsi) desc.push('RSI ' + params.min_rsi + '–' + params.max_rsi);
   else if (params.max_rsi) desc.push('RSI < ' + params.max_rsi);
@@ -1458,7 +1629,7 @@ function renderScreener(results, params, bubble) {
   if (params.max_score && parseInt(params.max_score) < 0) desc.push('AVOID signals');
 
   var html = '<h3>🔬 Screener Results</h3>';
-  html += '<div class="screener-header">Filters: <strong>' + (desc.join(' · ') || 'none') + '</strong> · ' + results.length + ' matches (Nifty 50)</div>';
+  html += '<div class="screener-header">Filters: <strong>' + (desc.join(' · ') || 'none') + '</strong> · ' + results.length + ' matches (' + universeLabel + ', ' + (meta.total_scanned || '?') + ' scanned)</div>';
   html += '<div class="screener-grid">';
   results.forEach(function(s) {
     var vc = s.verdict.includes('BUY') ? 'buy' : s.verdict.includes('AVOID') ? 'avoid' : 'hold';
@@ -1614,8 +1785,28 @@ function addFollowups(bubble, query, result) {
   bubble.appendChild(row);
 }
 
-// ── Copy button helper ─────────────────────────────────────────────────────
+// ── Copy + Export buttons ──────────────────────────────────────────────────
 function addCopyBtn(row, bubble) {
+  // Export button (left of copy)
+  var expBtn = document.createElement('button');
+  expBtn.className = 'export-btn';
+  expBtn.innerHTML = '<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg> Save';
+  expBtn.onclick = function() {
+    var text = bubble.innerText || bubble.textContent;
+    var blob = new Blob([text], { type: 'text/plain' });
+    var url = URL.createObjectURL(blob);
+    var a = document.createElement('a');
+    a.href = url; a.download = 'stock-analysis-' + new Date().toISOString().slice(0, 10) + '.txt';
+    document.body.appendChild(a); a.click(); document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    expBtn.innerHTML = '<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg> Saved!';
+    setTimeout(function() {
+      expBtn.innerHTML = '<svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg> Save';
+    }, 2000);
+  };
+  row.appendChild(expBtn);
+
+  // Copy button
   var btn = document.createElement('button');
   btn.className = 'copy-btn';
   btn.innerHTML = '<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg> Copy';
@@ -1679,6 +1870,7 @@ async function sendMsg() {
     /\bstocks?\s+(?:below|above)\s+sma\b/i.test(q) ||
     /\brsi\s*[<>]\s*\d+\b/i.test(q) ||
     /\bshow\b.*\bstocks?\b.*\brsi\b/i.test(q);
+  var screenerUniverse = /\bnifty\s*100\b|\bnext\s*50\b|\bwider\b|\bmore\s+stocks\b/i.test(q) ? 'nifty100' : 'nifty50';
 
   var _finishBubble = function(html, showFollowups) {
     streamBubble(bubble, html);
@@ -1717,13 +1909,18 @@ async function sendMsg() {
   if (isScreener) {
     var backend = BACKEND_URL || 'http://localhost:5050';
     var scParams = parseScreenerQuery(q);
+    if (screenerUniverse === 'nifty100') scParams.universe = 'nifty100';
     var qs = Object.keys(scParams).map(function(k) { return k + '=' + encodeURIComponent(scParams[k]); }).join('&');
-    bubble.innerHTML = '<div class="status-row"><div class="spin"></div><span style="font-size:.78rem;color:var(--cyan)">Running screener on Nifty 50...</span></div>';
+    var universeLabel = screenerUniverse === 'nifty100' ? 'Nifty 100' : 'Nifty 50';
+    bubble.innerHTML = '<div class="status-row"><div class="spin"></div><span style="font-size:.78rem;color:var(--cyan)">Running screener on ' + universeLabel + '...</span></div>';
     try {
-      var scResp = await fetch(backend + '/screener' + (qs ? '?' + qs : ''), { signal: AbortSignal.timeout(35000) });
-      var scData = await scResp.json();
-      if (scData.error) throw new Error(scData.error);
-      renderScreener(scData, scParams, bubble);
+      var scResp = await fetch(backend + '/screener' + (qs ? '?' + qs : ''), { signal: AbortSignal.timeout(40000) });
+      var scRaw = await scResp.json();
+      // Backend returns { results, universe, total_scanned } or legacy array
+      var scData = Array.isArray(scRaw) ? scRaw : (scRaw.results || []);
+      var scMeta = Array.isArray(scRaw) ? { universe: 'nifty50', total_scanned: 45 } : scRaw;
+      if (scRaw.error) throw new Error(scRaw.error);
+      renderScreener(scData, scParams, bubble, scMeta);
     } catch(e) {
       bubble.innerHTML = '<span style="color:var(--red)">Screener failed. ' + e.message + '</span>';
     }
@@ -1774,8 +1971,10 @@ async function sendMsg() {
     });
     clearInterval(pulse);
     _finishBubble(md(result));
-    // Append sparklines for individual stock queries
+    // Append sparklines/comparison chart for individual stock queries
     if (Object.keys(_lastPriceHistory).length > 0) appendSparklines(bubble);
+    // Async: fetch and append news headlines for 1-2 stocks
+    if (_ctx.stocks.length >= 1 && _ctx.stocks.length <= 2) appendNewsAsync(bubble, _ctx.stocks);
   } catch(e) {
     clearInterval(pulse);
     bubble.innerHTML = '<span style="color:var(--red)">Failed to fetch data. Check your internet connection.<br><small>' + e.message + '</small></span>';

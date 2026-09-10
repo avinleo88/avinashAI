@@ -129,6 +129,21 @@ NIFTY50_SYMS = [
     "APOLLOHOSP.NS","BPCL.NS","BRITANNIA.NS","HINDALCO.NS","TATACONSUM.NS",
 ]
 
+NIFTY_NEXT50_SYMS = [
+    "ADANIGREEN.NS","AMBUJACEM.NS","BAJAJHLDNG.NS","BANKBARODA.NS",
+    "BERGEPAINT.NS","BEL.NS","CANBK.NS","CHOLAFIN.NS","COLPAL.NS",
+    "DMART.NS","DLF.NS","GAIL.NS","GODREJCP.NS","GODREJPROP.NS",
+    "HAL.NS","HAVELLS.NS","HDFCLIFE.NS","ICICIPRULI.NS","INDHOTEL.NS",
+    "INDUSTOWER.NS","IOC.NS","IRCTC.NS","LUPIN.NS","MARICO.NS",
+    "MUTHOOTFIN.NS","NAUKRI.NS","NHPC.NS","OBEROIRLTY.NS","OFSS.NS",
+    "OIL.NS","PETRONET.NS","PFC.NS","PIDILITIND.NS","PNB.NS",
+    "POLYCAB.NS","RECLTD.NS","SBICARD.NS","SBILIFE.NS","SHREECEM.NS",
+    "SIEMENS.NS","SRF.NS","TATACOMM.NS","TORNTPHARM.NS","TRENT.NS",
+    "UNIONBANK.NS","VBL.NS","VEDL.NS","ZOMATO.NS","PIIND.NS","PAYTM.NS",
+]
+
+NIFTY100_SYMS = NIFTY50_SYMS + NIFTY_NEXT50_SYMS
+
 NAME_MAP = {
     "HDFCBANK.NS":"HDFC Bank","ICICIBANK.NS":"ICICI Bank",
     "SBIN.NS":"State Bank of India","KOTAKBANK.NS":"Kotak Mahindra Bank",
@@ -846,7 +861,7 @@ def sentiment():
 
 @app.route("/screener")
 def screener():
-    """Filter Nifty 50 stocks by technical criteria."""
+    """Filter Nifty 50 or Nifty 100 stocks by technical criteria."""
     try:
         min_rsi   = float(request.args.get("min_rsi", 0))
         max_rsi   = float(request.args.get("max_rsi", 100))
@@ -857,13 +872,15 @@ def screener():
         macd_neg  = request.args.get("macd_negative", "").lower() == "true"
         min_score = int(request.args.get("min_score", -10))
         max_score = int(request.args.get("max_score", 10))
+        universe  = request.args.get("universe", "nifty50").lower()
 
-        data = yf.download(NIFTY50_SYMS, period="3mo", progress=False, auto_adjust=True)
+        syms = NIFTY100_SYMS if universe == "nifty100" else NIFTY50_SYMS
+        data = yf.download(syms, period="3mo", progress=False, auto_adjust=True)
         closes_all = data["Close"]
         volumes_all = data.get("Volume", None)
         results = []
 
-        for sym in NIFTY50_SYMS:
+        for sym in syms:
             try:
                 closes = closes_all[sym].dropna()
                 if len(closes) < 22:
@@ -928,7 +945,41 @@ def screener():
                 continue
 
         results.sort(key=lambda x: x["score"], reverse=True)
-        return Response(json.dumps(results[:20]), content_type="application/json",
+        return Response(json.dumps({"results": results[:20], "universe": universe, "total_scanned": len(syms)}),
+                        content_type="application/json",
+                        headers={"Access-Control-Allow-Origin": "*"})
+    except Exception as e:
+        return json.dumps({"error": str(e)}), 502, {"Access-Control-Allow-Origin": "*"}
+
+
+@app.route("/news")
+def news():
+    """Return recent headlines for a stock using yfinance .news property."""
+    symbol = request.args.get("symbol", "").upper().strip()
+    if not symbol:
+        return Response(json.dumps([]), content_type="application/json",
+                        headers={"Access-Control-Allow-Origin": "*"})
+    if "." not in symbol and "^" not in symbol:
+        symbol += ".NS"
+    try:
+        ticker = yf.Ticker(symbol)
+        raw = getattr(ticker, "news", None) or []
+        items = []
+        for n in raw[:5]:
+            if not isinstance(n, dict):
+                continue
+            # yfinance 0.2.x: flat keys; newer versions may nest under "content"
+            content = n.get("content", {}) or {}
+            title   = n.get("title") or content.get("title", "")
+            pub     = (n.get("publisher") or
+                       content.get("provider", {}).get("displayName", ""))
+            link    = (n.get("link") or
+                       content.get("canonicalUrl", {}).get("url", ""))
+            ts      = n.get("providerPublishTime") or 0
+            if title:
+                items.append({"title": title, "publisher": pub,
+                               "link": link, "published": int(ts)})
+        return Response(json.dumps(items), content_type="application/json",
                         headers={"Access-Control-Allow-Origin": "*"})
     except Exception as e:
         return json.dumps({"error": str(e)}), 502, {"Access-Control-Allow-Origin": "*"}
