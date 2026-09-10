@@ -2175,7 +2175,9 @@ async function sendMsg() {
   var _hasFundHouse = _MF_AMC.test(q);
   var isMFScreener = !_hasFundHouse && (
     /\b(best|top)\b.*\b(large\s*.?cap|mid\s*.?cap|small\s*.?cap|flexi\s*.?cap|elss|debt|index|hybrid)\b.*\bfund/i.test(q) ||
-    /\b(large\s*.?cap|mid\s*.?cap|small\s*.?cap|flexi\s*.?cap|elss)\b.*\bfund\b/i.test(q)
+    /\b(large\s*.?cap|mid\s*.?cap|small\s*.?cap|flexi\s*.?cap|elss)\b.*\bfund\b/i.test(q) ||
+    /\b(best|top|recommend(ed)?|suggest(ed)?)\b.*\bmutual\s*funds?\b/i.test(q) ||
+    /\bmutual\s*funds?\b.*\b(recommend|suggest|best|top)\b/i.test(q)
   );
   var isMFCompare = isMFQuery && /\bvs\b|\bversus\b|\bcompare\b|\bbetter\b/i.test(q);
   var isSIP = /\bsip\s*calc/i.test(q) ||
@@ -2268,8 +2270,8 @@ async function sendMsg() {
     var catMap = { 'large cap':'large cap','large-cap':'large cap','mid cap':'mid cap','mid-cap':'mid cap',
       'small cap':'small cap','small-cap':'small cap','flexi cap':'flexi cap','flexicap':'flexi cap',
       'elss':'elss','tax saving':'elss','debt':'debt','index':'index','hybrid':'hybrid' };
-    var catKey = Object.keys(catMap).find(function(k) { return q.includes(k); }) || 'large cap';
-    var cat = catMap[catKey] || 'large cap';
+    var catKey = Object.keys(catMap).find(function(k) { return q.includes(k); });
+    var cat = catKey ? catMap[catKey] : 'flexi cap';
     var backend = BACKEND_URL || 'http://localhost:5050';
     bubble.innerHTML = '<div class="status-row"><div class="spin"></div><span style="font-size:.78rem;color:var(--cyan)">Finding top ' + cat + ' funds...</span></div>';
     try {
@@ -2314,7 +2316,7 @@ async function sendMsg() {
   // --- Handle: MF analysis ---
   if (isMFQuery) {
     var backend = BACKEND_URL || 'http://localhost:5050';
-    var mfQ = q.replace(/\b(analyze|analysis|tell me about|what about|how is|should i (buy|invest in)|is|any good|best|details|info|information|nav of|nav for|mutual\s*funds?|mf\b)\b/ig,'').trim();
+    var mfQ = q.replace(/\b(analyze|analysis|tell\s*me\s*(about)?|what\s*about|how\s*is|should\s*i\s*(buy|invest\s*in)|give\s*me|recommend(ation)?s?|on\s*the|what\s*are\s*the?|is|any\s*good|best|top|details|info(rmation)?|nav\s*of|nav\s*for|mutual\s*funds?|mf\b)\b/ig,'').trim();
     if (!mfQ || mfQ.length < 3) {
       _finishBubble(md('**Mutual Fund Help** 💼\n\nTry asking about a specific fund or category:\n\n- **Fund analysis**: `HDFC Midcap Opportunity`, `Parag Parikh Flexi Cap`, `Mirae Asset Large Cap`\n- **Category screener**: `best large cap funds`, `top ELSS funds`, `small cap funds`\n- **Compare funds**: `HDFC Midcap vs Nippon Midcap`\n- **SIP calculator**: `SIP 5000 per month for 10 years in Parag Parikh`\n- **MF vs Stock**: `Nifty 50 index fund vs HDFC Bank`'), true);
       return;
