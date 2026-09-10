@@ -1655,6 +1655,33 @@ function renderMFAnalysis(data, bubble) {
             '<div class="mf-return-val" style="color:' + color + '">' + (val >= 0 ? '+' : '') + val + '%</div></div>';
   });
   html += '</div>';
+
+  // Recommendation
+  var ret = data.returns || {};
+  var score = 0, factors = [];
+  if (ret['1Y'] != null) { if (ret['1Y'] > 20) { score += 3; } else if (ret['1Y'] > 12) { score += 2; } else if (ret['1Y'] > 5) { score += 1; } else if (ret['1Y'] < 0) { score -= 2; factors.push('negative 1Y return'); } else { score -= 1; } }
+  if (ret['3Y'] != null) { if (ret['3Y'] > 15) { score += 3; } else if (ret['3Y'] > 10) { score += 2; } else if (ret['3Y'] > 5) { score += 1; } else if (ret['3Y'] < 0) { score -= 2; factors.push('negative 3Y CAGR'); } else { score -= 1; } }
+  if (ret['5Y'] != null) { if (ret['5Y'] > 15) { score += 2; } else if (ret['5Y'] > 10) { score += 1; } else if (ret['5Y'] < 0) { score -= 1; factors.push('negative 5Y CAGR'); } }
+  if (ret['1M'] != null) { if (ret['1M'] < -5) score -= 1; else if (ret['1M'] > 5) score += 1; }
+  var hasLongTerm = ret['1Y'] != null || ret['3Y'] != null;
+  if (hasLongTerm) {
+    var sig, sigColor, sigBg;
+    if (score >= 6)      { sig = '🟢 BUY';             sigColor = '#00ffa3'; sigBg = 'rgba(0,255,163,.08)'; }
+    else if (score >= 3) { sig = '🟢 ACCUMULATE';      sigColor = '#00ffa3'; sigBg = 'rgba(0,255,163,.08)'; }
+    else if (score >= 0) { sig = '🟡 HOLD';             sigColor = '#ffd700'; sigBg = 'rgba(255,215,0,.08)'; }
+    else if (score >= -3){ sig = '🟡 HOLD / REVIEW';   sigColor = '#ffd700'; sigBg = 'rgba(255,215,0,.08)'; }
+    else                  { sig = '🔴 AVOID';            sigColor = '#ff4d6d'; sigBg = 'rgba(255,77,109,.08)'; }
+    var reason = score >= 6  ? 'Consistent outperformance across all tracked periods.' :
+                 score >= 3  ? 'Good multi-year track record — suitable for SIP.' :
+                 score >= 0  ? 'Average performance — hold if already invested; wait for better entry.' :
+                 score >= -3 ? 'Below-average returns. Compare with category peers before investing.' :
+                               'Weak long-term returns. ' + (factors.length ? 'Concerns: ' + factors.join(', ') + '.' : 'Consider alternatives.');
+    html += '<div style="margin-top:14px;padding:12px 14px;border-radius:10px;background:' + sigBg + ';border:1px solid ' + sigColor + '33">' +
+            '<div style="font-size:.72rem;font-weight:700;color:var(--muted);letter-spacing:.06em;text-transform:uppercase;margin-bottom:6px">Signal</div>' +
+            '<div style="font-size:1rem;font-weight:800;color:' + sigColor + ';margin-bottom:4px">' + sig + '</div>' +
+            '<div style="font-size:.72rem;color:var(--muted)">' + reason + '</div>' +
+            '</div>';
+  }
   html += '<p style="font-size:.65rem;color:var(--muted);margin-top:12px">⚠️ Past performance does not guarantee future returns. Consult a financial advisor.</p>';
   bubble.innerHTML = html;
 

@@ -995,24 +995,45 @@ def _mf_fetch(code):
 def _mf_returns(data):
     if not data:
         return {}
-    navs = []
+    from datetime import timedelta
+    entries = []
     for d in data:
         try:
-            navs.append(float(d["nav"]))
-        except (ValueError, KeyError):
+            for fmt in ("%d-%m-%Y", "%Y-%m-%d"):
+                try:
+                    dt = datetime.strptime(d["date"], fmt)
+                    entries.append((dt, float(d["nav"])))
+                    break
+                except ValueError:
+                    pass
+        except (KeyError, TypeError):
             pass
-    if not navs:
+    if not entries:
         return {}
-    cur = navs[0]
+    entries.sort(key=lambda x: x[0], reverse=True)
+    cur_date, cur_nav = entries[0]
 
-    def ret(idx):
-        if len(navs) > idx and navs[idx]:
-            return round(((cur - navs[idx]) / navs[idx]) * 100, 2)
+    def nav_at(days):
+        target = cur_date - timedelta(days=days)
+        best, best_diff = None, float("inf")
+        for dt, nav in entries:
+            diff = abs((dt - target).days)
+            if diff < best_diff:
+                best_diff, best = diff, nav
+            if dt < target - timedelta(days=15):
+                break
+        return best if best_diff <= 15 else None
+
+    def ret(days):
+        past = nav_at(days)
+        if past and past > 0:
+            return round(((cur_nav - past) / past) * 100, 2)
         return None
 
-    def cagr(idx, years):
-        if len(navs) > idx and navs[idx] and years:
-            return round(((cur / navs[idx]) ** (1 / years) - 1) * 100, 2)
+    def cagr(days, years):
+        past = nav_at(days)
+        if past and past > 0:
+            return round(((cur_nav / past) ** (1 / years) - 1) * 100, 2)
         return None
 
     return {
