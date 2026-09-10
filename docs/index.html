@@ -272,6 +272,7 @@
     /* ── Streaming reveal animation ───────────────────────────────────────── */
     @keyframes streamIn { from{opacity:0;transform:translateY(5px)} to{opacity:1;transform:translateY(0)} }
     .stream-el { animation:streamIn 0.28s ease both; }
+    .resp-ts { display:block; font-size:0.68rem; color:var(--muted); margin-bottom:6px; }
   </style>
 </head>
 <body>
@@ -618,7 +619,6 @@ function ipr(n) {
 
 async function buildResponse(query, onStatus) {
   var q = query.toLowerCase();
-  var now = new Date().toLocaleString("en-IN", { day:"numeric", month:"short", year:"numeric", hour:"2-digit", minute:"2-digit" });
   var lines = [];
   function emit(t) { lines.push(t !== undefined ? t : ""); }
 
@@ -807,8 +807,7 @@ async function buildResponse(query, onStatus) {
     }
   }
 
-  emit("**" + now + "**");
-  emit();
+  // (timestamp shown as subtle footer in sendMsg)
 
   // Top stock picks — fetch live movers and analyse top gainers with strong signals
   if (isTopPicks && !sectorKey) {
@@ -1394,9 +1393,17 @@ async function sendMsg() {
   var bubble = createBotBubble();
   var q = text.toLowerCase().trim();
 
+  // --- Slash commands ---
+  if (/^\/clear$|^\/new$|^\/reset$/.test(q)) { newChat(); return; }
+
   var _finishBubble = function(html, showFollowups) {
     streamBubble(bubble, html);
     if (showFollowups !== false) addFollowups(bubble, text, html);
+    // subtle timestamp footer
+    var ts = document.createElement('div');
+    ts.className = 'resp-ts';
+    ts.textContent = new Date().toLocaleString('en-IN', { day:'numeric', month:'short', year:'numeric', hour:'2-digit', minute:'2-digit' });
+    bubble.appendChild(ts);
     if (bubble._row) addCopyBtn(bubble._row, bubble);
     sendBtn.disabled = false; inp.focus();
     scrollBottom();
