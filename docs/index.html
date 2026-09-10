@@ -1391,20 +1391,50 @@ function renderSentiment(data, bubble) {
 // ── Screener query parser ──────────────────────────────────────────────────
 function parseScreenerQuery(q) {
   var p = {}, m;
-  m = q.match(/rsi\s*(?:below|<|under|less\s+than)\s*(\d+)/i);  if (m) p.max_rsi = m[1];
-  m = q.match(/rsi\s*(?:above|>|over|greater\s+than)\s*(\d+)/i); if (m) p.min_rsi = m[1];
+
+  // Exact RSI number filters
+  m = q.match(/rsi\s*(?:below|<|under|less\s+than)\s*(\d+)/i);   if (m) p.max_rsi = m[1];
+  m = q.match(/rsi\s*(?:above|>|over|greater\s+than)\s*(\d+)/i);  if (m) p.min_rsi = m[1];
   m = q.match(/rsi\s+between\s+(\d+)\s+and\s+(\d+)/i);
   if (m) { p.min_rsi = m[1]; p.max_rsi = m[2]; }
-  if (/oversold/i.test(q) && !p.max_rsi) p.max_rsi = '35';
-  if (/overbought/i.test(q) && !p.min_rsi) p.min_rsi = '65';
+
+  // Natural language RSI descriptions
+  if (/\bgood\s+rsi\b|\bhealthy\s+rsi\b|\boptimal\s+rsi\b|\bideal\s+rsi\b/i.test(q))
+    { if (!p.min_rsi) p.min_rsi = '30'; if (!p.max_rsi) p.max_rsi = '65'; }
+  if (/\bstrong\s+rsi\b|\bhigh\s+rsi\b/i.test(q))
+    { if (!p.min_rsi) p.min_rsi = '50'; if (!p.max_rsi) p.max_rsi = '70'; }
+  if (/\bweak\s+rsi\b|\blow\s+rsi\b/i.test(q))
+    { if (!p.max_rsi) p.max_rsi = '45'; }
+  if (/\bnot\s+overbought\b|\bavoid\s+overbought\b/i.test(q))
+    { if (!p.max_rsi) p.max_rsi = '65'; }
+  if (/\bnot\s+oversold\b/i.test(q))
+    { if (!p.min_rsi) p.min_rsi = '35'; }
+  if (/\boversold\b/i.test(q) && !p.max_rsi) p.max_rsi = '35';
+  if (/\boverbought\b/i.test(q) && !p.min_rsi) p.min_rsi = '65';
+  if (/\bbuy.?zone\b|\bvalue.?zone\b/i.test(q))
+    { if (!p.min_rsi) p.min_rsi = '25'; if (!p.max_rsi) p.max_rsi = '50'; }
+  if (/\bmomentum\b/i.test(q) && !/screener/i.test(q))
+    { if (!p.min_rsi) p.min_rsi = '55'; p.macd_positive = 'true'; }
+
+  // SMA filters
   if (/above\s+sma\s*20|above.*20.?day/i.test(q)) p.above_sma20 = 'true';
   if (/above\s+sma\s*50|above.*50.?day/i.test(q)) p.above_sma50 = 'true';
   if (/below\s+sma\s*20|below.*20.?day/i.test(q)) p.below_sma20 = 'true';
+
+  // MACD filters
   if (/positive\s+macd|bullish\s+macd|macd\s*(positive|>|above)/i.test(q)) p.macd_positive = 'true';
   if (/negative\s+macd|bearish\s+macd|macd\s*(negative|<|below)/i.test(q)) p.macd_negative = 'true';
+
+  // Signal filters
   if (/\bstrong\s+buy\b/i.test(q)) p.min_score = '4';
   else if (/\bbuy\s+signal/i.test(q)) p.min_score = '2';
   if (/\bavoid\b.*(?:screener|filter)/i.test(q) || /(?:screener|filter).*\bavoid\b/i.test(q)) p.max_score = '-1';
+
+  // Default: if no filters at all, show only BUY+ stocks so we don't dump everything
+  var hasFilter = p.min_rsi || p.max_rsi || p.above_sma20 || p.above_sma50 ||
+                  p.below_sma20 || p.macd_positive || p.macd_negative || p.min_score || p.max_score;
+  if (!hasFilter) p.min_score = '2';
+
   return p;
 }
 
@@ -1414,14 +1444,18 @@ function renderScreener(results, params, bubble) {
     return;
   }
   var desc = [];
-  if (params.max_rsi)    desc.push('RSI < ' + params.max_rsi);
-  if (params.min_rsi)    desc.push('RSI > ' + params.min_rsi);
+  if (params.min_rsi && params.max_rsi) desc.push('RSI ' + params.min_rsi + '–' + params.max_rsi);
+  else if (params.max_rsi) desc.push('RSI < ' + params.max_rsi);
+  else if (params.min_rsi) desc.push('RSI > ' + params.min_rsi);
   if (params.above_sma20 === 'true') desc.push('Above SMA20');
   if (params.above_sma50 === 'true') desc.push('Above SMA50');
   if (params.below_sma20 === 'true') desc.push('Below SMA20');
   if (params.macd_positive === 'true') desc.push('MACD +ve');
   if (params.macd_negative === 'true') desc.push('MACD −ve');
-  if (params.min_score)  desc.push('Score ≥ ' + params.min_score);
+  if (params.min_score === '4') desc.push('Strong BUY only');
+  else if (params.min_score === '2') desc.push('BUY signals');
+  else if (params.min_score) desc.push('Score ≥ ' + params.min_score);
+  if (params.max_score && parseInt(params.max_score) < 0) desc.push('AVOID signals');
 
   var html = '<h3>🔬 Screener Results</h3>';
   html += '<div class="screener-header">Filters: <strong>' + (desc.join(' · ') || 'none') + '</strong> · ' + results.length + ' matches (Nifty 50)</div>';
