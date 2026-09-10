@@ -2173,7 +2173,8 @@ async function sendMsg() {
     /\b(flexi\s*cap|large\s*cap\s*fund|mid\s*cap\s*fund|small\s*cap\s*fund|elss|debt\s*fund)\b/i.test(q) ||
     /\b(nav|folio|amc)\b/i.test(q);
   var _hasFundHouse = _MF_AMC.test(q);
-  var isMFScreener = !_hasFundHouse && (
+  var _isSIPLike = /\b(invest|every\s*month|per\s*month|monthly)\b/i.test(q) && /\d/.test(q) && /\byears?\b/i.test(q);
+  var isMFScreener = !_hasFundHouse && !_isSIPLike && (
     /\b(best|top)\b.*\b(large\s*.?cap|mid\s*.?cap|small\s*.?cap|flexi\s*.?cap|elss|debt|index|hybrid)\b.*\bfund/i.test(q) ||
     /\b(large\s*.?cap|mid\s*.?cap|small\s*.?cap|flexi\s*.?cap|elss)\b.*\bfund\b/i.test(q) ||
     /\b(best|top|recommend(ed)?|suggest(ed)?)\b.*\bmutual\s*funds?\b/i.test(q) ||
@@ -2182,7 +2183,7 @@ async function sendMsg() {
   var isMFCompare = isMFQuery && /\bvs\b|\bversus\b|\bcompare\b|\bbetter\b/i.test(q);
   var isSIP = /\bsip\s*calc/i.test(q) ||
     (/\bsip\b/i.test(q) && /\d/.test(q)) ||
-    (/\b(invest|monthly|every\s*month|per\s*month)\b/i.test(q) && /\d/.test(q) && /\byears?\b/i.test(q) && isMFQuery);
+    (_isSIPLike && isMFQuery);
 
   var _finishBubble = function(html, showFollowups) {
     streamBubble(bubble, html);

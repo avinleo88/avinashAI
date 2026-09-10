@@ -1070,7 +1070,7 @@ def _mf_normalize(q):
 def _mf_search_and_fetch(q):
     """Search MFAPI, prefer Direct Growth, return analysis dict or None."""
     def _search(term):
-        r = requests.get(f"https://api.mfapi.in/mf/search?q={term}", timeout=10, headers=_MF_HEADERS)
+        r = requests.get(f"https://api.mfapi.in/mf/search?q={term}", timeout=25, headers=_MF_HEADERS)
         results = r.json()
         direct = [f for f in results
                   if "direct" in f["schemeName"].lower() and "growth" in f["schemeName"].lower()]
@@ -1158,7 +1158,7 @@ def mf_search():
         return Response(json.dumps([]), content_type="application/json",
                         headers={"Access-Control-Allow-Origin": "*"})
     try:
-        r = requests.get(f"https://api.mfapi.in/mf/search?q={q}", timeout=10, headers=_MF_HEADERS)
+        r = requests.get(f"https://api.mfapi.in/mf/search?q={q}", timeout=25, headers=_MF_HEADERS)
         results = r.json()
         direct = [{"code": f["schemeCode"], "name": f["schemeName"]}
                   for f in results
@@ -1230,7 +1230,7 @@ def mf_top():
     search_q = search_map.get(category, category + " direct growth")
     try:
         r = requests.get(f"https://api.mfapi.in/mf/search?q={search_q}",
-                         timeout=10, headers=_MF_HEADERS)
+                         timeout=25, headers=_MF_HEADERS)
         results = r.json()
         direct = [f for f in results
                   if "direct" in f["schemeName"].lower()
