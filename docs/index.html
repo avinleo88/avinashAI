@@ -1036,7 +1036,7 @@ async function buildResponse(query, onStatus) {
   }
 
   // Sector — ALL stocks fetched in parallel
-  if (sectorKey) {
+  if (sectorKey && found.length === 0) {
     var sectorLabel = sectorKey.charAt(0).toUpperCase() + sectorKey.slice(1);
     onStatus("Fetching all " + sectorLabel + " stocks in parallel...");
     var sectorFetched = await fetchAll(SECTORS[sectorKey], "3mo");
