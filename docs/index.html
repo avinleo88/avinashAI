@@ -2140,7 +2140,7 @@ async function sendMsg() {
   // --- Intent: mutual fund / SIP ---
   var _MF_AMC = /\b(hdfc|sbi|axis|mirae|nippon|kotak|parag(\s*parikh)?|ppfas|icici(\s*pru(dential)?)?|uti|dsp|franklin|aditya(\s*birla)?|absl|sundaram|tata|quant|navi|motilal(\s*oswal)?|canara(\s*robeco)?|edelweiss|invesco|bandhan|hsbc|pgim|whiteoak|white\s*oak|bajaj(\s*finserv)?|baroda|mahindra|groww|lic|jm|itc?i?|union|idfc|l&t)\b/i;
   var _MF_CAT  = /\b(large\s*cap|mid\s*cap|small\s*cap|flexi\s*cap|multi\s*cap|elss|debt|hybrid|index|bluechip|liquid|overnight|equity|balanced|dynamic)\b/i;
-  var isMFQuery = /\b(mutual\s*fund|mf\b)\b/i.test(q) ||
+  var isMFQuery = /\b(mutual\s*funds?|mf\b)\b/i.test(q) ||
     (_MF_AMC.test(q) && /\b(fund|nav|direct|growth|idcw)\b/i.test(q)) ||
     (_MF_AMC.test(q) && _MF_CAT.test(q)) ||
     /\b(flexi\s*cap|large\s*cap\s*fund|mid\s*cap\s*fund|small\s*cap\s*fund|elss|debt\s*fund)\b/i.test(q) ||
@@ -2287,7 +2287,11 @@ async function sendMsg() {
   // --- Handle: MF analysis ---
   if (isMFQuery) {
     var backend = BACKEND_URL || 'http://localhost:5050';
-    var mfQ = q.replace(/\b(analyze|analysis|tell me about|what about|how is|should i (buy|invest in)|is|any good|best|details|info|information|nav of|nav for|mutual\s*fund|mf\b)\b/ig,'').trim() || q;
+    var mfQ = q.replace(/\b(analyze|analysis|tell me about|what about|how is|should i (buy|invest in)|is|any good|best|details|info|information|nav of|nav for|mutual\s*funds?|mf\b)\b/ig,'').trim();
+    if (!mfQ || mfQ.length < 3) {
+      _finishBubble(md('**Mutual Fund Help** 💼\n\nTry asking about a specific fund or category:\n\n- **Fund analysis**: `HDFC Midcap Opportunity`, `Parag Parikh Flexi Cap`, `Mirae Asset Large Cap`\n- **Category screener**: `best large cap funds`, `top ELSS funds`, `small cap funds`\n- **Compare funds**: `HDFC Midcap vs Nippon Midcap`\n- **SIP calculator**: `SIP 5000 per month for 10 years in Parag Parikh`\n- **MF vs Stock**: `Nifty 50 index fund vs HDFC Bank`'), true);
+      return;
+    }
     bubble.innerHTML = '<div class="status-row"><div class="spin"></div><span style="font-size:.78rem;color:var(--cyan)">Searching mutual fund database...</span></div>';
     try {
       var mfar = await fetchWithRetry(backend + '/mf/analyze?q=' + encodeURIComponent(mfQ), { signal: AbortSignal.timeout(90000) }, _retryStatus);
