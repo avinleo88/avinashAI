@@ -217,6 +217,61 @@
     .send:hover { background:linear-gradient(135deg,rgba(0,229,255,.28),rgba(168,85,247,.28)); box-shadow:0 0 22px rgba(0,229,255,.2); border-color:rgba(0,229,255,.5); transform:scale(1.04); }
     .disc { text-align:center; font-size:.62rem; color:rgba(255,255,255,.18); margin-top:6px; }
     code { background:rgba(255,255,255,.07); padding:1px 6px; border-radius:4px; font-size:.83em; }
+
+    /* ── Welcome suggestion grid ──────────────────────────────────────────── */
+    .sugg-grid {
+      display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-top:20px; text-align:left;
+    }
+    .sugg-card {
+      display:flex; align-items:flex-start; gap:10px; padding:11px 13px; border-radius:12px;
+      background:rgba(255,255,255,0.035); border:1px solid rgba(255,255,255,0.07);
+      cursor:pointer; transition:all 0.18s;
+    }
+    .sugg-card:hover {
+      background:rgba(0,229,255,0.07); border-color:rgba(0,229,255,0.3);
+      transform:translateY(-1px); box-shadow:0 4px 16px rgba(0,0,0,0.3);
+    }
+    .sugg-icon { font-size:1.1rem; flex-shrink:0; margin-top:1px; }
+    .sugg-label { font-size:0.78rem; font-weight:600; color:var(--text); line-height:1.3; }
+    .sugg-sub   { font-size:0.7rem; color:var(--muted); margin-top:2px; line-height:1.4; }
+
+    /* ── Follow-up chips after response ───────────────────────────────────── */
+    .followup-row {
+      display:flex; flex-wrap:wrap; gap:6px; margin-top:10px; padding-top:10px;
+      border-top:1px solid rgba(255,255,255,0.06);
+    }
+    .followup-chip {
+      display:inline-flex; align-items:center; gap:4px; padding:5px 11px;
+      border-radius:16px; font-size:0.72rem; cursor:pointer; transition:all 0.15s;
+      background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.1);
+      color:var(--muted); white-space:nowrap;
+    }
+    .followup-chip:hover { background:rgba(0,229,255,0.08); border-color:rgba(0,229,255,0.35); color:var(--cyan); }
+
+    /* ── Copy button ─────────────────────────────────────────────────────── */
+    .row.bot { position:relative; }
+    .copy-btn {
+      position:absolute; top:6px; right:0; opacity:0; transition:opacity 0.15s;
+      background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.1);
+      border-radius:7px; padding:3px 8px; font-size:0.68rem; color:var(--muted);
+      cursor:pointer; display:flex; align-items:center; gap:4px;
+    }
+    .copy-btn:hover { background:rgba(0,229,255,0.1); border-color:rgba(0,229,255,0.3); color:var(--cyan); }
+    .row.bot:hover .copy-btn { opacity:1; }
+    .copy-btn.copied { color:var(--green); border-color:rgba(0,255,163,0.3); }
+
+    /* ── New Chat button ──────────────────────────────────────────────────── */
+    .new-chat-btn {
+      display:flex; align-items:center; gap:5px; padding:5px 12px; border-radius:8px;
+      background:rgba(255,255,255,0.05); border:1px solid rgba(255,255,255,0.1);
+      color:var(--muted); font-size:0.72rem; cursor:pointer; transition:all 0.18s;
+      font-family:'Inter',sans-serif;
+    }
+    .new-chat-btn:hover { background:rgba(168,85,247,0.1); border-color:rgba(168,85,247,0.3); color:var(--purple); }
+
+    /* ── Streaming reveal animation ───────────────────────────────────────── */
+    @keyframes streamIn { from{opacity:0;transform:translateY(5px)} to{opacity:1;transform:translateY(0)} }
+    .stream-el { animation:streamIn 0.28s ease both; }
   </style>
 </head>
 <body>
@@ -231,6 +286,10 @@
   </div>
   <div class="topbar-right">
     <div class="market-time" id="istTime"></div>
+    <button class="new-chat-btn" onclick="newChat()" title="Start a new conversation">
+      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 .49-4"/></svg>
+      New chat
+    </button>
     <div class="status-pill"><div class="dot"></div> Live</div>
   </div>
 </div>
@@ -252,15 +311,42 @@
   <div class="welcome" id="welcome">
     <span class="welcome-icon">📈</span>
     <h2>Your Friendly Neighborhood Stock Agent 🕷️</h2>
-    <p>Ask about any NSE/BSE stock. Fetches live data and gives BUY / HOLD / AVOID signals.<br><br>
-    Works in any browser — no installation, no API key, no server needed.</p>
+    <p>Ask about any NSE/BSE stock. Fetches live data and gives BUY / HOLD / AVOID signals.</p>
+    <div class="sugg-grid">
+      <div class="sugg-card" onclick="ask('top 5 stocks to buy today')">
+        <span class="sugg-icon">🚀</span>
+        <div><div class="sugg-label">Top picks today</div><div class="sugg-sub">Best BUY signals right now</div></div>
+      </div>
+      <div class="sugg-card" onclick="ask('market overview')">
+        <span class="sugg-icon">📊</span>
+        <div><div class="sugg-label">Market overview</div><div class="sugg-sub">Nifty 50 &amp; Sensex snapshot</div></div>
+      </div>
+      <div class="sugg-card" onclick="ask('banking sector stocks')">
+        <span class="sugg-icon">🏦</span>
+        <div><div class="sugg-label">Banking sector</div><div class="sugg-sub">HDFC, ICICI, SBI &amp; more</div></div>
+      </div>
+      <div class="sugg-card" onclick="ask('worst stocks to avoid')">
+        <span class="sugg-icon">⚠️</span>
+        <div><div class="sugg-label">Stocks to avoid</div><div class="sugg-sub">Bearish signals &amp; weak picks</div></div>
+      </div>
+      <div class="sugg-card" onclick="ask('best defence stocks')">
+        <span class="sugg-icon">🛡️</span>
+        <div><div class="sugg-label">Defence sector</div><div class="sugg-sub">HAL, BEL, Mazagon Dock</div></div>
+      </div>
+      <div class="sugg-card" onclick="ask('what is RSI and how to read it')">
+        <span class="sugg-icon">❓</span>
+        <div><div class="sugg-label">How to read RSI</div><div class="sugg-sub">Understand the indicators</div></div>
+      </div>
+    </div>
   </div>
 </div>
 
 <div class="inputbar">
   <div class="input-wrap">
     <textarea id="inp" rows="1" placeholder="Ask about any stock — e.g. Should I buy TCS?"></textarea>
-    <button class="send" id="sendBtn" onclick="sendMsg()">&#9658;</button>
+    <button class="send" id="sendBtn" onclick="sendMsg()" title="Send (Enter)">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+    </button>
   </div>
   <div class="disc">⚠️ Educational purposes only — not financial advice · Always do your own research</div>
 </div>
@@ -1148,6 +1234,135 @@ inp.addEventListener("keydown", function(e) {
 
 function ask(t) { inp.value = t; sendMsg(); }
 
+// ── Rotating placeholder ───────────────────────────────────────────────────
+var _placeholders = [
+  "Ask about any stock — e.g. Should I buy TCS?",
+  "Try: best IT stocks to buy right now",
+  "Try: HDFC Bank vs ICICI Bank",
+  "Try: worst stocks to avoid this week",
+  "Try: market overview — how is Nifty today?",
+  "Try: best defence stocks",
+  "Try: should I invest in Reliance?",
+  "Try: what is RSI and how to read it",
+  "Try: pharma sector stocks",
+  "Try: top 5 stocks under momentum",
+];
+var _phIdx = 0;
+setInterval(function() {
+  if (document.activeElement !== inp && !inp.value) {
+    _phIdx = (_phIdx + 1) % _placeholders.length;
+    inp.placeholder = _placeholders[_phIdx];
+  }
+}, 3500);
+
+// ── New Chat ───────────────────────────────────────────────────────────────
+function newChat() {
+  chat.innerHTML = '';
+  var w = document.createElement('div');
+  w.id = 'welcome';
+  w.className = 'welcome';
+  w.innerHTML = document.querySelector('.welcome')
+    ? ''  // already removed, just rebuild
+    : '';
+  // Rebuild welcome HTML
+  w.innerHTML = '<span class="welcome-icon">📈</span>' +
+    '<h2>Your Friendly Neighborhood Stock Agent 🕷️</h2>' +
+    '<p>Ask about any NSE/BSE stock. Fetches live data and gives BUY / HOLD / AVOID signals.</p>' +
+    '<div class="sugg-grid">' +
+      '<div class="sugg-card" onclick="ask(\'top 5 stocks to buy today\')"><span class="sugg-icon">🚀</span><div><div class="sugg-label">Top picks today</div><div class="sugg-sub">Best BUY signals right now</div></div></div>' +
+      '<div class="sugg-card" onclick="ask(\'market overview\')"><span class="sugg-icon">📊</span><div><div class="sugg-label">Market overview</div><div class="sugg-sub">Nifty 50 &amp; Sensex snapshot</div></div></div>' +
+      '<div class="sugg-card" onclick="ask(\'banking sector stocks\')"><span class="sugg-icon">🏦</span><div><div class="sugg-label">Banking sector</div><div class="sugg-sub">HDFC, ICICI, SBI &amp; more</div></div></div>' +
+      '<div class="sugg-card" onclick="ask(\'worst stocks to avoid\')"><span class="sugg-icon">⚠️</span><div><div class="sugg-label">Stocks to avoid</div><div class="sugg-sub">Bearish signals &amp; weak picks</div></div></div>' +
+      '<div class="sugg-card" onclick="ask(\'best defence stocks\')"><span class="sugg-icon">🛡️</span><div><div class="sugg-label">Defence sector</div><div class="sugg-sub">HAL, BEL, Mazagon Dock</div></div></div>' +
+      '<div class="sugg-card" onclick="ask(\'what is RSI and how to read it\')"><span class="sugg-icon">❓</span><div><div class="sugg-label">How to read RSI</div><div class="sugg-sub">Understand the indicators</div></div></div>' +
+    '</div>';
+  chat.appendChild(w);
+  _ctx.stocks = []; _ctx.sector = null;
+  inp.value = ''; inp.style.height = 'auto'; inp.focus();
+}
+
+// ── Streaming-reveal: animate response elements in progressively ───────────
+function streamBubble(bubble, html) {
+  var tmp = document.createElement('div');
+  tmp.innerHTML = html;
+  var els = Array.from(tmp.childNodes).filter(function(n) {
+    return n.nodeType === 1 || (n.nodeType === 3 && n.textContent.trim());
+  });
+  if (els.length < 2) { bubble.innerHTML = html; return; }
+  bubble.innerHTML = '';
+  els.forEach(function(el, i) {
+    var wrapper = (el.nodeType === 3) ? document.createElement('span') : el;
+    if (el.nodeType === 3) wrapper.textContent = el.textContent;
+    wrapper.classList.add('stream-el');
+    wrapper.style.animationDelay = Math.min(i * 55, 600) + 'ms';
+    bubble.appendChild(wrapper);
+  });
+}
+
+// ── Follow-up chips ────────────────────────────────────────────────────────
+function addFollowups(bubble, query, result) {
+  var q = query.toLowerCase();
+  var chips = [];
+  // Context-aware suggestions
+  if (_ctx.stocks.length > 0) {
+    var sym = _ctx.stocks[0].replace(/\.(NS|BO)$/i, '');
+    chips.push('Compare ' + sym + ' vs competitors');
+  }
+  if (_ctx.sector) {
+    var sec = _ctx.sector.charAt(0).toUpperCase() + _ctx.sector.slice(1);
+    chips.push('Top picks in ' + sec);
+  }
+  if (/top|best|buy|pick|recommend/i.test(q)) {
+    chips.push('Stocks to avoid');
+    chips.push('Market overview');
+  } else if (/worst|avoid|bad|weak/i.test(q)) {
+    chips.push('Top picks today');
+    chips.push('Market overview');
+  } else if (/market|nifty|sensex/i.test(q)) {
+    chips.push('Top 5 picks today');
+    chips.push('Banking sector');
+  } else if (/sector|banking|it\b|pharma|auto|fmcg|energy|defence|power|metal|realty|telecom|cement|infra/i.test(q)) {
+    chips.push('Top picks today');
+    chips.push('Worst stocks to avoid');
+  } else {
+    chips.push('Top picks today');
+    chips.push('Market overview');
+    chips.push('Compare stocks');
+  }
+  // Deduplicate, limit to 3
+  chips = chips.filter(function(v, i, a) { return a.indexOf(v) === i; }).slice(0, 3);
+  if (chips.length === 0) return;
+  var row = document.createElement('div');
+  row.className = 'followup-row';
+  chips.forEach(function(label) {
+    var btn = document.createElement('button');
+    btn.className = 'followup-chip';
+    btn.textContent = label;
+    btn.onclick = function() { ask(label); };
+    row.appendChild(btn);
+  });
+  bubble.appendChild(row);
+}
+
+// ── Copy button helper ─────────────────────────────────────────────────────
+function addCopyBtn(row, bubble) {
+  var btn = document.createElement('button');
+  btn.className = 'copy-btn';
+  btn.innerHTML = '<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg> Copy';
+  btn.onclick = function() {
+    var text = bubble.innerText || bubble.textContent;
+    navigator.clipboard.writeText(text).then(function() {
+      btn.innerHTML = '<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg> Copied!';
+      btn.classList.add('copied');
+      setTimeout(function() {
+        btn.innerHTML = '<svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg> Copy';
+        btn.classList.remove('copied');
+      }, 2000);
+    });
+  };
+  row.appendChild(btn);
+}
+
 function addUserBubble(text) {
   removeWelcome();
   var row = document.createElement("div");
@@ -1165,7 +1380,9 @@ function createBotBubble() {
   row.innerHTML = '<div class="av bot">&#x1F916;</div><div class="bubble" id="b' + id + '"><div class="typing"><span></span><span></span><span></span></div></div>';
   chat.appendChild(row);
   scrollBottom();
-  return document.getElementById("b" + id);
+  var bubble = document.getElementById("b" + id);
+  bubble._row = row;
+  return bubble;
 }
 
 async function sendMsg() {
@@ -1177,18 +1394,26 @@ async function sendMsg() {
   var bubble = createBotBubble();
   var q = text.toLowerCase().trim();
 
+  var _finishBubble = function(html, showFollowups) {
+    streamBubble(bubble, html);
+    if (showFollowups !== false) addFollowups(bubble, text, html);
+    if (bubble._row) addCopyBtn(bubble._row, bubble);
+    sendBtn.disabled = false; inp.focus();
+    scrollBottom();
+  };
+
   // --- Intent: greeting ---
   if (/^(hi+|hello+|hey+|good\s*(morning|evening|afternoon|night|day)|namaste|hii+)\b/i.test(q)) {
-    bubble.innerHTML = md(_greetMsg()); sendBtn.disabled = false; inp.focus(); return;
+    _finishBubble(md(_greetMsg()), false); return;
   }
   // --- Intent: help ---
   if (/\bhelp\b|what can you do|how (do i|to) use|what (do|can) you do\b/i.test(q)) {
-    bubble.innerHTML = md(_helpMsg()); sendBtn.disabled = false; inp.focus(); return;
+    _finishBubble(md(_helpMsg()), false); return;
   }
   // --- Intent: explain a financial term ---
   if (/\b(what (is|are|does)|explain|define|meaning of)\b/i.test(q)) {
     var expl = _explainMsg(q);
-    if (expl) { bubble.innerHTML = md(expl); sendBtn.disabled = false; inp.focus(); return; }
+    if (expl) { _finishBubble(md(expl), false); return; }
   }
 
   // --- Context: resolve follow-up pronouns ("is it safe?", "should I buy it?") ---
@@ -1215,14 +1440,14 @@ async function sendMsg() {
       scrollBottom();
     });
     clearInterval(pulse);
-    bubble.innerHTML = md(result);
+    _finishBubble(md(result));
   } catch(e) {
     clearInterval(pulse);
     bubble.innerHTML = '<span style="color:var(--red)">Failed to fetch data. Check your internet connection.<br><small>' + e.message + '</small></span>';
+    if (bubble._row) addCopyBtn(bubble._row, bubble);
+    sendBtn.disabled = false; inp.focus();
   }
   scrollBottom();
-  sendBtn.disabled = false;
-  inp.focus();
 }
 
 // ── Market Summary Bar ────────────────────────────────────────────────────────
