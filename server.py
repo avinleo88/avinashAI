@@ -1045,13 +1045,38 @@ def _mf_returns(data):
         "5Y":  cagr(365 * 5, 5),
     }
 
+_MF_SYNONYMS = {
+    r"\bbluechip\b":          "large cap",
+    r"\bblue\s*chip\b":       "large cap",
+    r"\bemerging\s*bluechip\b": "large & mid cap",
+    r"\bmulticap\b":          "multi cap",
+    r"\bflexicap\b":          "flexi cap",
+    r"\bmidcap\b":            "mid cap",
+    r"\bsmallcap\b":          "small cap",
+    r"\blargecap\b":          "large cap",
+    r"\bopportunity\b":       "opportunities",
+    r"\bopportunities\b":     "opportunities",
+    r"\btaxsaver\b":          "tax saver",
+    r"\belss\b":              "tax saver",
+}
+
+def _mf_normalize(q):
+    import re as _re
+    s = q.lower().strip()
+    for pat, rep in _MF_SYNONYMS.items():
+        s = _re.sub(pat, rep, s, flags=_re.IGNORECASE)
+    return s
+
 def _mf_search_and_fetch(q):
     """Search MFAPI, prefer Direct Growth, return analysis dict or None."""
-    r = requests.get(f"https://api.mfapi.in/mf/search?q={q}", timeout=10, headers=_MF_HEADERS)
-    results = r.json()
-    direct = [f for f in results
-              if "direct" in f["schemeName"].lower() and "growth" in f["schemeName"].lower()]
-    chosen = direct[0] if direct else (results[0] if results else None)
+    def _search(term):
+        r = requests.get(f"https://api.mfapi.in/mf/search?q={term}", timeout=10, headers=_MF_HEADERS)
+        results = r.json()
+        direct = [f for f in results
+                  if "direct" in f["schemeName"].lower() and "growth" in f["schemeName"].lower()]
+        return direct[0] if direct else (results[0] if results else None)
+
+    chosen = _search(q) or _search(_mf_normalize(q))
     if not chosen:
         return None
     code = str(chosen["schemeCode"])
