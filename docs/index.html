@@ -1182,7 +1182,7 @@ async function sendMsg() {
     bubble.innerHTML = md(_greetMsg()); sendBtn.disabled = false; inp.focus(); return;
   }
   // --- Intent: help ---
-  if (/\bhelp\b|what can you do|how (do i|to) use|what (do|can) you\b/i.test(q)) {
+  if (/\bhelp\b|what can you do|how (do i|to) use|what (do|can) you do\b/i.test(q)) {
     bubble.innerHTML = md(_helpMsg()); sendBtn.disabled = false; inp.focus(); return;
   }
   // --- Intent: explain a financial term ---
