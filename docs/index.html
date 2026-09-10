@@ -273,6 +273,46 @@
     @keyframes streamIn { from{opacity:0;transform:translateY(5px)} to{opacity:1;transform:translateY(0)} }
     .stream-el { animation:streamIn 0.28s ease both; }
     .resp-ts { display:block; font-size:0.68rem; color:var(--muted); margin-bottom:6px; }
+
+    /* ── Sparkline charts ─────────────────────────────────────────────────── */
+    .charts-row { display:flex; flex-wrap:wrap; gap:12px; margin-top:12px; padding-top:12px; border-top:1px solid rgba(255,255,255,0.06); }
+    .chart-card { flex:1; min-width:180px; max-width:260px; }
+    .chart-label { font-size:0.72rem; color:var(--muted); margin-bottom:4px; }
+    .chart-card canvas { width:100%; height:60px; border-radius:6px; display:block; }
+
+    /* ── Sentiment gauge ──────────────────────────────────────────────────── */
+    .sentiment-wrap { text-align:center; padding:8px 0 4px; }
+    .sentiment-score { font-size:2.8rem; font-weight:700; line-height:1; }
+    .sentiment-label { font-size:0.9rem; font-weight:600; margin-top:4px; }
+    .sentiment-bar-row { display:flex; height:8px; border-radius:4px; overflow:hidden; margin:12px 0 6px; gap:2px; }
+    .sentiment-bar-row .seg { border-radius:4px; transition:width 0.6s ease; }
+    .sentiment-breakdown { display:flex; justify-content:space-between; font-size:0.72rem; color:var(--muted); }
+    .sentiment-lists { display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-top:12px; }
+    .sentiment-col h4 { font-size:0.72rem; font-weight:600; letter-spacing:.08em; text-transform:uppercase; margin-bottom:6px; }
+    .sentiment-col.bull h4 { color:var(--green); }
+    .sentiment-col.bear h4 { color:var(--red); }
+    .sentiment-stock { display:flex; justify-content:space-between; align-items:center; font-size:0.78rem; padding:4px 0; border-bottom:1px solid rgba(255,255,255,0.05); }
+    .sentiment-stock:last-child { border-bottom:none; }
+
+    /* ── Screener results ─────────────────────────────────────────────────── */
+    .screener-header { font-size:0.72rem; color:var(--muted); margin-bottom:10px; }
+    .screener-grid { display:flex; flex-direction:column; gap:6px; }
+    .screener-row {
+      display:flex; align-items:center; justify-content:space-between;
+      padding:9px 12px; border-radius:10px;
+      background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.07);
+      transition:background 0.15s; gap:8px;
+    }
+    .screener-row:hover { background:rgba(255,255,255,0.06); cursor:pointer; }
+    .screener-name { font-size:0.82rem; font-weight:600; color:var(--text); min-width:110px; }
+    .screener-sym  { font-size:0.68rem; color:var(--muted); }
+    .screener-pills { display:flex; gap:5px; flex-wrap:wrap; flex:1; justify-content:center; }
+    .screener-pill { font-size:0.68rem; padding:2px 8px; border-radius:10px; border:1px solid; }
+    .screener-pill.buy   { color:var(--green); border-color:rgba(0,255,163,.25); background:rgba(0,255,163,.06); }
+    .screener-pill.hold  { color:var(--amber); border-color:rgba(255,179,0,.25); background:rgba(255,179,0,.06); }
+    .screener-pill.avoid { color:var(--red);   border-color:rgba(255,77,109,.25); background:rgba(255,77,109,.06); }
+    .screener-price { font-size:0.8rem; font-weight:600; text-align:right; min-width:60px; }
+    .screener-chg   { font-size:0.72rem; font-weight:600; min-width:48px; text-align:right; }
   </style>
 </head>
 <body>
@@ -305,6 +345,8 @@
   <div class="chip primary" onclick="showSectorHeatmap()">🌡️ Sectors</div>
   <div class="chip-divider"></div>
   <div class="chip" onclick="ask('Market overview today')">📊 Market overview</div>
+  <div class="chip" onclick="ask('market sentiment')">🧭 Sentiment</div>
+  <div class="chip" onclick="ask('screener: stocks with RSI below 35 above SMA50')">🔬 Screener</div>
   <span id="dynamicChips"></span>
 </div>
 
@@ -580,6 +622,7 @@ function parseResult(result) {
     hi52: Math.round(hi52 * 100) / 100,
     lo52: Math.round(lo52 * 100) / 100,
     w52pct: w52pct,
+    prices: prices.slice(-30),
   };
 }
 
@@ -1097,10 +1140,12 @@ async function buildResponse(query, onStatus) {
     // Save context for follow-up questions ("is it safe?", "compare it with X")
     _ctx.stocks = unique; _ctx.sector = null;
     var stockResults = [];
+    var _priceHistory = {};  // symbol -> prices array for sparklines
     stockFetched.forEach(function(item) {
       if (!item.result) return; // skip silently — already searched NSE
       var d = parseResult(item.result);
       if (!d) return;
+      if (d.prices && d.prices.length > 5) _priceHistory[d.symbol] = { prices: d.prices, name: d.name };
       var sig = analyse(d);
       var arrow = d.change >= 0 ? "+" : "";
       emit("### " + d.name);
@@ -1134,6 +1179,7 @@ async function buildResponse(query, onStatus) {
 
   emit("---");
   emit("*Rule-based technical analysis only — not financial advice.*");
+  _lastPriceHistory = typeof _priceHistory !== "undefined" ? _priceHistory : {};
   return lines.join("\n");
 }
 
@@ -1178,6 +1224,7 @@ var msgId   = 0;
 
 // Conversation context — remember last stocks for follow-up questions
 var _ctx = { stocks: [], sector: null };
+var _lastPriceHistory = {}; // populated by buildResponse; read by sendMsg to draw sparklines
 
 function _greetMsg() {
   return [
@@ -1232,6 +1279,173 @@ inp.addEventListener("keydown", function(e) {
 });
 
 function ask(t) { inp.value = t; sendMsg(); }
+
+// ── Sparkline canvas drawing ───────────────────────────────────────────────
+function drawSparkline(prices, color) {
+  var DPR = window.devicePixelRatio || 1;
+  var W = 240, H = 60;
+  var canvas = document.createElement('canvas');
+  canvas.width  = W * DPR; canvas.height = H * DPR;
+  canvas.style.cssText = 'width:' + W + 'px;height:' + H + 'px;display:block;border-radius:6px;';
+  var ctx = canvas.getContext('2d');
+  ctx.scale(DPR, DPR);
+  var PAD = { t:6, r:6, b:14, l:6 };
+  var pw = W - PAD.l - PAD.r, ph = H - PAD.t - PAD.b;
+  var lo = Math.min.apply(null, prices), hi = Math.max.apply(null, prices);
+  var rng = hi - lo || 1;
+  var step = pw / Math.max(prices.length - 1, 1);
+  function px(i) { return PAD.l + i * step; }
+  function py(v) { return PAD.t + ph - ((v - lo) / rng) * ph; }
+  // Gradient fill
+  var grad = ctx.createLinearGradient(0, PAD.t, 0, H);
+  grad.addColorStop(0, color + '44'); grad.addColorStop(1, color + '00');
+  ctx.beginPath();
+  ctx.moveTo(px(0), py(prices[0]));
+  for (var i = 1; i < prices.length; i++) ctx.lineTo(px(i), py(prices[i]));
+  ctx.lineTo(px(prices.length - 1), H); ctx.lineTo(px(0), H); ctx.closePath();
+  ctx.fillStyle = grad; ctx.fill();
+  // Line
+  ctx.beginPath();
+  ctx.moveTo(px(0), py(prices[0]));
+  for (var i = 1; i < prices.length; i++) ctx.lineTo(px(i), py(prices[i]));
+  ctx.strokeStyle = color; ctx.lineWidth = 1.5; ctx.lineJoin = 'round'; ctx.stroke();
+  // End dot
+  var lx = px(prices.length - 1), ly = py(prices[prices.length - 1]);
+  ctx.beginPath(); ctx.arc(lx, ly, 2.5, 0, Math.PI * 2);
+  ctx.fillStyle = color; ctx.fill();
+  // Price labels
+  ctx.fillStyle = 'rgba(255,255,255,0.45)'; ctx.font = '9px Inter,sans-serif';
+  ctx.fillText('₹' + Math.round(lo), PAD.l, H - 2);
+  ctx.textAlign = 'right';
+  ctx.fillText('₹' + Math.round(hi), W - PAD.r, PAD.t + 9);
+  return canvas;
+}
+
+// Append sparklines to bubble after individual stock analysis
+function appendSparklines(bubble) {
+  var ph = _lastPriceHistory;
+  var syms = Object.keys(ph);
+  if (syms.length === 0) return;
+  var row = document.createElement('div');
+  row.className = 'charts-row';
+  syms.forEach(function(sym) {
+    var entry = ph[sym];
+    var prices = entry.prices;
+    var trend = prices[prices.length - 1] >= prices[0];
+    var color = trend ? '#00ffa3' : '#ff4d6d';
+    var card = document.createElement('div');
+    card.className = 'chart-card';
+    var lbl = document.createElement('div');
+    lbl.className = 'chart-label';
+    lbl.textContent = (entry.name || sym.replace('.NS','')) + ' · 30-day price';
+    card.appendChild(lbl);
+    card.appendChild(drawSparkline(prices, color));
+    row.appendChild(card);
+  });
+  bubble.insertBefore(row, bubble.querySelector('.followup-row') || null);
+}
+
+// ── Sentiment gauge renderer ───────────────────────────────────────────────
+function renderSentiment(data, bubble) {
+  var score = data.score;
+  var color = score >= 55 ? 'var(--green)' : score >= 45 ? 'var(--amber)' : 'var(--red)';
+  var icon  = score >= 70 ? '🚀' : score >= 55 ? '📈' : score >= 45 ? '😐' : score >= 30 ? '📉' : '💥';
+  var total = data.total || 1;
+  var bullPct = Math.round((data.bullish / total) * 100);
+  var neutralPct = Math.round((data.neutral / total) * 100);
+  var bearPct = 100 - bullPct - neutralPct;
+
+  var html = '<h2 style="margin-bottom:8px">📊 Nifty 50 Market Sentiment</h2>';
+  html += '<div class="sentiment-wrap">';
+  html += '<div class="sentiment-score" style="color:' + color + '">' + icon + ' ' + score + '</div>';
+  html += '<div class="sentiment-label" style="color:' + color + '">' + data.label + '</div>';
+  html += '<div style="font-size:.72rem;color:var(--muted);margin-top:4px">out of 100 — based on ' + data.total + ' Nifty 50 stocks</div>';
+  html += '</div>';
+
+  html += '<div class="sentiment-bar-row" style="margin-top:14px">';
+  html += '<div class="seg" style="width:' + bullPct + '%;background:var(--green);opacity:.7"></div>';
+  html += '<div class="seg" style="width:' + neutralPct + '%;background:var(--amber);opacity:.7"></div>';
+  html += '<div class="seg" style="width:' + bearPct + '%;background:var(--red);opacity:.7"></div>';
+  html += '</div>';
+  html += '<div class="sentiment-breakdown">';
+  html += '<span style="color:var(--green)">🟢 ' + data.bullish + ' Bullish</span>';
+  html += '<span style="color:var(--amber)">🟡 ' + data.neutral + ' Neutral</span>';
+  html += '<span style="color:var(--red)">🔴 ' + data.bearish + ' Bearish</span>';
+  html += '</div>';
+
+  html += '<div class="sentiment-lists">';
+  html += '<div class="sentiment-col bull"><h4>Top Bullish</h4>';
+  (data.top_bullish || []).forEach(function(s) {
+    html += '<div class="sentiment-stock"><span>' + s.name + '</span><span style="color:var(--green)">Score ' + (s.score > 0 ? '+' : '') + s.score + '</span></div>';
+  });
+  html += '</div>';
+  html += '<div class="sentiment-col bear"><h4>Top Bearish</h4>';
+  (data.top_bearish || []).forEach(function(s) {
+    html += '<div class="sentiment-stock"><span>' + s.name + '</span><span style="color:var(--red)">Score ' + s.score + '</span></div>';
+  });
+  html += '</div></div>';
+  html += '<p style="font-size:.68rem;color:var(--muted);margin-top:10px">⚠️ Rule-based technical signals only — not financial advice.</p>';
+  bubble.innerHTML = html;
+}
+
+// ── Screener query parser ──────────────────────────────────────────────────
+function parseScreenerQuery(q) {
+  var p = {}, m;
+  m = q.match(/rsi\s*(?:below|<|under|less\s+than)\s*(\d+)/i);  if (m) p.max_rsi = m[1];
+  m = q.match(/rsi\s*(?:above|>|over|greater\s+than)\s*(\d+)/i); if (m) p.min_rsi = m[1];
+  m = q.match(/rsi\s+between\s+(\d+)\s+and\s+(\d+)/i);
+  if (m) { p.min_rsi = m[1]; p.max_rsi = m[2]; }
+  if (/oversold/i.test(q) && !p.max_rsi) p.max_rsi = '35';
+  if (/overbought/i.test(q) && !p.min_rsi) p.min_rsi = '65';
+  if (/above\s+sma\s*20|above.*20.?day/i.test(q)) p.above_sma20 = 'true';
+  if (/above\s+sma\s*50|above.*50.?day/i.test(q)) p.above_sma50 = 'true';
+  if (/below\s+sma\s*20|below.*20.?day/i.test(q)) p.below_sma20 = 'true';
+  if (/positive\s+macd|bullish\s+macd|macd\s*(positive|>|above)/i.test(q)) p.macd_positive = 'true';
+  if (/negative\s+macd|bearish\s+macd|macd\s*(negative|<|below)/i.test(q)) p.macd_negative = 'true';
+  if (/\bstrong\s+buy\b/i.test(q)) p.min_score = '4';
+  else if (/\bbuy\s+signal/i.test(q)) p.min_score = '2';
+  if (/\bavoid\b.*(?:screener|filter)/i.test(q) || /(?:screener|filter).*\bavoid\b/i.test(q)) p.max_score = '-1';
+  return p;
+}
+
+function renderScreener(results, params, bubble) {
+  if (!results || results.length === 0) {
+    bubble.innerHTML = '<p>No stocks matched those filters in the Nifty 50 universe. Try relaxing the criteria.</p>';
+    return;
+  }
+  var desc = [];
+  if (params.max_rsi)    desc.push('RSI < ' + params.max_rsi);
+  if (params.min_rsi)    desc.push('RSI > ' + params.min_rsi);
+  if (params.above_sma20 === 'true') desc.push('Above SMA20');
+  if (params.above_sma50 === 'true') desc.push('Above SMA50');
+  if (params.below_sma20 === 'true') desc.push('Below SMA20');
+  if (params.macd_positive === 'true') desc.push('MACD +ve');
+  if (params.macd_negative === 'true') desc.push('MACD −ve');
+  if (params.min_score)  desc.push('Score ≥ ' + params.min_score);
+
+  var html = '<h3>🔬 Screener Results</h3>';
+  html += '<div class="screener-header">Filters: <strong>' + (desc.join(' · ') || 'none') + '</strong> · ' + results.length + ' matches (Nifty 50)</div>';
+  html += '<div class="screener-grid">';
+  results.forEach(function(s) {
+    var vc = s.verdict.includes('BUY') ? 'buy' : s.verdict.includes('AVOID') ? 'avoid' : 'hold';
+    var chgColor = s.change_pct >= 0 ? 'var(--green)' : 'var(--red)';
+    var chgSign  = s.change_pct >= 0 ? '+' : '';
+    html += '<div class="screener-row" onclick="ask(\'' + s.name.replace(/'/g, "\\'") + '\')">';
+    html += '<div><div class="screener-name">' + s.name + '</div>';
+    html += '<div class="screener-sym">' + s.symbol.replace('.NS','') + '</div></div>';
+    html += '<div class="screener-pills">';
+    html += '<span class="screener-pill ' + vc + '">' + s.verdict + '</span>';
+    html += '<span class="screener-pill hold">RSI ' + s.rsi + '</span>';
+    html += '<span class="screener-pill hold">1M ' + (s.ret_1m >= 0 ? '+' : '') + s.ret_1m + '%</span>';
+    html += '</div>';
+    html += '<div><div class="screener-price">₹' + s.price.toLocaleString('en-IN') + '</div>';
+    html += '<div class="screener-chg" style="color:' + chgColor + '">' + chgSign + s.change_pct + '%</div></div>';
+    html += '</div>';
+  });
+  html += '</div>';
+  html += '<p style="font-size:.68rem;color:var(--muted);margin-top:10px">⚠️ Technical screener only — not financial advice.</p>';
+  bubble.innerHTML = html;
+}
 
 // ── Rotating placeholder ───────────────────────────────────────────────────
 var _placeholders = [
@@ -1419,6 +1633,19 @@ async function sendMsg() {
   // --- Slash commands ---
   if (/^\/clear$|^\/new$|^\/reset$/.test(q)) { newChat(); return; }
 
+  // --- Intent: market sentiment ---
+  var isSentiment = /\b(market\s+sentiment|fear.?(?:and|&|n).?greed|nifty\s+health|market\s+health|market\s+mood|overall\s+market|bull(?:ish)?\s+market|bear(?:ish)?\s+market)\b/i.test(q) ||
+    /\bhow\s+(bullish|bearish|healthy|strong|weak)\s+(?:is\s+)?(?:the\s+)?market\b/i.test(q) ||
+    /\bsentiment\b/i.test(q);
+
+  // --- Intent: screener ---
+  var isScreener = /\bscreen(?:er)?\b/i.test(q) ||
+    /\bfilter\s+stocks?\b/i.test(q) ||
+    /\bstocks?\s+with\s+rsi\b/i.test(q) ||
+    /\bstocks?\s+(?:below|above)\s+sma\b/i.test(q) ||
+    /\brsi\s*[<>]\s*\d+\b/i.test(q) ||
+    /\bshow\b.*\bstocks?\b.*\brsi\b/i.test(q);
+
   var _finishBubble = function(html, showFollowups) {
     streamBubble(bubble, html);
     if (showFollowups !== false) addFollowups(bubble, text, html);
@@ -1431,6 +1658,48 @@ async function sendMsg() {
     sendBtn.disabled = false; inp.focus();
     scrollBottom();
   };
+
+  // --- Handle: sentiment ---
+  if (isSentiment) {
+    var backend = BACKEND_URL || 'http://localhost:5050';
+    bubble.innerHTML = '<div class="status-row"><div class="spin"></div><span style="font-size:.78rem;color:var(--cyan)">Scanning Nifty 50 sentiment...</span></div>';
+    try {
+      var sResp = await fetch(backend + '/sentiment', { signal: AbortSignal.timeout(35000) });
+      var sData = await sResp.json();
+      if (sData.error) throw new Error(sData.error);
+      renderSentiment(sData, bubble);
+    } catch(e) {
+      bubble.innerHTML = '<span style="color:var(--red)">Could not fetch sentiment. ' + e.message + '</span>';
+    }
+    var ts2 = document.createElement('div'); ts2.className = 'resp-ts';
+    ts2.textContent = new Date().toLocaleString('en-IN', { day:'numeric', month:'short', year:'numeric', hour:'2-digit', minute:'2-digit' });
+    bubble.appendChild(ts2);
+    if (bubble._row) addCopyBtn(bubble._row, bubble);
+    sendBtn.disabled = false; inp.focus(); scrollBottom();
+    return;
+  }
+
+  // --- Handle: screener ---
+  if (isScreener) {
+    var backend = BACKEND_URL || 'http://localhost:5050';
+    var scParams = parseScreenerQuery(q);
+    var qs = Object.keys(scParams).map(function(k) { return k + '=' + encodeURIComponent(scParams[k]); }).join('&');
+    bubble.innerHTML = '<div class="status-row"><div class="spin"></div><span style="font-size:.78rem;color:var(--cyan)">Running screener on Nifty 50...</span></div>';
+    try {
+      var scResp = await fetch(backend + '/screener' + (qs ? '?' + qs : ''), { signal: AbortSignal.timeout(35000) });
+      var scData = await scResp.json();
+      if (scData.error) throw new Error(scData.error);
+      renderScreener(scData, scParams, bubble);
+    } catch(e) {
+      bubble.innerHTML = '<span style="color:var(--red)">Screener failed. ' + e.message + '</span>';
+    }
+    var ts3 = document.createElement('div'); ts3.className = 'resp-ts';
+    ts3.textContent = new Date().toLocaleString('en-IN', { day:'numeric', month:'short', year:'numeric', hour:'2-digit', minute:'2-digit' });
+    bubble.appendChild(ts3);
+    if (bubble._row) addCopyBtn(bubble._row, bubble);
+    sendBtn.disabled = false; inp.focus(); scrollBottom();
+    return;
+  }
 
   // --- Intent: greeting ---
   if (/^(hi+|hello+|hey+|good\s*(morning|evening|afternoon|night|day)|namaste|hii+)\b/i.test(q)) {
@@ -1471,6 +1740,8 @@ async function sendMsg() {
     });
     clearInterval(pulse);
     _finishBubble(md(result));
+    // Append sparklines for individual stock queries
+    if (Object.keys(_lastPriceHistory).length > 0) appendSparklines(bubble);
   } catch(e) {
     clearInterval(pulse);
     bubble.innerHTML = '<span style="color:var(--red)">Failed to fetch data. Check your internet connection.<br><small>' + e.message + '</small></span>';

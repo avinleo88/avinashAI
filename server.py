@@ -768,6 +768,172 @@ def ask():
                     headers={"Cache-Control":"no-cache","X-Accel-Buffering":"no"})
 
 
+@app.route("/sentiment")
+def sentiment():
+    """Compute overall Nifty 50 market sentiment score (0-100)."""
+    try:
+        data = yf.download(NIFTY50_SYMS, period="3mo", progress=False, auto_adjust=True)
+        closes_all = data["Close"]
+        bullish = bearish = neutral = 0
+        top_bullish, top_bearish = [], []
+        all_scores = []
+
+        for sym in NIFTY50_SYMS:
+            try:
+                closes = closes_all[sym].dropna()
+                if len(closes) < 22:
+                    continue
+                cur = float(closes.iloc[-1])
+                delta = closes.diff()
+                gain  = delta.clip(lower=0).rolling(14).mean()
+                loss  = (-delta.clip(upper=0)).rolling(14).mean()
+                rs    = gain / loss.replace(0, 1e-9)
+                rsi   = float((100 - 100 / (1 + rs)).iloc[-1])
+                sma20 = float(closes.rolling(20).mean().iloc[-1])
+                sma50 = float(closes.rolling(50).mean().iloc[-1]) if len(closes) >= 50 else sma20
+                ema12 = closes.ewm(span=12).mean()
+                ema26 = closes.ewm(span=26).mean()
+                macd  = float((ema12 - ema26).iloc[-1])
+
+                score = 0
+                if rsi < 30:   score += 2
+                elif rsi < 45: score += 1
+                elif rsi > 70: score -= 2
+                elif rsi > 60: score -= 1
+                if cur > sma20 and sma20 > sma50:    score += 2
+                elif cur > sma20:                      score += 1
+                elif cur < sma20 and sma20 < sma50:   score -= 2
+                elif cur < sma20:                      score -= 1
+                if macd > 0: score += 1
+                else:        score -= 1
+
+                all_scores.append(score)
+                name = NAME_MAP.get(sym, sym.replace(".NS", ""))
+                if score >= 2:
+                    bullish += 1
+                    if len(top_bullish) < 4:
+                        top_bullish.append({"name": name, "score": score, "rsi": round(rsi, 1)})
+                elif score <= -2:
+                    bearish += 1
+                    if len(top_bearish) < 4:
+                        top_bearish.append({"name": name, "score": score, "rsi": round(rsi, 1)})
+                else:
+                    neutral += 1
+            except Exception:
+                continue
+
+        total = bullish + bearish + neutral
+        if total == 0:
+            return json.dumps({"error": "no data"}), 502, {"Access-Control-Allow-Origin": "*"}
+
+        score_pct = round((bullish / total) * 100)
+        avg = round(sum(all_scores) / len(all_scores), 1) if all_scores else 0
+
+        if score_pct >= 70:   label = "Strongly Bullish"
+        elif score_pct >= 55: label = "Bullish"
+        elif score_pct >= 45: label = "Neutral"
+        elif score_pct >= 30: label = "Bearish"
+        else:                 label = "Strongly Bearish"
+
+        return Response(json.dumps({
+            "score": score_pct, "label": label, "avg_score": avg,
+            "bullish": bullish, "bearish": bearish, "neutral": neutral, "total": total,
+            "top_bullish": top_bullish, "top_bearish": top_bearish,
+        }), content_type="application/json", headers={"Access-Control-Allow-Origin": "*"})
+    except Exception as e:
+        return json.dumps({"error": str(e)}), 502, {"Access-Control-Allow-Origin": "*"}
+
+
+@app.route("/screener")
+def screener():
+    """Filter Nifty 50 stocks by technical criteria."""
+    try:
+        min_rsi   = float(request.args.get("min_rsi", 0))
+        max_rsi   = float(request.args.get("max_rsi", 100))
+        above_sma20 = request.args.get("above_sma20", "").lower() == "true"
+        above_sma50 = request.args.get("above_sma50", "").lower() == "true"
+        below_sma20 = request.args.get("below_sma20", "").lower() == "true"
+        macd_pos  = request.args.get("macd_positive", "").lower() == "true"
+        macd_neg  = request.args.get("macd_negative", "").lower() == "true"
+        min_score = int(request.args.get("min_score", -10))
+        max_score = int(request.args.get("max_score", 10))
+
+        data = yf.download(NIFTY50_SYMS, period="3mo", progress=False, auto_adjust=True)
+        closes_all = data["Close"]
+        volumes_all = data.get("Volume", None)
+        results = []
+
+        for sym in NIFTY50_SYMS:
+            try:
+                closes = closes_all[sym].dropna()
+                if len(closes) < 22:
+                    continue
+                cur  = float(closes.iloc[-1])
+                prev = float(closes.iloc[-2])
+
+                delta = closes.diff()
+                gain  = delta.clip(lower=0).rolling(14).mean()
+                loss  = (-delta.clip(upper=0)).rolling(14).mean()
+                rs    = gain / loss.replace(0, 1e-9)
+                rsi   = round(float((100 - 100 / (1 + rs)).iloc[-1]), 1)
+                sma20 = round(float(closes.rolling(20).mean().iloc[-1]), 2)
+                sma50 = round(float(closes.rolling(50).mean().iloc[-1]), 2) if len(closes) >= 50 else sma20
+                ema12 = closes.ewm(span=12).mean()
+                ema26 = closes.ewm(span=26).mean()
+                macd  = round(float((ema12 - ema26).iloc[-1]), 2)
+
+                # Apply filters
+                if rsi < min_rsi or rsi > max_rsi:   continue
+                if above_sma20 and cur <= sma20:      continue
+                if above_sma50 and cur <= sma50:      continue
+                if below_sma20 and cur >= sma20:      continue
+                if macd_pos and macd <= 0:            continue
+                if macd_neg and macd >= 0:            continue
+
+                # Score
+                score = 0
+                if rsi < 30:   score += 2
+                elif rsi < 45: score += 1
+                elif rsi > 70: score -= 2
+                elif rsi > 60: score -= 1
+                if cur > sma20 and sma20 > sma50:    score += 2
+                elif cur > sma20:                      score += 1
+                elif cur < sma20 and sma20 < sma50:   score -= 2
+                elif cur < sma20:                      score -= 1
+                if macd > 0: score += 1
+                else:        score -= 1
+
+                if score < min_score or score > max_score: continue
+
+                verdict = ("STRONG BUY" if score >= 4 else "BUY" if score >= 2
+                           else "HOLD" if score >= 0 else "AVOID" if score >= -2 else "STRONG AVOID")
+                ret_1m = round(((cur - float(closes.iloc[-22])) / float(closes.iloc[-22])) * 100, 2)
+
+                vol_ratio = 1.0
+                if volumes_all is not None and sym in volumes_all.columns:
+                    vols = volumes_all[sym].dropna()
+                    if len(vols) >= 20:
+                        avg_v = float(vols.tail(20).mean())
+                        vol_ratio = round(float(vols.iloc[-1]) / avg_v, 2) if avg_v else 1
+
+                results.append({
+                    "symbol": sym, "name": NAME_MAP.get(sym, sym.replace(".NS", "")),
+                    "price": round(cur, 2),
+                    "change_pct": round(((cur - prev) / prev) * 100, 2) if prev else 0,
+                    "score": score, "verdict": verdict,
+                    "rsi": rsi, "sma20": sma20, "sma50": sma50, "macd": macd,
+                    "ret_1m": ret_1m, "vol_ratio": vol_ratio,
+                })
+            except Exception:
+                continue
+
+        results.sort(key=lambda x: x["score"], reverse=True)
+        return Response(json.dumps(results[:20]), content_type="application/json",
+                        headers={"Access-Control-Allow-Origin": "*"})
+    except Exception as e:
+        return json.dumps({"error": str(e)}), 502, {"Access-Control-Allow-Origin": "*"}
+
+
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5050))
     print(f"✓  Free Stock Agent — open http://localhost:{port} in your browser")
