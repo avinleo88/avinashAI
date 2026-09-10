@@ -2205,7 +2205,7 @@ async function sendMsg() {
     if (sipParams.fundQ) {
       try {
         var backend = BACKEND_URL || 'http://localhost:5050';
-        var sfr = await fetch(backend + '/mf/analyze?q=' + encodeURIComponent(sipParams.fundQ), { signal: AbortSignal.timeout(15000) });
+        var sfr = await fetch(backend + '/mf/analyze?q=' + encodeURIComponent(sipParams.fundQ), { signal: AbortSignal.timeout(90000) });
         var sfd = await sfr.json();
         if (!sfd.error) sipFund = sfd;
       } catch(e) {}
@@ -2228,7 +2228,7 @@ async function sendMsg() {
     var backend = BACKEND_URL || 'http://localhost:5050';
     bubble.innerHTML = '<div class="status-row"><div class="spin"></div><span style="font-size:.78rem;color:var(--cyan)">Finding top ' + cat + ' funds...</span></div>';
     try {
-      var mfsr = await fetch(backend + '/mf/top?category=' + encodeURIComponent(cat), { signal: AbortSignal.timeout(40000) });
+      var mfsr = await fetch(backend + '/mf/top?category=' + encodeURIComponent(cat), { signal: AbortSignal.timeout(90000) });
       var mfsd = await mfsr.json();
       if (mfsd.error) throw new Error(mfsd.error);
       renderMFScreener(mfsd, cat, bubble);
@@ -2251,7 +2251,7 @@ async function sendMsg() {
       var backend = BACKEND_URL || 'http://localhost:5050';
       bubble.innerHTML = '<div class="status-row"><div class="spin"></div><span style="font-size:.78rem;color:var(--cyan)">Comparing...</span></div>';
       try {
-        var mfcr = await fetch(backend + '/mf/compare?q1=' + encodeURIComponent(cq1) + '&q2=' + encodeURIComponent(cq2), { signal: AbortSignal.timeout(35000) });
+        var mfcr = await fetch(backend + '/mf/compare?q1=' + encodeURIComponent(cq1) + '&q2=' + encodeURIComponent(cq2), { signal: AbortSignal.timeout(90000) });
         var mfcd = await mfcr.json();
         if (mfcd.error) throw new Error(mfcd.error);
         renderMFCompare(mfcd, bubble);
@@ -2272,7 +2272,7 @@ async function sendMsg() {
     var mfQ = q.replace(/\b(analyze|analysis|tell me about|what about|how is|should i (buy|invest in)|is|any good|best|details|info|information|nav of|nav for|mutual\s*fund|mf\b)\b/ig,'').trim() || q;
     bubble.innerHTML = '<div class="status-row"><div class="spin"></div><span style="font-size:.78rem;color:var(--cyan)">Searching mutual fund database...</span></div>';
     try {
-      var mfar = await fetch(backend + '/mf/analyze?q=' + encodeURIComponent(mfQ), { signal: AbortSignal.timeout(20000) });
+      var mfar = await fetch(backend + '/mf/analyze?q=' + encodeURIComponent(mfQ), { signal: AbortSignal.timeout(90000) });
       var mfad = await mfar.json();
       if (mfad.error) throw new Error(mfad.error);
       renderMFAnalysis(mfad, bubble);
