@@ -954,7 +954,7 @@ def screener():
 
 
 @app.route("/news")
-def news():    """Return recent headlines for a stock using yfinance .news property."""
+def news():
     symbol = request.args.get("symbol", "").upper().strip()
     if not symbol:
         return Response(json.dumps([]), content_type="application/json",
