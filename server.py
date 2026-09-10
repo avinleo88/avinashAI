@@ -4,6 +4,7 @@ Pure technical analysis using yfinance + rule-based signals.
 """
 
 import os, json, time, csv, io, threading
+import requests
 import yfinance as yf
 import warnings
 warnings.filterwarnings("ignore")
@@ -953,8 +954,7 @@ def screener():
 
 
 @app.route("/news")
-def news():
-    """Return recent headlines for a stock using yfinance .news property."""
+def news():    """Return recent headlines for a stock using yfinance .news property."""
     symbol = request.args.get("symbol", "").upper().strip()
     if not symbol:
         return Response(json.dumps([]), content_type="application/json",
@@ -980,6 +980,244 @@ def news():
                 items.append({"title": title, "publisher": pub,
                                "link": link, "published": int(ts)})
         return Response(json.dumps(items), content_type="application/json",
+                        headers={"Access-Control-Allow-Origin": "*"})
+    except Exception as e:
+        return json.dumps({"error": str(e)}), 502, {"Access-Control-Allow-Origin": "*"}
+
+
+# ── Mutual Fund helpers ───────────────────────────────────────────────────────
+_MF_HEADERS = {"User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7)"}
+
+def _mf_fetch(code):
+    r = requests.get(f"https://api.mfapi.in/mf/{code}", timeout=15, headers=_MF_HEADERS)
+    return r.json()
+
+def _mf_returns(data):
+    if not data:
+        return {}
+    navs = []
+    for d in data:
+        try:
+            navs.append(float(d["nav"]))
+        except (ValueError, KeyError):
+            pass
+    if not navs:
+        return {}
+    cur = navs[0]
+
+    def ret(idx):
+        if len(navs) > idx and navs[idx]:
+            return round(((cur - navs[idx]) / navs[idx]) * 100, 2)
+        return None
+
+    def cagr(idx, years):
+        if len(navs) > idx and navs[idx] and years:
+            return round(((cur / navs[idx]) ** (1 / years) - 1) * 100, 2)
+        return None
+
+    return {
+        "1M":  ret(30),
+        "3M":  ret(90),
+        "6M":  ret(180),
+        "1Y":  cagr(365, 1),
+        "3Y":  cagr(365 * 3, 3),
+        "5Y":  cagr(365 * 5, 5),
+    }
+
+def _mf_search_and_fetch(q):
+    """Search MFAPI, prefer Direct Growth, return analysis dict or None."""
+    r = requests.get(f"https://api.mfapi.in/mf/search?q={q}", timeout=10, headers=_MF_HEADERS)
+    results = r.json()
+    direct = [f for f in results
+              if "direct" in f["schemeName"].lower() and "growth" in f["schemeName"].lower()]
+    chosen = direct[0] if direct else (results[0] if results else None)
+    if not chosen:
+        return None
+    code = str(chosen["schemeCode"])
+    fund = _mf_fetch(code)
+    meta = fund.get("meta", {})
+    data = fund.get("data", [])
+    if not data:
+        return None
+    prices = [float(d["nav"]) for d in reversed(data[:365])]
+    return {
+        "type": "mf",
+        "code": code,
+        "name": meta.get("scheme_name", ""),
+        "category": meta.get("scheme_category", ""),
+        "type_label": meta.get("scheme_type", ""),
+        "fund_house": meta.get("fund_house", ""),
+        "current_nav": round(float(data[0]["nav"]), 4),
+        "nav_date": data[0].get("date", ""),
+        "returns": _mf_returns(data),
+        "prices": prices,
+    }
+
+def _stock_as_mf_format(q):
+    """Fetch a stock and return it in MF-compatible returns format."""
+    sym = q.strip().upper()
+    for pop_name, pop_sym in POPULAR.items():
+        if pop_name in q.lower():
+            sym = pop_sym
+            break
+    else:
+        if "." not in sym and "^" not in sym:
+            sym += ".NS"
+    try:
+        ticker = yf.Ticker(sym)
+        hist5y = ticker.history(period="5y")
+        if hist5y.empty:
+            return None
+        prices = hist5y["Close"].tolist()
+        cur = prices[-1]
+        info = ticker.info
+
+        def ret_at(n):
+            if len(prices) > n and prices[-(n+1)]:
+                return round(((cur - prices[-(n+1)]) / prices[-(n+1)]) * 100, 2)
+            return None
+
+        def cagr_at(n, yrs):
+            if len(prices) > n and prices[-(n+1)] and yrs:
+                return round(((cur / prices[-(n+1)]) ** (1/yrs) - 1) * 100, 2)
+            return None
+
+        return {
+            "type": "stock",
+            "code": sym,
+            "name": info.get("longName") or NAME_MAP.get(sym, sym.replace(".NS", "")),
+            "category": info.get("sector", "Equity"),
+            "type_label": "Stock",
+            "fund_house": "NSE",
+            "current_nav": round(cur, 2),
+            "nav_date": "",
+            "returns": {
+                "1M":  ret_at(22),
+                "3M":  ret_at(66),
+                "6M":  ret_at(130),
+                "1Y":  cagr_at(252, 1),
+                "3Y":  cagr_at(756, 3),
+                "5Y":  cagr_at(1260, 5),
+            },
+            "prices": prices[-365:] if len(prices) > 365 else prices,
+        }
+    except Exception:
+        return None
+
+
+@app.route("/mf/search")
+def mf_search():
+    q = request.args.get("q", "").strip()
+    if len(q) < 2:
+        return Response(json.dumps([]), content_type="application/json",
+                        headers={"Access-Control-Allow-Origin": "*"})
+    try:
+        r = requests.get(f"https://api.mfapi.in/mf/search?q={q}", timeout=10, headers=_MF_HEADERS)
+        results = r.json()
+        direct = [{"code": f["schemeCode"], "name": f["schemeName"]}
+                  for f in results
+                  if "direct" in f["schemeName"].lower() and "growth" in f["schemeName"].lower()]
+        return Response(json.dumps(direct[:10]), content_type="application/json",
+                        headers={"Access-Control-Allow-Origin": "*"})
+    except Exception as e:
+        return json.dumps({"error": str(e)}), 502, {"Access-Control-Allow-Origin": "*"}
+
+
+@app.route("/mf/analyze")
+def mf_analyze():
+    q = request.args.get("q", "").strip()
+    if not q:
+        return json.dumps({"error": "no query"}), 400, {"Access-Control-Allow-Origin": "*"}
+    try:
+        result = _mf_search_and_fetch(q)
+        if not result:
+            return json.dumps({"error": "not found"}), 404, {"Access-Control-Allow-Origin": "*"}
+        return Response(json.dumps(result), content_type="application/json",
+                        headers={"Access-Control-Allow-Origin": "*"})
+    except Exception as e:
+        return json.dumps({"error": str(e)}), 502, {"Access-Control-Allow-Origin": "*"}
+
+
+@app.route("/mf/compare")
+def mf_compare():
+    from concurrent.futures import ThreadPoolExecutor
+    queries = [request.args.get(f"q{i}", "").strip() for i in range(1, 5)]
+    queries = [q for q in queries if q][:4]
+    if len(queries) < 2:
+        return json.dumps({"error": "need at least q1 and q2"}), 400, {"Access-Control-Allow-Origin": "*"}
+
+    def fetch_one(q):
+        # Try MF first, then stock
+        try:
+            result = _mf_search_and_fetch(q)
+            if result:
+                return result
+        except Exception:
+            pass
+        try:
+            return _stock_as_mf_format(q)
+        except Exception:
+            return None
+
+    with ThreadPoolExecutor(max_workers=4) as ex:
+        results = list(ex.map(fetch_one, queries))
+
+    results = [r for r in results if r]
+    return Response(json.dumps(results), content_type="application/json",
+                    headers={"Access-Control-Allow-Origin": "*"})
+
+
+@app.route("/mf/top")
+def mf_top():
+    from concurrent.futures import ThreadPoolExecutor
+    category = request.args.get("category", "large cap").lower().strip()
+    search_map = {
+        "large cap":  "large cap direct growth",
+        "mid cap":    "mid cap direct growth",
+        "small cap":  "small cap direct growth",
+        "flexi cap":  "flexi cap direct growth",
+        "elss":       "elss tax saver direct growth",
+        "debt":       "short duration direct growth",
+        "index":      "nifty 50 index direct",
+        "hybrid":     "aggressive hybrid direct growth",
+    }
+    search_q = search_map.get(category, category + " direct growth")
+    try:
+        r = requests.get(f"https://api.mfapi.in/mf/search?q={search_q}",
+                         timeout=10, headers=_MF_HEADERS)
+        results = r.json()
+        direct = [f for f in results
+                  if "direct" in f["schemeName"].lower()
+                  and "growth" in f["schemeName"].lower()][:14]
+        if not direct:
+            direct = results[:14]
+
+        def fetch_one(fund_info):
+            try:
+                code = str(fund_info["schemeCode"])
+                fund = _mf_fetch(code)
+                meta = fund.get("meta", {})
+                data = fund.get("data", [])
+                if not data or len(data) < 30:
+                    return None
+                ret = _mf_returns(data)
+                return {
+                    "code": code,
+                    "name": meta.get("scheme_name", ""),
+                    "category": meta.get("scheme_category", ""),
+                    "fund_house": meta.get("fund_house", ""),
+                    "current_nav": round(float(data[0]["nav"]), 4),
+                    "returns": ret,
+                }
+            except Exception:
+                return None
+
+        with ThreadPoolExecutor(max_workers=6) as ex:
+            fetched = list(ex.map(fetch_one, direct))
+
+        valid = [f for f in fetched if f and f["returns"].get("1Y") is not None]
+        valid.sort(key=lambda x: x["returns"].get("1Y", 0), reverse=True)
+        return Response(json.dumps(valid[:8]), content_type="application/json",
                         headers={"Access-Control-Allow-Origin": "*"})
     except Exception as e:
         return json.dumps({"error": str(e)}), 502, {"Access-Control-Allow-Origin": "*"}

@@ -279,6 +279,51 @@
     .news-title { font-size:.78rem; color:var(--text); line-height:1.4; }
     .news-meta  { font-size:.65rem; color:var(--muted); margin-top:2px; }
 
+    /* ── Mutual Fund styles ───────────────────────────────────────────────── */
+    .mf-meta-row { display:flex; flex-wrap:wrap; gap:6px; margin-bottom:12px; }
+    .mf-meta-pill { background:rgba(0,229,255,0.08); border:1px solid rgba(0,229,255,0.15); border-radius:12px; padding:2px 10px; font-size:.68rem; color:var(--cyan); }
+    .mf-nav-row { display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:12px; }
+    .mf-nav-big { font-size:1.5rem; font-weight:700; font-variant-numeric:tabular-nums; }
+    .mf-returns-head { font-size:.68rem; font-weight:600; color:var(--muted); letter-spacing:.06em; text-transform:uppercase; margin-bottom:8px; }
+    .mf-returns-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:8px; }
+    .mf-return-cell { background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.08); border-radius:8px; padding:8px 10px; }
+    .mf-return-period { font-size:.65rem; color:var(--muted); margin-bottom:3px; }
+    .mf-return-val { font-size:1rem; font-weight:600; font-variant-numeric:tabular-nums; }
+    /* Compare */
+    .mf-compare-table { width:100%; border-collapse:collapse; font-size:.78rem; margin:10px 0; }
+    .mf-compare-table th { padding:7px 10px; background:rgba(255,255,255,0.06); color:var(--muted); font-size:.68rem; text-align:left; border-bottom:1px solid rgba(255,255,255,0.08); }
+    .mf-compare-table td { padding:7px 10px; border-bottom:1px solid rgba(255,255,255,0.05); font-variant-numeric:tabular-nums; }
+    .mf-compare-table tr:last-child td { border-bottom:none; }
+    .mf-compare-table tr:hover td { background:rgba(255,255,255,0.03); }
+    .mf-compare-details { display:flex; gap:8px; margin-top:12px; flex-wrap:wrap; }
+    .mf-compare-detail-card { flex:1; min-width:130px; background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.08); border-radius:8px; padding:8px 10px; }
+    /* Screener */
+    .mf-screener-list { display:flex; flex-direction:column; gap:6px; }
+    .mf-screener-row { display:flex; align-items:center; gap:10px; background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.07); border-radius:8px; padding:10px 12px; cursor:pointer; transition:background 0.15s; }
+    .mf-screener-row:hover { background:rgba(0,229,255,0.05); border-color:rgba(0,229,255,0.2); }
+    .mf-screener-rank { width:22px; height:22px; border-radius:50%; background:rgba(255,255,255,0.08); display:flex; align-items:center; justify-content:center; font-size:.68rem; font-weight:700; flex-shrink:0; }
+    .mf-screener-info { flex:1; min-width:0; }
+    .mf-screener-name { font-size:.75rem; font-weight:600; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+    .mf-screener-house { font-size:.63rem; color:var(--muted); margin-top:2px; }
+    .mf-screener-returns { display:flex; gap:10px; align-items:center; flex-shrink:0; }
+    .mf-ret-badge { text-align:center; font-size:.8rem; font-weight:600; font-variant-numeric:tabular-nums; min-width:48px; }
+    /* SIP Calculator */
+    .sip-params { display:flex; gap:12px; flex-wrap:wrap; background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.08); border-radius:8px; padding:10px 14px; margin-bottom:14px; }
+    .sip-param { display:flex; flex-direction:column; gap:2px; }
+    .sip-param-label { font-size:.63rem; color:var(--muted); }
+    .sip-param-val { font-size:.88rem; font-weight:600; }
+    .sip-result-box { text-align:center; padding:18px 12px; background:linear-gradient(135deg,rgba(0,229,255,0.07),rgba(168,85,247,0.07)); border:1px solid rgba(0,229,255,0.15); border-radius:10px; margin-bottom:14px; }
+    .sip-result-main { font-size:2rem; font-weight:700; color:var(--cyan); font-variant-numeric:tabular-nums; }
+    .sip-breakdown { display:grid; grid-template-columns:repeat(3,1fr); gap:8px; margin-bottom:12px; }
+    .sip-bk-item { background:rgba(255,255,255,0.04); border-radius:8px; padding:8px 10px; text-align:center; }
+    .sip-bk-label { font-size:.62rem; color:var(--muted); display:block; margin-bottom:3px; }
+    .sip-bk-val { font-size:.88rem; font-weight:600; font-variant-numeric:tabular-nums; }
+    .sip-bar-row { height:8px; border-radius:4px; overflow:hidden; display:flex; background:rgba(255,255,255,0.08); margin-bottom:6px; }
+    .sip-bar-invested { background:var(--cyan); opacity:.7; height:100%; }
+    .sip-bar-gains { background:var(--green); opacity:.7; height:100%; }
+    .sip-projection-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:8px; margin-top:8px; }
+    .sip-proj-cell { background:rgba(255,255,255,0.04); border:1px solid rgba(255,255,255,0.08); border-radius:8px; padding:8px 10px; text-align:center; }
+
     /* ── New Chat button ──────────────────────────────────────────────────── */
     .new-chat-btn {
       display:flex; align-items:center; gap:5px; padding:5px 12px; border-radius:8px;
@@ -367,6 +412,9 @@
   <div class="chip" onclick="ask('market sentiment')">🧭 Sentiment</div>
   <div class="chip" onclick="ask('screener: stocks with RSI below 35 above SMA50')">🔬 Screener</div>
   <div class="chip" onclick="ask('nifty100 screener: buy signals above SMA50')">🔬 Nifty 100</div>
+  <div class="chip" onclick="ask('best large cap mutual funds')">💼 Large Cap MF</div>
+  <div class="chip" onclick="ask('best ELSS tax saving funds')">🧾 ELSS</div>
+  <div class="chip" onclick="ask('SIP calculator 5000 per month 15 years')">🧮 SIP Calc</div>
   <span id="dynamicChips"></span>
 </div>
 
@@ -1557,6 +1605,187 @@ function renderSentiment(data, bubble) {
   bubble.innerHTML = html;
 }
 
+// ── Mutual Fund renderers ──────────────────────────────────────────────────
+function fmtINR(v) {
+  if (v >= 1e7) return '₹' + (v/1e7).toFixed(2) + ' Cr';
+  if (v >= 1e5) return '₹' + (v/1e5).toFixed(2) + ' L';
+  return '₹' + Math.round(v).toLocaleString('en-IN');
+}
+
+function renderMFAnalysis(data, bubble) {
+  var html = '<h2 style="margin-bottom:8px">📊 ' + esc(data.name) + '</h2>';
+  html += '<div class="mf-meta-row">';
+  html += '<span class="mf-meta-pill">' + esc(data.fund_house || '') + '</span>';
+  if (data.category) html += '<span class="mf-meta-pill">' + esc(data.category) + '</span>';
+  if (data.type_label) html += '<span class="mf-meta-pill">' + esc(data.type_label) + '</span>';
+  if (data.type === 'stock') html += '<span class="mf-meta-pill" style="border-color:rgba(255,179,0,.3);color:var(--amber)">📈 Stock</span>';
+  html += '</div>';
+
+  html += '<div class="mf-nav-row">';
+  html += '<div><div class="mf-nav-big">₹' + data.current_nav + '</div>';
+  if (data.nav_date) html += '<div style="font-size:.7rem;color:var(--muted)">NAV as of ' + esc(data.nav_date) + '</div></div>';
+  else html += '</div>';
+  var r1m = data.returns && data.returns['1M'];
+  if (r1m !== null && r1m !== undefined) {
+    var c1m = r1m >= 0 ? 'var(--green)' : 'var(--red)';
+    html += '<div style="text-align:right"><div style="font-size:1.2rem;font-weight:700;color:' + c1m + '">' + (r1m >= 0 ? '+' : '') + r1m + '%</div>' +
+            '<div style="font-size:.68rem;color:var(--muted)">1 Month</div></div>';
+  }
+  html += '</div>';
+
+  html += '<div class="mf-returns-head">Returns (CAGR)</div>';
+  html += '<div class="mf-returns-grid">';
+  [['1M','1 Mo'],['3M','3 Mo'],['6M','6 Mo'],['1Y','1 Year'],['3Y','3Y CAGR'],['5Y','5Y CAGR']].forEach(function(p) {
+    var val = data.returns && data.returns[p[0]];
+    if (val === null || val === undefined) return;
+    var color = val >= 0 ? 'var(--green)' : 'var(--red)';
+    html += '<div class="mf-return-cell"><div class="mf-return-period">' + p[1] + '</div>' +
+            '<div class="mf-return-val" style="color:' + color + '">' + (val >= 0 ? '+' : '') + val + '%</div></div>';
+  });
+  html += '</div>';
+  html += '<p style="font-size:.65rem;color:var(--muted);margin-top:12px">⚠️ Past performance does not guarantee future returns. Consult a financial advisor.</p>';
+  bubble.innerHTML = html;
+
+  if (data.prices && data.prices.length > 5) {
+    var div = document.createElement('div');
+    div.style.cssText = 'margin-top:14px;padding-top:10px;border-top:1px solid rgba(255,255,255,0.06)';
+    var lbl = document.createElement('div'); lbl.className = 'chart-label';
+    lbl.textContent = '📈 1-year NAV / price chart';
+    div.appendChild(lbl);
+    var trend = data.prices[data.prices.length-1] >= data.prices[0];
+    div.appendChild(drawSparkline(data.prices, trend ? '#00ffa3' : '#ff4d6d'));
+    bubble.insertBefore(div, bubble.querySelector('.resp-ts') || null);
+  }
+}
+
+function renderMFCompare(funds, bubble) {
+  if (!funds || funds.length === 0) {
+    bubble.innerHTML = '<p>Could not find the funds / stocks to compare. Try more specific names.</p>'; return;
+  }
+  var cols = funds.length + 1;
+  var colStyle = 'grid-template-columns:1fr ' + funds.map(function() { return '1fr'; }).join(' ');
+  var html = '<h2 style="margin-bottom:10px">📊 ' + funds.map(function(f) { return esc(f.name.split('-')[0].trim().split('Fund')[0].trim()); }).join(' vs ') + '</h2>';
+  html += '<table class="mf-compare-table">';
+  html += '<tr><th></th>' + funds.map(function(f) {
+    var badge = f.type === 'stock' ? ' <span style="font-size:.58rem;color:var(--amber)">[Stock]</span>' : '';
+    return '<th>' + esc(f.name.length > 40 ? f.name.slice(0,38)+'…' : f.name) + badge + '</th>';
+  }).join('') + '</tr>';
+  html += '<tr><td style="color:var(--muted);font-size:.72rem">Fund House</td>' + funds.map(function(f) { return '<td style="font-size:.72rem">' + esc(f.fund_house||'') + '</td>'; }).join('') + '</tr>';
+  html += '<tr><td style="color:var(--muted);font-size:.72rem">NAV / Price</td>' + funds.map(function(f) { return '<td>₹' + f.current_nav + '</td>'; }).join('') + '</tr>';
+
+  [['1M','1 Month'],['3M','3 Months'],['6M','6 Months'],['1Y','1 Year'],['3Y','3Y CAGR'],['5Y','5Y CAGR']].forEach(function(p) {
+    var vals = funds.map(function(f) { return (f.returns && f.returns[p[0]] != null) ? f.returns[p[0]] : null; });
+    if (vals.every(function(v) { return v === null; })) return;
+    var maxVal = Math.max.apply(null, vals.filter(function(v) { return v !== null; }));
+    html += '<tr><td style="color:var(--muted);font-size:.72rem">' + p[1] + '</td>';
+    vals.forEach(function(val) {
+      if (val === null) { html += '<td style="color:var(--muted)">N/A</td>'; return; }
+      var c = val >= 0 ? 'var(--green)' : 'var(--red)';
+      var isBest = val === maxVal && maxVal > 0;
+      html += '<td style="color:' + c + ';' + (isBest ? 'font-weight:700' : '') + '">' + (val >= 0 ? '+' : '') + val + '%' + (isBest ? ' 🏆' : '') + '</td>';
+    });
+    html += '</tr>';
+  });
+  html += '</table>';
+  html += '<p style="font-size:.65rem;color:var(--muted);margin-top:8px">⚠️ Past performance does not guarantee future returns.</p>';
+  bubble.innerHTML = html;
+
+  if (funds.length >= 2 && funds[0].prices && funds[0].prices.length > 5 && funds[1].prices && funds[1].prices.length > 5) {
+    var series = funds.map(function(f) { return { prices: f.prices, name: f.name.split(' ')[0] }; });
+    var div = document.createElement('div');
+    div.style.cssText = 'margin-top:14px;padding-top:10px;border-top:1px solid rgba(255,255,255,0.06)';
+    var lbl = document.createElement('div'); lbl.className = 'chart-label';
+    lbl.textContent = '📈 1-year comparison (normalised %)';
+    div.appendChild(lbl); div.appendChild(drawMultiChart(series));
+    bubble.insertBefore(div, bubble.querySelector('.resp-ts') || null);
+  }
+}
+
+function renderMFScreener(funds, category, bubble) {
+  if (!funds || funds.length === 0) {
+    bubble.innerHTML = '<p>No funds found for "' + esc(category) + '". Try: large cap, mid cap, small cap, elss, flexi cap, index.</p>'; return;
+  }
+  var catLabel = category.replace(/\b\w/g, function(c) { return c.toUpperCase(); });
+  var html = '<h2 style="margin-bottom:4px">🏆 Top ' + catLabel + ' Funds</h2>';
+  html += '<div style="font-size:.7rem;color:var(--muted);margin-bottom:12px">Sorted by 1-year returns · Direct Growth plans</div>';
+  html += '<div class="mf-screener-list">';
+  funds.forEach(function(f, i) {
+    var r1y = f.returns && f.returns['1Y'], r3y = f.returns && f.returns['3Y'];
+    var color = (r1y || 0) >= 0 ? 'var(--green)' : 'var(--red)';
+    html += '<div class="mf-screener-row" onclick="ask(\'' + f.name.replace(/'/g,"") + '\')">';
+    html += '<div class="mf-screener-rank">' + (i+1) + '</div>';
+    html += '<div class="mf-screener-info"><div class="mf-screener-name">' + esc(f.name) + '</div>';
+    html += '<div class="mf-screener-house">' + esc(f.fund_house||'') + ' · ₹' + f.current_nav + ' NAV</div></div>';
+    html += '<div class="mf-screener-returns">';
+    if (r1y !== null && r1y !== undefined)
+      html += '<div class="mf-ret-badge" style="color:' + color + '">' + (r1y >= 0 ? '+' : '') + r1y + '%<div style="font-size:.58rem;color:var(--muted)">1Y</div></div>';
+    if (r3y !== null && r3y !== undefined) {
+      var c3 = (r3y||0) >= 0 ? 'var(--green)' : 'var(--red)';
+      html += '<div class="mf-ret-badge" style="color:' + c3 + '">' + (r3y >= 0 ? '+' : '') + r3y + '%<div style="font-size:.58rem;color:var(--muted)">3Y</div></div>';
+    }
+    html += '</div></div>';
+  });
+  html += '</div>';
+  html += '<p style="font-size:.65rem;color:var(--muted);margin-top:10px">⚠️ Past performance does not guarantee future returns. Not financial advice.</p>';
+  bubble.innerHTML = html;
+}
+
+function parseSIPQuery(q) {
+  var monthly = 5000, years = 10, rate = 12, fundQ = null, m;
+  m = q.match(/(?:₹|rs\.?\s*)?(\d[\d,]*)\s*(?:k\b)?.*?(?:per\s*month|monthly|\/month|\bpm\b)/i);
+  if (m) {
+    monthly = parseInt(m[1].replace(/,/g,''));
+    if (/\bk\b/i.test(m[0])) monthly *= 1000;
+  }
+  m = q.match(/(\d+)\s*(?:years?|yrs?)/i);
+  if (m) years = parseInt(m[1]);
+  m = q.match(/(\d+(?:\.\d+)?)\s*%?\s*(?:return|p\.?a\.?|per\s*annum)/i);
+  if (m) rate = parseFloat(m[1]);
+  m = q.match(/\bin\s+(.+?)(?:\s+for|\s+at|\s+with|\s*$)/i);
+  if (m && m[1] && m[1].length > 3 && !/year|month|rupee/i.test(m[1])) fundQ = m[1].trim();
+  return { monthly: monthly, years: years, rate: rate, fundQ: fundQ };
+}
+
+function renderSIPCalc(params, mfData, bubble) {
+  var monthly = params.monthly, years = params.years, rate = params.rate;
+  var n = years * 12, r = (rate / 100) / 12;
+  var fv = monthly * (((Math.pow(1 + r, n) - 1) / r) * (1 + r));
+  var invested = monthly * n, gains = fv - invested;
+  var investedPct = Math.round((invested / fv) * 100);
+
+  var html = '<h2 style="margin-bottom:12px">🧮 SIP Calculator</h2>';
+  if (mfData) html += '<div style="font-size:.78rem;color:var(--cyan);margin-bottom:10px">📊 Fund: ' + esc(mfData.name) + '</div>';
+  html += '<div class="sip-params">';
+  html += '<div class="sip-param"><span class="sip-param-label">Monthly SIP</span><span class="sip-param-val">₹' + monthly.toLocaleString('en-IN') + '</span></div>';
+  html += '<div class="sip-param"><span class="sip-param-label">Duration</span><span class="sip-param-val">' + years + ' years</span></div>';
+  html += '<div class="sip-param"><span class="sip-param-label">Expected Return</span><span class="sip-param-val">' + rate + '% p.a.</span></div>';
+  html += '</div>';
+  html += '<div class="sip-result-box"><div class="sip-result-main">' + fmtINR(fv) + '</div>';
+  html += '<div style="font-size:.72rem;color:var(--muted);margin-top:4px">Estimated corpus after ' + years + ' years</div></div>';
+  html += '<div class="sip-breakdown">';
+  html += '<div class="sip-bk-item"><span class="sip-bk-label">Amount Invested</span><span class="sip-bk-val">' + fmtINR(invested) + '</span></div>';
+  html += '<div class="sip-bk-item"><span class="sip-bk-label">Est. Returns</span><span class="sip-bk-val" style="color:var(--green)">+' + fmtINR(gains) + '</span></div>';
+  html += '<div class="sip-bk-item"><span class="sip-bk-label">Wealth Gain</span><span class="sip-bk-val" style="color:var(--cyan)">+' + Math.round((gains/invested)*100) + '%</span></div>';
+  html += '</div>';
+  html += '<div class="sip-bar-row"><div class="sip-bar-invested" style="width:' + investedPct + '%"></div><div class="sip-bar-gains" style="width:' + (100-investedPct) + '%"></div></div>';
+  html += '<div style="display:flex;gap:16px;font-size:.68rem;margin-bottom:14px"><span style="color:var(--cyan)">■ Invested (' + investedPct + '%)</span><span style="color:var(--green)">■ Returns (' + (100-investedPct) + '%)</span></div>';
+  html += '<div class="mf-returns-head">Corpus Projection</div><div class="sip-projection-grid">';
+  [5,10,15,20,25,30].filter(function(y){return y<=Math.max(years+5,15);}).forEach(function(y) {
+    var n2=y*12, fv2=monthly*(((Math.pow(1+r,n2)-1)/r)*(1+r));
+    html += '<div class="sip-proj-cell"><div style="font-size:.68rem;color:var(--muted)">' + y + ' Yrs</div>';
+    html += '<div style="font-weight:700;font-size:.88rem">' + fmtINR(fv2) + '</div></div>';
+  });
+  html += '</div>';
+  if (mfData && mfData.returns && mfData.returns['3Y'] !== null && mfData.returns['3Y'] !== undefined) {
+    var r3y = mfData.returns['3Y'], r3 = (r3y/100)/12;
+    var fv3 = monthly*(((Math.pow(1+r3,n)-1)/r3)*(1+r3));
+    html += '<div style="margin-top:12px;padding:10px;background:rgba(255,255,255,0.04);border-radius:8px;font-size:.78rem">';
+    html += '📌 Using this fund\'s 3Y CAGR of <strong>' + r3y + '%</strong>: estimated corpus = <strong style="color:var(--cyan)">' + fmtINR(fv3) + '</strong></div>';
+  }
+  html += '<p style="font-size:.65rem;color:var(--muted);margin-top:10px">⚠️ Projections are estimates based on assumed constant returns. Not financial advice.</p>';
+  bubble.innerHTML = html;
+}
+
 // ── Screener query parser ──────────────────────────────────────────────────
 function parseScreenerQuery(q) {
   var p = {}, m;
@@ -1893,6 +2122,18 @@ async function sendMsg() {
     /\bshow\b.*\bstocks?\b.*\brsi\b/i.test(q);
   var screenerUniverse = /\bnifty\s*100\b|\bnext\s*50\b|\bwider\b|\bmore\s+stocks\b/i.test(q) ? 'nifty100' : 'nifty50';
 
+  // --- Intent: mutual fund / SIP ---
+  var isMFQuery = /\b(mutual\s*fund|mf\b)\b/i.test(q) ||
+    /\b(hdfc|sbi|axis|mirae|nippon|kotak|parag|icici\s*pru|uti|dsp|franklin|aditya\s*birla|sundaram|tata|quant|navi)\b.*\b(fund|nav)\b/i.test(q) ||
+    /\b(flexi\s*cap|large\s*cap\s*fund|mid\s*cap\s*fund|small\s*cap\s*fund|elss|debt\s*fund)\b/i.test(q) ||
+    /\b(nav|folio|amc)\b/i.test(q);
+  var isMFScreener = /\b(best|top)\b.*\b(large\s*.?cap|mid\s*.?cap|small\s*.?cap|flexi\s*.?cap|elss|debt|index|hybrid)\b.*\bfund/i.test(q) ||
+    /\b(large\s*.?cap|mid\s*.?cap|small\s*.?cap|flexi\s*.?cap|elss)\b.*\bfund\b/i.test(q);
+  var isMFCompare = isMFQuery && /\bvs\b|\bversus\b|\bcompare\b|\bbetter\b/i.test(q);
+  var isSIP = /\bsip\s*calc/i.test(q) ||
+    (/\bsip\b/i.test(q) && /\d/.test(q)) ||
+    (/\b(invest|monthly)\b/i.test(q) && /\d/.test(q) && /\b(year|yr)\b/i.test(q) && isMFQuery);
+
   var _finishBubble = function(html, showFollowups) {
     streamBubble(bubble, html);
     if (showFollowups !== false) addFollowups(bubble, text, html);
@@ -1951,6 +2192,95 @@ async function sendMsg() {
     if (bubble._row) addCopyBtn(bubble._row, bubble);
     sendBtn.disabled = false; inp.focus(); scrollBottom();
     return;
+  }
+
+  // --- Handle: SIP calculator ---
+  if (isSIP) {
+    var sipParams = parseSIPQuery(q);
+    bubble.innerHTML = '<div class="status-row"><div class="spin"></div><span style="font-size:.78rem;color:var(--cyan)">Calculating SIP projection...</span></div>';
+    var sipFund = null;
+    if (sipParams.fundQ) {
+      try {
+        var backend = BACKEND_URL || 'http://localhost:5050';
+        var sfr = await fetch(backend + '/mf/analyze?q=' + encodeURIComponent(sipParams.fundQ), { signal: AbortSignal.timeout(15000) });
+        var sfd = await sfr.json();
+        if (!sfd.error) sipFund = sfd;
+      } catch(e) {}
+    }
+    renderSIPCalc(sipParams, sipFund, bubble);
+    var tsS = document.createElement('div'); tsS.className = 'resp-ts';
+    tsS.textContent = new Date().toLocaleString('en-IN', { day:'numeric', month:'short', year:'numeric', hour:'2-digit', minute:'2-digit' });
+    bubble.appendChild(tsS);
+    if (bubble._row) addCopyBtn(bubble._row, bubble);
+    sendBtn.disabled = false; inp.focus(); scrollBottom(); return;
+  }
+
+  // --- Handle: MF category screener ---
+  if (isMFScreener) {
+    var catMap = { 'large cap':'large cap','large-cap':'large cap','mid cap':'mid cap','mid-cap':'mid cap',
+      'small cap':'small cap','small-cap':'small cap','flexi cap':'flexi cap','flexicap':'flexi cap',
+      'elss':'elss','tax saving':'elss','debt':'debt','index':'index','hybrid':'hybrid' };
+    var catKey = Object.keys(catMap).find(function(k) { return q.includes(k); }) || 'large cap';
+    var cat = catMap[catKey] || 'large cap';
+    var backend = BACKEND_URL || 'http://localhost:5050';
+    bubble.innerHTML = '<div class="status-row"><div class="spin"></div><span style="font-size:.78rem;color:var(--cyan)">Finding top ' + cat + ' funds...</span></div>';
+    try {
+      var mfsr = await fetch(backend + '/mf/top?category=' + encodeURIComponent(cat), { signal: AbortSignal.timeout(40000) });
+      var mfsd = await mfsr.json();
+      if (mfsd.error) throw new Error(mfsd.error);
+      renderMFScreener(mfsd, cat, bubble);
+    } catch(e) {
+      bubble.innerHTML = '<span style="color:var(--red)">Could not fetch fund data. ' + e.message + '</span>';
+    }
+    var tsM = document.createElement('div'); tsM.className = 'resp-ts';
+    tsM.textContent = new Date().toLocaleString('en-IN', { day:'numeric', month:'short', year:'numeric', hour:'2-digit', minute:'2-digit' });
+    bubble.appendChild(tsM);
+    if (bubble._row) addCopyBtn(bubble._row, bubble);
+    sendBtn.disabled = false; inp.focus(); scrollBottom(); return;
+  }
+
+  // --- Handle: MF / stock comparison ---
+  if (isMFCompare) {
+    var cParts = q.split(/\bvs\b|\bversus\b/i);
+    var cq1 = cParts[0].replace(/\bcompare\b/i,'').replace(/\b(mutual\s*fund|mf)\b/ig,'').trim();
+    var cq2 = cParts.slice(1).join(' ').replace(/\b(with|to|and)\b/i,'').trim();
+    if (cq1 && cq2) {
+      var backend = BACKEND_URL || 'http://localhost:5050';
+      bubble.innerHTML = '<div class="status-row"><div class="spin"></div><span style="font-size:.78rem;color:var(--cyan)">Comparing...</span></div>';
+      try {
+        var mfcr = await fetch(backend + '/mf/compare?q1=' + encodeURIComponent(cq1) + '&q2=' + encodeURIComponent(cq2), { signal: AbortSignal.timeout(35000) });
+        var mfcd = await mfcr.json();
+        if (mfcd.error) throw new Error(mfcd.error);
+        renderMFCompare(mfcd, bubble);
+      } catch(e) {
+        bubble.innerHTML = '<span style="color:var(--red)">Could not compare. ' + e.message + '</span>';
+      }
+      var tsMC = document.createElement('div'); tsMC.className = 'resp-ts';
+      tsMC.textContent = new Date().toLocaleString('en-IN', { day:'numeric', month:'short', year:'numeric', hour:'2-digit', minute:'2-digit' });
+      bubble.appendChild(tsMC);
+      if (bubble._row) addCopyBtn(bubble._row, bubble);
+      sendBtn.disabled = false; inp.focus(); scrollBottom(); return;
+    }
+  }
+
+  // --- Handle: MF analysis ---
+  if (isMFQuery) {
+    var backend = BACKEND_URL || 'http://localhost:5050';
+    var mfQ = q.replace(/\b(analyze|analysis|tell me about|what about|how is|should i (buy|invest in)|is|any good|best|details|info|information|nav of|nav for|mutual\s*fund|mf\b)\b/ig,'').trim() || q;
+    bubble.innerHTML = '<div class="status-row"><div class="spin"></div><span style="font-size:.78rem;color:var(--cyan)">Searching mutual fund database...</span></div>';
+    try {
+      var mfar = await fetch(backend + '/mf/analyze?q=' + encodeURIComponent(mfQ), { signal: AbortSignal.timeout(20000) });
+      var mfad = await mfar.json();
+      if (mfad.error) throw new Error(mfad.error);
+      renderMFAnalysis(mfad, bubble);
+    } catch(e) {
+      bubble.innerHTML = '<span style="color:var(--red)">Could not find this fund. Try a specific name like "HDFC Flexi Cap Direct Growth".<br><small>' + e.message + '</small></span>';
+    }
+    var tsMF = document.createElement('div'); tsMF.className = 'resp-ts';
+    tsMF.textContent = new Date().toLocaleString('en-IN', { day:'numeric', month:'short', year:'numeric', hour:'2-digit', minute:'2-digit' });
+    bubble.appendChild(tsMF);
+    if (bubble._row) addCopyBtn(bubble._row, bubble);
+    sendBtn.disabled = false; inp.focus(); scrollBottom(); return;
   }
 
   // --- Intent: greeting ---
