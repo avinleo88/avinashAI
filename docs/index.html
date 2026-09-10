@@ -576,6 +576,18 @@ const SECTOR_ALIASES = {
   "technology": "it", "tech": "it", "software": "it", "it sector": "it",
 };
 
+async function fetchWithRetry(url, opts, onRetry) {
+  try {
+    return await fetch(url, opts);
+  } catch(e) {
+    if (onRetry) onRetry();
+    await new Promise(r => setTimeout(r, 8000));
+    var ro = Object.assign({}, opts);
+    delete ro.signal; // fresh request, no expired AbortSignal
+    return await fetch(url, ro);
+  }
+}
+
 // Fetch one symbol — races both proxies simultaneously, uses whichever wins
 async function fetchYahoo(symbol, range) {
   range = range || "3mo";
@@ -928,7 +940,7 @@ async function buildResponse(query, onStatus) {
     var backend = BACKEND_URL || "http://localhost:5050";
     var recsData = null;
     try {
-      var rr = await fetch(backend + "/recommendations", { signal: AbortSignal.timeout(30000) });
+      var rr = await fetchWithRetry(backend + "/recommendations", { signal: AbortSignal.timeout(30000) }, function(){ onStatus('Server waking up, retrying...'); });
       recsData = await rr.json();
     } catch(e) {}
     if (!recsData || recsData.length === 0) {
@@ -975,7 +987,7 @@ async function buildResponse(query, onStatus) {
     var backend = BACKEND_URL || "http://localhost:5050";
     var avoidData = null;
     try {
-      var ar = await fetch(backend + "/avoid", { signal: AbortSignal.timeout(30000) });
+      var ar = await fetchWithRetry(backend + "/avoid", { signal: AbortSignal.timeout(30000) }, function(){ onStatus('Server waking up, retrying...'); });
       avoidData = await ar.json();
     } catch(e) {}
     if (!avoidData || avoidData.length === 0) {
@@ -2103,6 +2115,9 @@ async function sendMsg() {
   sendBtn.disabled = true;
   addUserBubble(text);
   var bubble = createBotBubble();
+  var _retryStatus = function() {
+    bubble.innerHTML = '<div class="status-row"><div class="spin"></div><span style="font-size:.78rem;color:var(--cyan)">Server waking up, retrying in 8s…</span></div>';
+  };
   var q = text.toLowerCase().trim();
 
   // --- Slash commands ---
@@ -2158,7 +2173,7 @@ async function sendMsg() {
     var backend = BACKEND_URL || 'http://localhost:5050';
     bubble.innerHTML = '<div class="status-row"><div class="spin"></div><span style="font-size:.78rem;color:var(--cyan)">Scanning Nifty 50 sentiment...</span></div>';
     try {
-      var sResp = await fetch(backend + '/sentiment', { signal: AbortSignal.timeout(35000) });
+      var sResp = await fetchWithRetry(backend + '/sentiment', { signal: AbortSignal.timeout(35000) }, _retryStatus);
       var sData = await sResp.json();
       if (sData.error) throw new Error(sData.error);
       renderSentiment(sData, bubble);
@@ -2182,7 +2197,7 @@ async function sendMsg() {
     var universeLabel = screenerUniverse === 'nifty100' ? 'Nifty 100' : 'Nifty 50';
     bubble.innerHTML = '<div class="status-row"><div class="spin"></div><span style="font-size:.78rem;color:var(--cyan)">Running screener on ' + universeLabel + '...</span></div>';
     try {
-      var scResp = await fetch(backend + '/screener' + (qs ? '?' + qs : ''), { signal: AbortSignal.timeout(40000) });
+      var scResp = await fetchWithRetry(backend + '/screener' + (qs ? '?' + qs : ''), { signal: AbortSignal.timeout(40000) }, _retryStatus);
       var scRaw = await scResp.json();
       // Backend returns { results, universe, total_scanned } or legacy array
       var scData = Array.isArray(scRaw) ? scRaw : (scRaw.results || []);
@@ -2208,7 +2223,7 @@ async function sendMsg() {
     if (sipParams.fundQ) {
       try {
         var backend = BACKEND_URL || 'http://localhost:5050';
-        var sfr = await fetch(backend + '/mf/analyze?q=' + encodeURIComponent(sipParams.fundQ), { signal: AbortSignal.timeout(90000) });
+        var sfr = await fetchWithRetry(backend + '/mf/analyze?q=' + encodeURIComponent(sipParams.fundQ), { signal: AbortSignal.timeout(90000) }, _retryStatus);
         var sfd = await sfr.json();
         if (!sfd.error) sipFund = sfd;
       } catch(e) {}
@@ -2231,7 +2246,7 @@ async function sendMsg() {
     var backend = BACKEND_URL || 'http://localhost:5050';
     bubble.innerHTML = '<div class="status-row"><div class="spin"></div><span style="font-size:.78rem;color:var(--cyan)">Finding top ' + cat + ' funds...</span></div>';
     try {
-      var mfsr = await fetch(backend + '/mf/top?category=' + encodeURIComponent(cat), { signal: AbortSignal.timeout(90000) });
+      var mfsr = await fetchWithRetry(backend + '/mf/top?category=' + encodeURIComponent(cat), { signal: AbortSignal.timeout(90000) }, _retryStatus);
       var mfsd = await mfsr.json();
       if (mfsd.error) throw new Error(mfsd.error);
       renderMFScreener(mfsd, cat, bubble);
@@ -2254,7 +2269,7 @@ async function sendMsg() {
       var backend = BACKEND_URL || 'http://localhost:5050';
       bubble.innerHTML = '<div class="status-row"><div class="spin"></div><span style="font-size:.78rem;color:var(--cyan)">Comparing...</span></div>';
       try {
-        var mfcr = await fetch(backend + '/mf/compare?q1=' + encodeURIComponent(cq1) + '&q2=' + encodeURIComponent(cq2), { signal: AbortSignal.timeout(90000) });
+        var mfcr = await fetchWithRetry(backend + '/mf/compare?q1=' + encodeURIComponent(cq1) + '&q2=' + encodeURIComponent(cq2), { signal: AbortSignal.timeout(90000) }, _retryStatus);
         var mfcd = await mfcr.json();
         if (mfcd.error) throw new Error(mfcd.error);
         renderMFCompare(mfcd, bubble);
@@ -2275,7 +2290,7 @@ async function sendMsg() {
     var mfQ = q.replace(/\b(analyze|analysis|tell me about|what about|how is|should i (buy|invest in)|is|any good|best|details|info|information|nav of|nav for|mutual\s*fund|mf\b)\b/ig,'').trim() || q;
     bubble.innerHTML = '<div class="status-row"><div class="spin"></div><span style="font-size:.78rem;color:var(--cyan)">Searching mutual fund database...</span></div>';
     try {
-      var mfar = await fetch(backend + '/mf/analyze?q=' + encodeURIComponent(mfQ), { signal: AbortSignal.timeout(90000) });
+      var mfar = await fetchWithRetry(backend + '/mf/analyze?q=' + encodeURIComponent(mfQ), { signal: AbortSignal.timeout(90000) }, _retryStatus);
       var mfad = await mfar.json();
       if (mfad.error) throw new Error(mfad.error);
       renderMFAnalysis(mfad, bubble);
