@@ -2127,8 +2127,11 @@ async function sendMsg() {
     /\b(hdfc|sbi|axis|mirae|nippon|kotak|parag|icici\s*pru|uti|dsp|franklin|aditya\s*birla|sundaram|tata|quant|navi)\b.*\b(fund|nav)\b/i.test(q) ||
     /\b(flexi\s*cap|large\s*cap\s*fund|mid\s*cap\s*fund|small\s*cap\s*fund|elss|debt\s*fund)\b/i.test(q) ||
     /\b(nav|folio|amc)\b/i.test(q);
-  var isMFScreener = /\b(best|top)\b.*\b(large\s*.?cap|mid\s*.?cap|small\s*.?cap|flexi\s*.?cap|elss|debt|index|hybrid)\b.*\bfund/i.test(q) ||
-    /\b(large\s*.?cap|mid\s*.?cap|small\s*.?cap|flexi\s*.?cap|elss)\b.*\bfund\b/i.test(q);
+  var _hasFundHouse = /\b(hdfc|sbi|axis|mirae|nippon|kotak|parag|icici|uti|dsp|franklin|aditya|birla|sundaram|tata|quant|navi|ppfas|invesco|motilal)\b/i.test(q);
+  var isMFScreener = !_hasFundHouse && (
+    /\b(best|top)\b.*\b(large\s*.?cap|mid\s*.?cap|small\s*.?cap|flexi\s*.?cap|elss|debt|index|hybrid)\b.*\bfund/i.test(q) ||
+    /\b(large\s*.?cap|mid\s*.?cap|small\s*.?cap|flexi\s*.?cap|elss)\b.*\bfund\b/i.test(q)
+  );
   var isMFCompare = isMFQuery && /\bvs\b|\bversus\b|\bcompare\b|\bbetter\b/i.test(q);
   var isSIP = /\bsip\s*calc/i.test(q) ||
     (/\bsip\b/i.test(q) && /\d/.test(q)) ||
