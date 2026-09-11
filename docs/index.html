@@ -1794,7 +1794,7 @@ function parseSIPQuery(q) {
   m = q.match(/(\d+(?:\.\d+)?)\s*%?\s*(?:return|p\.?a\.?|per\s*annum)/i);
   if (m) rate = parseFloat(m[1]);
   m = q.match(/\bin\s+(.+?)(?:\s+for|\s+at|\s+with|\s*$)/i);
-  if (m && m[1] && m[1].length > 3 && !/year|month|rupee/i.test(m[1])) fundQ = m[1].trim();
+  if (m && m[1] && m[1].length > 3 && !/year|month|rupee|^\s*(this|a|the|some|same|that)\s*(fund)?\s*$/i.test(m[1])) fundQ = m[1].trim();
   return { monthly: monthly, years: years, rate: rate, fundQ: fundQ };
 }
 
@@ -2221,7 +2221,7 @@ async function sendMsg() {
   var isMFCompare = isMFQuery && /\bvs\b|\bversus\b|\bcompare\b|\bbetter\b/i.test(q);
   var isSIP = /\bsip\s*calc/i.test(q) ||
     (/\bsip\b/i.test(q) && /\d/.test(q)) ||
-    (_isSIPLike && isMFQuery);
+    (_isSIPLike && (isMFQuery || /\bfund\b/i.test(q)));
 
   var _finishBubble = function(html, showFollowups) {
     streamBubble(bubble, html);
