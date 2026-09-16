@@ -16,6 +16,20 @@ from datetime import datetime
 app = Flask(__name__, static_folder=".")
 CORS(app)
 
+# Simple in-memory cache: key -> {"ts": epoch, "data": ...}
+# Results are reused for 30 minutes to avoid repeated heavy yfinance downloads.
+_CACHE = {}
+_CACHE_TTL = 1800  # seconds
+
+def _cache_get(key):
+    entry = _CACHE.get(key)
+    if entry and (time.time() - entry["ts"]) < _CACHE_TTL:
+        return entry["data"]
+    return None
+
+def _cache_set(key, data):
+    _CACHE[key] = {"ts": time.time(), "data": data}
+
 # ── NSE symbol search index ───────────────────────────────────────────────────
 _NSE_INDEX = {}   # lowercase name/symbol -> "SYMBOL.NS"
 _NSE_NAMES = {}   # "SYMBOL.NS" -> "Company Full Name"
@@ -436,8 +450,12 @@ def build_response(query: str):
 # ── Routes ────────────────────────────────────────────────────────────────────
 @app.route("/recommendations")
 def recommendations():
+    cached = _cache_get("recommendations")
+    if cached is not None:
+        return Response(json.dumps(cached), content_type="application/json",
+                        headers={"Access-Control-Allow-Origin": "*"})
     try:
-        data = yf.download(NIFTY50_SYMS, period="3mo", progress=False, auto_adjust=True)
+        data = yf.download(NIFTY50_SYMS, period="2mo", progress=False, auto_adjust=True)
         closes_all = data["Close"]
         volumes_all = data["Volume"]
         if closes_all.empty:
@@ -530,7 +548,9 @@ def recommendations():
             })
 
         results.sort(key=lambda x: x["score"], reverse=True)
-        return Response(json.dumps(results[:10]), content_type="application/json",
+        top = results[:10]
+        _cache_set("recommendations", top)
+        return Response(json.dumps(top), content_type="application/json",
                         headers={"Access-Control-Allow-Origin": "*"})
     except Exception as e:
         return json.dumps({"error": str(e)}), 502, {"Access-Control-Allow-Origin": "*"}
@@ -538,8 +558,12 @@ def recommendations():
 
 @app.route("/avoid")
 def avoid():
+    cached = _cache_get("avoid")
+    if cached is not None:
+        return Response(json.dumps(cached), content_type="application/json",
+                        headers={"Access-Control-Allow-Origin": "*"})
     try:
-        data = yf.download(NIFTY50_SYMS, period="3mo", progress=False, auto_adjust=True)
+        data = yf.download(NIFTY50_SYMS, period="2mo", progress=False, auto_adjust=True)
         closes_all = data["Close"]
         volumes_all = data["Volume"]
         results = []
@@ -606,7 +630,9 @@ def avoid():
             except Exception:
                 continue
         results.sort(key=lambda x: x["score"])
-        return Response(json.dumps(results[:10]), content_type="application/json",
+        top = results[:10]
+        _cache_set("avoid", top)
+        return Response(json.dumps(top), content_type="application/json",
                         headers={"Access-Control-Allow-Origin": "*"})
     except Exception as e:
         return json.dumps({"error": str(e)}), 502, {"Access-Control-Allow-Origin": "*"}
@@ -699,6 +725,11 @@ def market_summary():
 @app.route("/")
 def index():
     return send_from_directory(".", "index.html")
+
+
+@app.route("/ping")
+def ping():
+    return Response('{"status":"ok"}', content_type="application/json")
 
 
 @app.route("/search")
