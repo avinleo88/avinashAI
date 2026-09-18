@@ -439,6 +439,7 @@
   <div class="chip" onclick="ask('screener: stocks with RSI below 35 above SMA50')">🔬 Screener</div>
   <div class="chip" onclick="ask('nifty100 screener: buy signals above SMA50')">🔬 Nifty 100</div>
   <div class="chip" onclick="showSIPCalc()">🧮 SIP Calc</div>
+  <div class="chip" onclick="wakeServer()" id="wakeChip">⚡ Wake Server</div>
   <span id="dynamicChips"></span>
 </div>
 
@@ -2051,6 +2052,28 @@ async function sendMsg() {
     bubble.innerHTML = '<span style="color:var(--red)">Failed to fetch data. Check your internet connection.<br><small>' + e.message + '</small></span>';
     if (bubble._row) addCopyBtn(bubble._row, bubble);
     sendBtn.disabled = false; inp.focus();
+  }
+  scrollBottom();
+}
+
+// ── Wake Server ───────────────────────────────────────────────────────────────
+async function wakeServer() {
+  var chip = document.getElementById("wakeChip");
+  if (chip) { chip.disabled = true; chip.textContent = "⏳ Waking…"; }
+  var bubble = createBotBubble();
+  bubble.innerHTML = '<div class="status-row"><div class="spin"></div><span style="font-size:.78rem;color:var(--cyan)">Pinging server — Render free tier may take up to 50s to wake…</span></div>';
+  scrollBottom();
+  var backend = BACKEND_URL || "http://localhost:5050";
+  var t0 = Date.now();
+  try {
+    var r = await fetch(backend + "/ping", { signal: AbortSignal.timeout(60000) });
+    if (!r.ok) throw new Error("HTTP " + r.status);
+    var elapsed = ((Date.now() - t0) / 1000).toFixed(1);
+    bubble.innerHTML = md("✅ **Server is awake!** Responded in **" + elapsed + "s** — queries should be fast now.");
+    if (chip) { chip.textContent = "✅ Server ready"; chip.disabled = false; setTimeout(function() { if (chip) chip.textContent = "⚡ Wake Server"; }, 4000); }
+  } catch(e) {
+    bubble.innerHTML = '<span style="color:var(--red)">Could not reach server. It may be down or the request timed out.<br><small>' + e.message + '</small></span>';
+    if (chip) { chip.textContent = "⚡ Wake Server"; chip.disabled = false; }
   }
   scrollBottom();
 }
