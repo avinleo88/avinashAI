@@ -2064,7 +2064,7 @@ function showSIPCalc() {
 
   function pillsHTML(values, sel, idPrefix, unit) {
     return values.map(function(v) {
-      return '<button class="sip-pill'+(v===sel?' active':'')+'" id="'+idPrefix+v+'" onclick="__sipPick(\''+ idPrefix+'\',"+ v +')">'+ v + unit +'</button>';
+      return '<button class="sip-pill'+(v===sel?' active':'')+'" id="'+idPrefix+v+'" onclick="__sipPick(\''+idPrefix+'\','+v+')">'+v+unit+'</button>';
     }).join('');
   }
 
