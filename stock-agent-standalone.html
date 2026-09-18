@@ -312,6 +312,26 @@
     .screener-pill.avoid { color:var(--red);   border-color:rgba(255,77,109,.25); background:rgba(255,77,109,.06); }
     .screener-price { font-size:0.8rem; font-weight:600; text-align:right; min-width:60px; }
     .screener-chg   { font-size:0.72rem; font-weight:600; min-width:48px; text-align:right; }
+    /* ── SIP Calculator ─────────────────────────────────────────────────────── */
+    .sip-card { background:var(--surface); border:1px solid var(--border); border-radius:14px; padding:18px 20px; max-width:420px; }
+    .sip-card h3 { margin:0 0 14px; font-size:.95rem; color:var(--fg); }
+    .sip-label { font-size:.75rem; color:var(--muted); margin-bottom:6px; }
+    .sip-amount-wrap { display:flex; align-items:center; gap:8px; background:var(--bg); border:1px solid var(--border); border-radius:8px; padding:8px 12px; margin-bottom:16px; }
+    .sip-amount-wrap span { font-size:1rem; color:var(--muted); }
+    .sip-amount-inp { background:none; border:none; outline:none; color:var(--fg); font-size:1.1rem; font-weight:600; width:100%; font-family:inherit; }
+    .sip-amount-inp::placeholder { color:var(--muted); font-weight:400; }
+    .sip-pills { display:flex; flex-wrap:wrap; gap:7px; margin-bottom:16px; }
+    .sip-pill { padding:5px 13px; border-radius:20px; border:1px solid var(--border); background:none; color:var(--muted); font-size:.8rem; cursor:pointer; transition:all .15s; font-family:inherit; }
+    .sip-pill:hover { border-color:rgba(0,229,255,.4); color:var(--cyan); }
+    .sip-pill.active { background:rgba(0,229,255,.12); border-color:var(--cyan); color:var(--cyan); font-weight:600; }
+    .sip-result { background:linear-gradient(135deg,rgba(0,229,255,.07),rgba(0,255,163,.05)); border:1px solid rgba(0,229,255,.18); border-radius:10px; padding:14px 16px; margin-top:4px; display:none; }
+    .sip-result.show { display:block; }
+    .sip-result-row { display:flex; justify-content:space-between; align-items:center; padding:5px 0; border-bottom:1px solid var(--border); font-size:.82rem; }
+    .sip-result-row:last-child { border-bottom:none; }
+    .sip-result-row .lbl { color:var(--muted); }
+    .sip-result-row .val { font-weight:600; color:var(--fg); }
+    .sip-result-row.corpus .val { font-size:1.15rem; color:var(--cyan); }
+    .sip-result-row.profit .val { color:var(--green); }
   </style>
 </head>
 <body>
@@ -347,7 +367,7 @@
   <div class="chip" onclick="ask('market sentiment')">🧭 Sentiment</div>
   <div class="chip" onclick="ask('screener: stocks with RSI below 35 above SMA50')">🔬 Screener</div>
   <div class="chip" onclick="ask('nifty100 screener: buy signals above SMA50')">🔬 Nifty 100</div>
-  <div class="chip" onclick="ask('best ELSS tax saving funds')">🧾 ELSS</div>
+  <div class="chip" onclick="showSIPCalc()">🧮 SIP Calc</div>
   <span id="dynamicChips"></span>
 </div>
 
@@ -1921,6 +1941,119 @@ async function sendMsg() {
     sendBtn.disabled = false; inp.focus();
   }
   scrollBottom();
+}
+
+// ── SIP Calculator ────────────────────────────────────────────────────────────
+function showSIPCalc() {
+  var chat = document.getElementById("chat");
+  var welcome = chat.querySelector(".welcome");
+  if (welcome) welcome.remove();
+
+  // User bubble
+  var userRow = document.createElement("div");
+  userRow.className = "row";
+  userRow.innerHTML = '<div style="margin-left:auto;max-width:70%"><div class="bubble user">🧮 SIP Calculator</div></div>';
+  chat.appendChild(userRow);
+
+  // Bot row
+  var row = document.createElement("div");
+  row.className = "row";
+  var av = document.createElement("div");
+  av.className = "av bot";
+  av.innerHTML = "&#x1F916;";
+
+  var YEARS    = [3, 5, 7, 10, 13, 15, 20];
+  var RATES    = [8, 10, 12, 13, 14, 15, 18, 20];
+  var selYears = 10;
+  var selRate  = 12;
+
+  function fmtINR(n) {
+    if (n >= 1e7)  return "₹" + (n / 1e7).toFixed(2)  + " Cr";
+    if (n >= 1e5)  return "₹" + (n / 1e5).toFixed(2)  + " L";
+    return "₹" + Math.round(n).toLocaleString("en-IN");
+  }
+
+  function calcSIP(monthly, years, rate) {
+    var n = years * 12;
+    var r = rate / 100 / 12;
+    var corpus = monthly * ((Math.pow(1 + r, n) - 1) / r) * (1 + r);
+    var invested = monthly * n;
+    var returns  = corpus - invested;
+    return { corpus: corpus, invested: invested, returns: returns };
+  }
+
+  function render() {
+    var monthly = parseFloat(document.getElementById("sipAmt").value) || 0;
+    var res = document.getElementById("sipResult");
+    if (monthly <= 0) { res.classList.remove("show"); return; }
+    var c = calcSIP(monthly, selYears, selRate);
+    document.getElementById("sipInvested").textContent = fmtINR(c.invested);
+    document.getElementById("sipReturns").textContent  = "+" + fmtINR(c.returns);
+    document.getElementById("sipCorpus").textContent   = fmtINR(c.corpus);
+    res.classList.add("show");
+  }
+
+  function pillsHTML(values, sel, idPrefix, unit) {
+    return values.map(function(v) {
+      return '<button class="sip-pill' + (v === sel ? ' active' : '') +
+             '" id="' + idPrefix + v + '" onclick="__sipPick(\'' + idPrefix + '\',' + v + ')">' +
+             v + unit + '</button>';
+    }).join('');
+  }
+
+  var bubble = document.createElement("div");
+  bubble.className = "bubble";
+  bubble.innerHTML =
+    '<div class="sip-card">' +
+      '<h3>🧮 SIP Calculator</h3>' +
+      '<div class="sip-label">Monthly Investment</div>' +
+      '<div class="sip-amount-wrap"><span>₹</span>' +
+        '<input class="sip-amount-inp" id="sipAmt" type="number" placeholder="e.g. 5000" min="1" oninput="__sipRender()"/>' +
+      '</div>' +
+      '<div class="sip-label">Investment Period</div>' +
+      '<div class="sip-pills">' + pillsHTML(YEARS, selYears, 'sipy', ' yrs') + '</div>' +
+      '<div class="sip-label">Expected Annual Return</div>' +
+      '<div class="sip-pills">' + pillsHTML(RATES, selRate, 'sipr', '%') + '</div>' +
+      '<div class="sip-result" id="sipResult">' +
+        '<div class="sip-result-row"><span class="lbl">Total Invested</span><span class="val" id="sipInvested">—</span></div>' +
+        '<div class="sip-result-row profit"><span class="lbl">Returns Earned</span><span class="val" id="sipReturns">—</span></div>' +
+        '<div class="sip-result-row corpus"><span class="lbl">Total Corpus</span><span class="val" id="sipCorpus">—</span></div>' +
+      '</div>' +
+    '</div>';
+
+  row.appendChild(av);
+  row.appendChild(bubble);
+  chat.appendChild(row);
+  scrollBottom();
+
+  // Expose helpers to global scope for inline onclick
+  window.__sipSelYears = selYears;
+  window.__sipSelRate  = selRate;
+  window.__sipRender   = render;
+  window.__sipPick = function(prefix, val) {
+    if (prefix === 'sipy') {
+      window.__sipSelYears = val;
+      [3,5,7,10,13,15,20].forEach(function(y) {
+        var el = document.getElementById('sipy' + y);
+        if (el) el.className = 'sip-pill' + (y === val ? ' active' : '');
+      });
+    } else {
+      window.__sipSelRate = val;
+      [8,10,12,13,14,15,18,20].forEach(function(r) {
+        var el = document.getElementById('sipr' + r);
+        if (el) el.className = 'sip-pill' + (r === val ? ' active' : '');
+      });
+    }
+    // Re-calc using current globals
+    var monthly = parseFloat(document.getElementById("sipAmt").value) || 0;
+    var res = document.getElementById("sipResult");
+    if (monthly <= 0) { res.classList.remove("show"); return; }
+    var c = calcSIP(monthly, window.__sipSelYears, window.__sipSelRate);
+    document.getElementById("sipInvested").textContent = fmtINR(c.invested);
+    document.getElementById("sipReturns").textContent  = "+" + fmtINR(c.returns);
+    document.getElementById("sipCorpus").textContent   = fmtINR(c.corpus);
+    res.classList.add("show");
+  };
 }
 
 // ── Market Summary Bar ────────────────────────────────────────────────────────
