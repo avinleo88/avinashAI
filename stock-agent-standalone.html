@@ -1925,6 +1925,14 @@ async function sendMsg() {
   var _retryStatus = function() {
     bubble.innerHTML = '<div class="status-row"><div class="spin"></div><span style="font-size:.78rem;color:var(--cyan)">Server waking up, retrying in 8s…</span></div>';
   };
+  var _finishBubble = function(html, doFollowups) {
+    if (doFollowups === undefined) doFollowups = true;
+    bubble.innerHTML = html;
+    if (bubble._row) addCopyBtn(bubble._row, bubble);
+    if (doFollowups) addFollowups(bubble, resolvedText || text, html);
+    sendBtn.disabled = false; inp.focus();
+    scrollBottom();
+  };
   var q = text.toLowerCase().trim();
 
   // --- Slash commands ---
