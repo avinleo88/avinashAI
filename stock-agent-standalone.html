@@ -313,25 +313,96 @@
     .screener-price { font-size:0.8rem; font-weight:600; text-align:right; min-width:60px; }
     .screener-chg   { font-size:0.72rem; font-weight:600; min-width:48px; text-align:right; }
     /* ── SIP Calculator ─────────────────────────────────────────────────────── */
-    .sip-card { background:var(--surface); border:1px solid var(--border); border-radius:14px; padding:18px 20px; max-width:420px; }
-    .sip-card h3 { margin:0 0 14px; font-size:.95rem; color:var(--fg); }
-    .sip-label { font-size:.75rem; color:var(--muted); margin-bottom:6px; }
-    .sip-amount-wrap { display:flex; align-items:center; gap:8px; background:var(--bg); border:1px solid var(--border); border-radius:8px; padding:8px 12px; margin-bottom:16px; }
-    .sip-amount-wrap span { font-size:1rem; color:var(--muted); }
-    .sip-amount-inp { background:none; border:none; outline:none; color:var(--fg); font-size:1.1rem; font-weight:600; width:100%; font-family:inherit; }
-    .sip-amount-inp::placeholder { color:var(--muted); font-weight:400; }
-    .sip-pills { display:flex; flex-wrap:wrap; gap:7px; margin-bottom:16px; }
-    .sip-pill { padding:5px 13px; border-radius:20px; border:1px solid var(--border); background:none; color:var(--muted); font-size:.8rem; cursor:pointer; transition:all .15s; font-family:inherit; }
-    .sip-pill:hover { border-color:rgba(0,229,255,.4); color:var(--cyan); }
-    .sip-pill.active { background:rgba(0,229,255,.12); border-color:var(--cyan); color:var(--cyan); font-weight:600; }
-    .sip-result { background:linear-gradient(135deg,rgba(0,229,255,.07),rgba(0,255,163,.05)); border:1px solid rgba(0,229,255,.18); border-radius:10px; padding:14px 16px; margin-top:4px; display:none; }
-    .sip-result.show { display:block; }
-    .sip-result-row { display:flex; justify-content:space-between; align-items:center; padding:5px 0; border-bottom:1px solid var(--border); font-size:.82rem; }
-    .sip-result-row:last-child { border-bottom:none; }
-    .sip-result-row .lbl { color:var(--muted); }
-    .sip-result-row .val { font-weight:600; color:var(--fg); }
-    .sip-result-row.corpus .val { font-size:1.15rem; color:var(--cyan); }
-    .sip-result-row.profit .val { color:var(--green); }
+    .sip-card {
+      background: rgba(255,255,255,.03); border-radius:20px; padding:24px;
+      max-width:460px; backdrop-filter:blur(10px); position:relative; overflow:hidden;
+      box-shadow:0 8px 32px rgba(0,0,0,.45), inset 0 1px 0 rgba(255,255,255,.06);
+      border:1px solid rgba(255,255,255,.08);
+    }
+    .sip-card::before {
+      content:""; position:absolute; top:0; left:0; right:0; height:1px;
+      background:linear-gradient(90deg,transparent,rgba(0,229,255,.5) 50%,transparent);
+    }
+    .sip-card-title {
+      font-size:.95rem; font-weight:700; margin-bottom:22px; letter-spacing:-.01em;
+      display:flex; align-items:center; gap:8px; color:var(--text);
+    }
+    .sip-section-label {
+      font-size:.63rem; font-weight:700; letter-spacing:.1em; text-transform:uppercase;
+      color:var(--muted); margin-bottom:9px;
+    }
+    .sip-amount-wrap {
+      display:flex; align-items:center; gap:10px; margin-bottom:22px;
+      background:rgba(0,0,0,.3); border:1.5px solid rgba(255,255,255,.1);
+      border-radius:12px; padding:12px 16px; transition:border-color .2s, box-shadow .2s;
+    }
+    .sip-amount-wrap:focus-within {
+      border-color:rgba(0,229,255,.5); box-shadow:0 0 0 3px rgba(0,229,255,.08);
+    }
+    .sip-currency { font-size:1.3rem; font-weight:700; color:var(--cyan); flex-shrink:0; }
+    .sip-amount-inp {
+      background:none; border:none; outline:none; color:var(--text);
+      font-size:1.5rem; font-weight:700; width:100%; font-family:inherit; letter-spacing:-.02em;
+    }
+    .sip-amount-inp::placeholder { color:rgba(255,255,255,.18); font-weight:400; font-size:1rem; }
+    .sip-pills { display:flex; flex-wrap:wrap; gap:7px; margin-bottom:22px; }
+    .sip-pill {
+      padding:6px 14px; border-radius:10px; border:1px solid rgba(255,255,255,.1);
+      background:rgba(255,255,255,.03); color:rgba(255,255,255,.45); font-size:.78rem;
+      cursor:pointer; transition:all .15s; font-family:inherit; font-weight:500;
+    }
+    .sip-pill:hover { border-color:rgba(0,229,255,.35); color:rgba(0,229,255,.8); background:rgba(0,229,255,.05); }
+    .sip-pill.active {
+      background:rgba(0,229,255,.15); border-color:rgba(0,229,255,.6);
+      color:var(--cyan); font-weight:700; box-shadow:0 0 12px rgba(0,229,255,.15);
+    }
+    .sip-divider { height:1px; background:rgba(255,255,255,.06); margin:4px 0 20px; }
+    .sip-stepup-btn {
+      width:100%; display:flex; align-items:center; gap:10px; cursor:pointer;
+      background:rgba(0,229,255,.05); border:1px dashed rgba(0,229,255,.22);
+      border-radius:12px; padding:11px 14px; transition:all .2s; font-family:inherit; margin-bottom:0;
+      text-align:left;
+    }
+    .sip-stepup-btn:hover { background:rgba(0,229,255,.09); border-color:rgba(0,229,255,.4); }
+    .sip-stepup-btn.on { background:rgba(255,179,0,.06); border-color:rgba(255,179,0,.3); border-style:solid; }
+    .sip-stepup-icon { font-size:1rem; flex-shrink:0; }
+    .sip-stepup-label strong { display:block; font-size:.82rem; color:var(--text); font-weight:600; }
+    .sip-stepup-label span { font-size:.7rem; color:var(--muted); }
+    .sip-stepup-section { overflow:hidden; max-height:0; transition:max-height .3s ease, opacity .3s; opacity:0; }
+    .sip-stepup-section.open { max-height:120px; opacity:1; }
+    .sip-stepup-section-inner { padding-top:16px; }
+    /* Results */
+    .sip-result { opacity:0; transform:translateY(10px); transition:opacity .35s, transform .35s; pointer-events:none; margin-top:16px; }
+    .sip-result.show { opacity:1; transform:translateY(0); pointer-events:auto; }
+    .sip-result-block {
+      background:rgba(0,0,0,.25); border:1px solid rgba(255,255,255,.07);
+      border-radius:14px; padding:16px; margin-bottom:10px;
+    }
+    .sip-result-block.su { border-color:rgba(255,179,0,.2); background:rgba(255,179,0,.04); }
+    .sip-block-title {
+      font-size:.63rem; font-weight:700; letter-spacing:.1em; text-transform:uppercase;
+      color:var(--muted); margin-bottom:12px;
+    }
+    .sip-result-block.su .sip-block-title { color:rgba(255,179,0,.8); }
+    .sip-bar-wrap { margin-bottom:12px; }
+    .sip-bar {
+      height:7px; border-radius:4px; background:rgba(255,255,255,.06);
+      overflow:hidden; display:flex; margin-bottom:6px;
+    }
+    .sip-bar-a { background:rgba(0,229,255,.45); height:100%; transition:width .5s ease; }
+    .sip-bar-b { background:rgba(0,255,163,.75); height:100%; transition:width .5s ease; }
+    .sip-bar.su .sip-bar-a { background:rgba(255,179,0,.45); }
+    .sip-bar.su .sip-bar-b { background:rgba(255,179,0,.9); }
+    .sip-bar-legend { display:flex; gap:14px; }
+    .sip-legend-dot { width:8px; height:8px; border-radius:2px; flex-shrink:0; }
+    .sip-legend-item { display:flex; align-items:center; gap:5px; font-size:.67rem; color:var(--muted); }
+    .sip-row { display:flex; justify-content:space-between; align-items:center; padding:7px 0; }
+    .sip-row + .sip-row { border-top:1px solid rgba(255,255,255,.05); }
+    .sip-row-lbl { font-size:.78rem; color:var(--muted); }
+    .sip-row-val { font-size:.85rem; font-weight:600; color:var(--text); }
+    .sip-row-val.pos { color:var(--green); }
+    .sip-row-val.total { font-size:1.3rem; font-weight:800; color:var(--cyan); letter-spacing:-.02em; line-height:1; }
+    .sip-row-val.total-su { font-size:1.3rem; font-weight:800; color:#FFB300; letter-spacing:-.02em; line-height:1; }
   </style>
 </head>
 <body>
@@ -1960,70 +2031,82 @@ function showSIPCalc() {
   av.className = "av bot";
   av.innerHTML = "&#x1F916;";
 
-  var YEARS    = [3, 5, 7, 10, 13, 15, 20];
-  var RATES    = [8, 10, 12, 13, 14, 15, 18, 20];
-  var STEPUPS  = [5, 10, 15, 20, 25, 30];
+  var YEARS   = [3, 5, 7, 10, 13, 15, 20];
+  var RATES   = [8, 10, 12, 13, 14, 15, 18, 20];
+  var STEPUPS = [5, 10, 15, 20, 25, 30];
 
-  window.__sipSelYears  = 10;
-  window.__sipSelRate   = 12;
-  window.__sipStepup    = 10;
-  window.__sipStepupOn  = false;
+  window.__sipSelYears = 10;
+  window.__sipSelRate  = 12;
+  window.__sipStepup   = 10;
+  window.__sipStepupOn = false;
 
   function fmtINR(n) {
-    if (n >= 1e7) return "₹" + (n / 1e7).toFixed(2) + " Cr";
-    if (n >= 1e5) return "₹" + (n / 1e5).toFixed(2) + " L";
-    return "₹" + Math.round(n).toLocaleString("en-IN");
+    if (n >= 1e7) return "\u20B9" + (n / 1e7).toFixed(2) + " Cr";
+    if (n >= 1e5) return "\u20B9" + (n / 1e5).toFixed(2) + " L";
+    return "\u20B9" + Math.round(n).toLocaleString("en-IN");
   }
 
   function calcSIP(monthly, years, rate) {
-    var r = rate / 100 / 12;
-    var n = years * 12;
-    var corpus   = monthly * ((Math.pow(1 + r, n) - 1) / r) * (1 + r);
-    var invested = monthly * n;
-    return { corpus: corpus, invested: invested, returns: corpus - invested };
+    var r = rate / 100 / 12, n = years * 12;
+    var corpus = monthly * ((Math.pow(1+r,n)-1)/r) * (1+r);
+    return { corpus:corpus, invested:monthly*n, returns:corpus - monthly*n };
   }
 
   function calcStepupSIP(monthly, years, rate, stepup) {
-    var r = rate / 100 / 12;
-    var s = stepup / 100;
-    var corpus = 0, invested = 0;
-    for (var k = 0; k < years; k++) {
-      var m = monthly * Math.pow(1 + s, k);
-      var fvYear = m * ((Math.pow(1 + r, 12) - 1) / r) * (1 + r);
-      corpus += fvYear * Math.pow(1 + r, 12 * (years - k - 1));
-      invested += m * 12;
+    var r = rate/100/12, s = stepup/100, corpus=0, invested=0;
+    for (var k=0; k<years; k++) {
+      var m = monthly * Math.pow(1+s,k);
+      corpus += m * ((Math.pow(1+r,12)-1)/r) * (1+r) * Math.pow(1+r,12*(years-k-1));
+      invested += m*12;
     }
-    return { corpus: corpus, invested: invested, returns: corpus - invested };
+    return { corpus:corpus, invested:invested, returns:corpus-invested };
   }
 
   function pillsHTML(values, sel, idPrefix, unit) {
     return values.map(function(v) {
-      return '<button class="sip-pill' + (v === sel ? ' active' : '') +
-             '" id="' + idPrefix + v + '" onclick="__sipPick(\'' + idPrefix + '\',' + v + ')">' +
-             v + unit + '</button>';
+      return '<button class="sip-pill'+(v===sel?' active':'')+'" id="'+idPrefix+v+'" onclick="__sipPick(\''+ idPrefix+'\',"+ v +')">'+ v + unit +'</button>';
     }).join('');
+  }
+
+  function blockHTML(c, isSU) {
+    var pct  = c.corpus > 0 ? (c.invested / c.corpus * 100) : 50;
+    var rPct = 100 - pct;
+    var su   = isSU ? ' su' : '';
+    var idPfx = isSU ? 'su' : 'reg';
+    var corpCls = isSU ? 'total-su' : 'total';
+    var dotInv = isSU ? 'rgba(255,179,0,.45)' : 'rgba(0,229,255,.45)';
+    var dotRet = isSU ? 'rgba(255,179,0,.9)' : 'rgba(0,255,163,.75)';
+    return '<div class="sip-result-block'+su+'">' +
+      '<div class="sip-block-title">' + (isSU ? '⚡ Step-up SIP' : '📊 Regular SIP') + '</div>' +
+      '<div class="sip-bar-wrap">' +
+        '<div class="sip-bar'+su+'">' +
+          '<div class="sip-bar-a" style="width:'+pct.toFixed(1)+'%"></div>' +
+          '<div class="sip-bar-b" style="width:'+rPct.toFixed(1)+'%"></div>' +
+        '</div>' +
+        '<div class="sip-bar-legend">' +
+          '<div class="sip-legend-item"><div class="sip-legend-dot" style="background:'+dotInv+'"></div>Invested</div>' +
+          '<div class="sip-legend-item"><div class="sip-legend-dot" style="background:'+dotRet+'"></div>Returns</div>' +
+        '</div>' +
+      '</div>' +
+      '<div class="sip-row"><span class="sip-row-lbl">Total Invested</span><span class="sip-row-val">' + fmtINR(c.invested) + '</span></div>' +
+      '<div class="sip-row"><span class="sip-row-lbl">Returns Earned</span><span class="sip-row-val pos">+' + fmtINR(c.returns) + '</span></div>' +
+      '<div class="sip-row"><span class="sip-row-lbl" style="font-weight:600;color:' + (isSU?'#FFB300':'var(--cyan)') + '">Total Corpus</span><span class="sip-row-val '+corpCls+'">' + fmtINR(c.corpus) + '</span></div>' +
+    '</div>';
   }
 
   function doRender() {
     var monthly = parseFloat(document.getElementById("sipAmt").value) || 0;
     var res = document.getElementById("sipResult");
     if (monthly <= 0) { res.classList.remove("show"); return; }
-
     var base = calcSIP(monthly, window.__sipSelYears, window.__sipSelRate);
-
-    document.getElementById("sipInvested").textContent = fmtINR(base.invested);
-    document.getElementById("sipReturns").textContent  = "+" + fmtINR(base.returns);
-    document.getElementById("sipCorpus").textContent   = fmtINR(base.corpus);
-
-    var suRow = document.getElementById("sipStepupResultRow");
+    var rb = document.getElementById("sipRegBlock");
+    var sb = document.getElementById("sipSuBlock");
+    if (rb) rb.innerHTML = blockHTML(base, false);
     if (window.__sipStepupOn) {
       var su = calcStepupSIP(monthly, window.__sipSelYears, window.__sipSelRate, window.__sipStepup);
-      document.getElementById("sipSuInvested").textContent = fmtINR(su.invested);
-      document.getElementById("sipSuReturns").textContent  = "+" + fmtINR(su.returns);
-      document.getElementById("sipSuCorpus").textContent   = fmtINR(su.corpus);
-      if (suRow) suRow.style.display = "";
+      if (sb) { sb.innerHTML = blockHTML(su, true); sb.style.display = ""; }
     } else {
-      if (suRow) suRow.style.display = "none";
+      if (sb) sb.style.display = "none";
     }
     res.classList.add("show");
   }
@@ -2032,52 +2115,27 @@ function showSIPCalc() {
   bubble.className = "bubble";
   bubble.innerHTML =
     '<div class="sip-card">' +
-      '<h3>🧮 SIP Calculator</h3>' +
-
-      '<div class="sip-label">Monthly Investment</div>' +
-      '<div class="sip-amount-wrap"><span>₹</span>' +
-        '<input class="sip-amount-inp" id="sipAmt" type="number" placeholder="e.g. 5000" min="1" oninput="__sipRender()"/>' +
+      '<div class="sip-card-title">🧮 SIP Calculator</div>' +
+      '<div class="sip-section-label">Monthly Investment</div>' +
+      '<div class="sip-amount-wrap"><span class="sip-currency">\u20B9</span>' +
+        '<input class="sip-amount-inp" id="sipAmt" type="number" placeholder="Enter amount" min="1" oninput="__sipRender()"/>' +
       '</div>' +
-
-      '<div class="sip-label">Investment Period</div>' +
+      '<div class="sip-section-label">Investment Period</div>' +
       '<div class="sip-pills">' + pillsHTML(YEARS, window.__sipSelYears, 'sipy', ' yrs') + '</div>' +
-
-      '<div class="sip-label">Expected Annual Return</div>' +
+      '<div class="sip-section-label">Expected Annual Return</div>' +
       '<div class="sip-pills">' + pillsHTML(RATES, window.__sipSelRate, 'sipr', '%') + '</div>' +
-
-      // Step-up toggle
-      '<div style="display:flex;align-items:center;gap:10px;margin:14px 0 0;">' +
-        '<button id="sipStepupToggle" onclick="__sipToggleStepup()" style="' +
-          'background:rgba(0,229,255,.08);border:1px solid rgba(0,229,255,.25);color:var(--cyan);' +
-          'border-radius:20px;padding:5px 14px;font-size:.78rem;cursor:pointer;font-family:inherit;' +
-          'transition:all .15s;">+ Add Step-up SIP</button>' +
-        '<span style="font-size:.72rem;color:var(--muted)">Increase SIP annually</span>' +
-      '</div>' +
-
-      // Step-up rate pills (hidden by default)
-      '<div id="sipStepupSection" style="display:none;margin-top:12px;">' +
-        '<div class="sip-label">Annual Step-up Rate</div>' +
-        '<div class="sip-pills">' + pillsHTML(STEPUPS, window.__sipStepup, 'sipsu', '%') + '</div>' +
-      '</div>' +
-
-      // Results
-      '<div class="sip-result" id="sipResult">' +
-
-        // Normal SIP result
-        '<div style="font-size:.72rem;color:var(--muted);font-weight:600;padding:4px 0 6px;letter-spacing:.04em" id="sipNormalLabel">REGULAR SIP</div>' +
-        '<div class="sip-result-row"><span class="lbl">Total Invested</span><span class="val" id="sipInvested">—</span></div>' +
-        '<div class="sip-result-row profit"><span class="lbl">Returns Earned</span><span class="val" id="sipReturns">—</span></div>' +
-        '<div class="sip-result-row corpus"><span class="lbl">Total Corpus</span><span class="val" id="sipCorpus">—</span></div>' +
-
-        // Step-up SIP result (hidden until toggled)
-        '<div id="sipStepupResultRow" style="display:none">' +
-          '<div style="font-size:.72rem;color:#FFB300;font-weight:600;padding:12px 0 6px;letter-spacing:.04em">STEP-UP SIP</div>' +
-          '<div class="sip-result-row"><span class="lbl">Total Invested</span><span class="val" id="sipSuInvested">—</span></div>' +
-          '<div class="sip-result-row profit"><span class="lbl">Returns Earned</span><span class="val" id="sipSuReturns">—</span></div>' +
-          '<div class="sip-result-row" style="border-bottom:none"><span class="lbl" style="color:#FFB300;font-weight:600">Total Corpus</span><span class="val" style="font-size:1.15rem;color:#FFB300" id="sipSuCorpus">—</span></div>' +
+      '<div class="sip-divider"></div>' +
+      '<button id="sipStepupBtn" class="sip-stepup-btn" onclick="__sipToggleStepup()">' +
+        '<span class="sip-stepup-icon">⚡</span>' +
+        '<div class="sip-stepup-label"><strong>Add Step-up SIP</strong><span>Increase your SIP amount every year</span></div>' +
+      '</button>' +
+      '<div class="sip-stepup-section" id="sipStepupSection">' +
+        '<div class="sip-stepup-section-inner">' +
+          '<div class="sip-section-label">Annual Step-up Rate</div>' +
+          '<div class="sip-pills">' + pillsHTML(STEPUPS, window.__sipStepup, 'sipsu', '%') + '</div>' +
         '</div>' +
-
       '</div>' +
+      '<div class="sip-result" id="sipResult"><div id="sipRegBlock"></div><div id="sipSuBlock" style="display:none"></div></div>' +
     '</div>';
 
   row.appendChild(av);
@@ -2089,57 +2147,35 @@ function showSIPCalc() {
 
   window.__sipToggleStepup = function() {
     window.__sipStepupOn = !window.__sipStepupOn;
+    var btn = document.getElementById("sipStepupBtn");
     var sec = document.getElementById("sipStepupSection");
-    var btn = document.getElementById("sipStepupToggle");
-    var lbl = document.getElementById("sipNormalLabel");
     if (window.__sipStepupOn) {
-      sec.style.display = "";
-      btn.textContent = "✕ Remove Step-up SIP";
-      btn.style.background = "rgba(255,77,109,.08)";
-      btn.style.borderColor = "rgba(255,77,109,.3)";
-      btn.style.color = "var(--red)";
-      if (lbl) lbl.style.display = "";
+      btn.classList.add("on");
+      btn.querySelector("strong").textContent = "Remove Step-up SIP";
+      btn.querySelector("span").textContent = "Step-up is active";
+      sec.classList.add("open");
     } else {
-      sec.style.display = "none";
-      btn.textContent = "+ Add Step-up SIP";
-      btn.style.background = "rgba(0,229,255,.08)";
-      btn.style.borderColor = "rgba(0,229,255,.25)";
-      btn.style.color = "var(--cyan)";
-      if (lbl) lbl.style.display = "none";
+      btn.classList.remove("on");
+      btn.querySelector("strong").textContent = "Add Step-up SIP";
+      btn.querySelector("span").textContent = "Increase your SIP amount every year";
+      sec.classList.remove("open");
     }
     doRender();
   };
 
   window.__sipPick = function(prefix, val) {
-    var allYears  = [3,5,7,10,13,15,20];
-    var allRates  = [8,10,12,13,14,15,18,20];
-    var allStepup = [5,10,15,20,25,30];
-    if (prefix === 'sipy') {
-      window.__sipSelYears = val;
-      allYears.forEach(function(y) {
-        var el = document.getElementById('sipy' + y);
-        if (el) el.className = 'sip-pill' + (y === val ? ' active' : '');
-      });
-    } else if (prefix === 'sipr') {
-      window.__sipSelRate = val;
-      allRates.forEach(function(r) {
-        var el = document.getElementById('sipr' + r);
-        if (el) el.className = 'sip-pill' + (r === val ? ' active' : '');
-      });
-    } else if (prefix === 'sipsu') {
-      window.__sipStepup = val;
-      allStepup.forEach(function(s) {
-        var el = document.getElementById('sipsu' + s);
-        if (el) el.className = 'sip-pill' + (s === val ? ' active' : '');
-      });
-    }
+    var maps = { sipy:[3,5,7,10,13,15,20], sipr:[8,10,12,13,14,15,18,20], sipsu:[5,10,15,20,25,30] };
+    if (prefix==='sipy') window.__sipSelYears = val;
+    else if (prefix==='sipr') window.__sipSelRate = val;
+    else if (prefix==='sipsu') window.__sipStepup = val;
+    (maps[prefix]||[]).forEach(function(v) {
+      var el = document.getElementById(prefix+v);
+      if (el) el.className = 'sip-pill'+(v===val?' active':'');
+    });
     doRender();
   };
-
-  // Hide the "REGULAR SIP" label until step-up is toggled on
-  var lbl = document.getElementById("sipNormalLabel");
-  if (lbl) lbl.style.display = "none";
 }
+
 
 // ── Market Summary Bar ────────────────────────────────────────────────────────
 function showLiveMarket() {
