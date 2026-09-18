@@ -526,8 +526,6 @@ def recommendations():
             elif ret_1m < -10: score -= 1; warns.append(f"1M return {ret_1m}% — weak")
 
             verdict = "STRONG BUY" if score >= 4 else "BUY" if score >= 2 else "HOLD" if score >= 0 else "AVOID" if score >= -2 else "STRONG AVOID"
-            if score < 2:
-                continue  # only return BUY and STRONG BUY
 
             results.append({
                 "symbol":    sym,
@@ -608,8 +606,6 @@ def avoid():
                 if ret_1m < -5:   score -= 1; warns.append(f"1M return {ret_1m}% — declining")
                 elif ret_1m > 5:  score += 1; flags.append(f"1M return +{ret_1m}% — momentum")
                 verdict = "STRONG BUY" if score >= 4 else "BUY" if score >= 2 else "HOLD" if score >= 0 else "AVOID" if score >= -3 else "STRONG AVOID"
-                if score > -1:
-                    continue
                 results.append({
                     "symbol":    sym,
                     "name":      NAME_MAP.get(sym, sym.replace(".NS", "")),

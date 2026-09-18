@@ -989,7 +989,7 @@ async function buildResponse(query, onStatus) {
       emit("> **MACD** *(Moving Avg Convergence Divergence)* — Measures momentum direction. **Positive** = bullish momentum building. **Negative** = bearish momentum.");
       emit();
       buys.forEach(function(s, idx) {
-        var verdictLabel = s.score >= 4 ? "STRONG BUY" : "BUY";
+        var verdictLabel = s.verdict || (s.score >= 4 ? "STRONG BUY" : s.score >= 2 ? "BUY" : s.score >= 0 ? "HOLD" : "AVOID");
         var arrow = s.change_pct >= 0 ? "+" : "";
         emit("### " + (idx + 1) + ". " + (s.name || s.symbol));
         emit("**Price:** ₹" + s.price.toLocaleString("en-IN") + "  " + arrow + s.change_pct.toFixed(2) + "%");
@@ -1003,7 +1003,7 @@ async function buildResponse(query, onStatus) {
         emit("| 52W Position | " + s.w52pct + "% | " + (s.w52pct < 30 ? "Near low — value zone" : s.w52pct > 80 ? "Near high" : "Mid-range") + " |");
         emit("| 1M Return | " + s.ret_1m + "% | " + (s.ret_1m > 5 ? "Strong momentum" : s.ret_1m < -5 ? "Recent pullback" : "Stable") + " |");
         emit();
-        emit("**Verdict: " + verdictLabel + "** (Score: +" + s.score + "/8)");
+        emit("**Verdict: " + verdictLabel + "** (Score: " + (s.score >= 0 ? "+" : "") + s.score + "/8)");
         emit();
         emit("---");
         emit();
@@ -1964,6 +1964,39 @@ async function sendMsg() {
   if (/\b(what (is|are|does)|explain|define|meaning of)\b/i.test(q)) {
     var expl = _explainMsg(q);
     if (expl) { _finishBubble(md(expl), false); return; }
+  }
+
+  // --- Intent: screener --- call backend /screener, skip buildResponse
+  if (isScreener) {
+    var sparams = { universe: screenerUniverse };
+    var _m;
+    _m = q.match(/rsi\s*(?:below|under|<|less\s+than)\s*(\d+)/i);    if (_m) sparams.max_rsi = _m[1];
+    _m = q.match(/rsi\s*(?:above|over|>|greater\s+than)\s*(\d+)/i);  if (_m) sparams.min_rsi = _m[1];
+    if (/above\s+sma\s*50|over\s+sma\s*50/i.test(q))  sparams.above_sma50 = 'true';
+    if (/above\s+sma\s*20/i.test(q))                   sparams.above_sma20 = 'true';
+    if (/below\s+sma\s*20/i.test(q))                   sparams.below_sma20 = 'true';
+    if (/macd\s*(positive|bullish)/i.test(q))           sparams.macd_positive = 'true';
+    if (/macd\s*(negative|bearish)/i.test(q))           sparams.macd_negative = 'true';
+    if (/\bbuy\s+signal/i.test(q))                      sparams.min_score = '2';
+    if (/\bavoid\s+signal|\bweak\b/i.test(q))           sparams.max_score = '-1';
+    var _qs = Object.keys(sparams).map(function(k) { return encodeURIComponent(k) + '=' + encodeURIComponent(sparams[k]); }).join('&');
+    var _sBackend = BACKEND_URL || "http://localhost:5050";
+    bubble.innerHTML = '<div class="status-row"><div class="spin"></div><span style="font-size:.78rem;color:var(--cyan)">Running screener on ' + (screenerUniverse === 'nifty100' ? 'Nifty 100' : 'Nifty 50') + '…</span></div>';
+    scrollBottom();
+    try {
+      var _sr = await fetchWithRetry(_sBackend + '/screener?' + _qs, { signal: AbortSignal.timeout(45000) }, function() {
+        bubble.innerHTML = '<div class="status-row"><div class="spin"></div><span style="font-size:.78rem;color:var(--cyan)">Server waking up, retrying…</span></div>';
+      });
+      var _sData = await _sr.json();
+      var _sMeta = { universe: screenerUniverse, total_scanned: screenerUniverse === 'nifty100' ? 100 : 50 };
+      renderScreener(_sData, sparams, bubble, _sMeta);
+    } catch(_se) {
+      bubble.innerHTML = '<span style="color:var(--red)">Screener failed. Check your connection.<br><small>' + _se.message + '</small></span>';
+    }
+    if (bubble._row) addCopyBtn(bubble._row, bubble);
+    sendBtn.disabled = false; inp.focus();
+    scrollBottom();
+    return;
   }
 
   // --- Context: resolve follow-up questions when a stock was already discussed ---
