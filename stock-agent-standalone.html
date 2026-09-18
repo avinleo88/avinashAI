@@ -1949,13 +1949,11 @@ function showSIPCalc() {
   var welcome = chat.querySelector(".welcome");
   if (welcome) welcome.remove();
 
-  // User bubble
   var userRow = document.createElement("div");
   userRow.className = "row";
   userRow.innerHTML = '<div style="margin-left:auto;max-width:70%"><div class="bubble user">🧮 SIP Calculator</div></div>';
   chat.appendChild(userRow);
 
-  // Bot row
   var row = document.createElement("div");
   row.className = "row";
   var av = document.createElement("div");
@@ -1964,33 +1962,38 @@ function showSIPCalc() {
 
   var YEARS    = [3, 5, 7, 10, 13, 15, 20];
   var RATES    = [8, 10, 12, 13, 14, 15, 18, 20];
-  var selYears = 10;
-  var selRate  = 12;
+  var STEPUPS  = [5, 10, 15, 20, 25, 30];
+
+  window.__sipSelYears  = 10;
+  window.__sipSelRate   = 12;
+  window.__sipStepup    = 10;
+  window.__sipStepupOn  = false;
 
   function fmtINR(n) {
-    if (n >= 1e7)  return "₹" + (n / 1e7).toFixed(2)  + " Cr";
-    if (n >= 1e5)  return "₹" + (n / 1e5).toFixed(2)  + " L";
+    if (n >= 1e7) return "₹" + (n / 1e7).toFixed(2) + " Cr";
+    if (n >= 1e5) return "₹" + (n / 1e5).toFixed(2) + " L";
     return "₹" + Math.round(n).toLocaleString("en-IN");
   }
 
   function calcSIP(monthly, years, rate) {
-    var n = years * 12;
     var r = rate / 100 / 12;
-    var corpus = monthly * ((Math.pow(1 + r, n) - 1) / r) * (1 + r);
+    var n = years * 12;
+    var corpus   = monthly * ((Math.pow(1 + r, n) - 1) / r) * (1 + r);
     var invested = monthly * n;
-    var returns  = corpus - invested;
-    return { corpus: corpus, invested: invested, returns: returns };
+    return { corpus: corpus, invested: invested, returns: corpus - invested };
   }
 
-  function render() {
-    var monthly = parseFloat(document.getElementById("sipAmt").value) || 0;
-    var res = document.getElementById("sipResult");
-    if (monthly <= 0) { res.classList.remove("show"); return; }
-    var c = calcSIP(monthly, selYears, selRate);
-    document.getElementById("sipInvested").textContent = fmtINR(c.invested);
-    document.getElementById("sipReturns").textContent  = "+" + fmtINR(c.returns);
-    document.getElementById("sipCorpus").textContent   = fmtINR(c.corpus);
-    res.classList.add("show");
+  function calcStepupSIP(monthly, years, rate, stepup) {
+    var r = rate / 100 / 12;
+    var s = stepup / 100;
+    var corpus = 0, invested = 0;
+    for (var k = 0; k < years; k++) {
+      var m = monthly * Math.pow(1 + s, k);
+      var fvYear = m * ((Math.pow(1 + r, 12) - 1) / r) * (1 + r);
+      corpus += fvYear * Math.pow(1 + r, 12 * (years - k - 1));
+      invested += m * 12;
+    }
+    return { corpus: corpus, invested: invested, returns: corpus - invested };
   }
 
   function pillsHTML(values, sel, idPrefix, unit) {
@@ -2001,23 +2004,79 @@ function showSIPCalc() {
     }).join('');
   }
 
+  function doRender() {
+    var monthly = parseFloat(document.getElementById("sipAmt").value) || 0;
+    var res = document.getElementById("sipResult");
+    if (monthly <= 0) { res.classList.remove("show"); return; }
+
+    var base = calcSIP(monthly, window.__sipSelYears, window.__sipSelRate);
+
+    document.getElementById("sipInvested").textContent = fmtINR(base.invested);
+    document.getElementById("sipReturns").textContent  = "+" + fmtINR(base.returns);
+    document.getElementById("sipCorpus").textContent   = fmtINR(base.corpus);
+
+    var suRow = document.getElementById("sipStepupResultRow");
+    if (window.__sipStepupOn) {
+      var su = calcStepupSIP(monthly, window.__sipSelYears, window.__sipSelRate, window.__sipStepup);
+      document.getElementById("sipSuInvested").textContent = fmtINR(su.invested);
+      document.getElementById("sipSuReturns").textContent  = "+" + fmtINR(su.returns);
+      document.getElementById("sipSuCorpus").textContent   = fmtINR(su.corpus);
+      if (suRow) suRow.style.display = "";
+    } else {
+      if (suRow) suRow.style.display = "none";
+    }
+    res.classList.add("show");
+  }
+
   var bubble = document.createElement("div");
   bubble.className = "bubble";
   bubble.innerHTML =
     '<div class="sip-card">' +
       '<h3>🧮 SIP Calculator</h3>' +
+
       '<div class="sip-label">Monthly Investment</div>' +
       '<div class="sip-amount-wrap"><span>₹</span>' +
         '<input class="sip-amount-inp" id="sipAmt" type="number" placeholder="e.g. 5000" min="1" oninput="__sipRender()"/>' +
       '</div>' +
+
       '<div class="sip-label">Investment Period</div>' +
-      '<div class="sip-pills">' + pillsHTML(YEARS, selYears, 'sipy', ' yrs') + '</div>' +
+      '<div class="sip-pills">' + pillsHTML(YEARS, window.__sipSelYears, 'sipy', ' yrs') + '</div>' +
+
       '<div class="sip-label">Expected Annual Return</div>' +
-      '<div class="sip-pills">' + pillsHTML(RATES, selRate, 'sipr', '%') + '</div>' +
+      '<div class="sip-pills">' + pillsHTML(RATES, window.__sipSelRate, 'sipr', '%') + '</div>' +
+
+      // Step-up toggle
+      '<div style="display:flex;align-items:center;gap:10px;margin:14px 0 0;">' +
+        '<button id="sipStepupToggle" onclick="__sipToggleStepup()" style="' +
+          'background:rgba(0,229,255,.08);border:1px solid rgba(0,229,255,.25);color:var(--cyan);' +
+          'border-radius:20px;padding:5px 14px;font-size:.78rem;cursor:pointer;font-family:inherit;' +
+          'transition:all .15s;">+ Add Step-up SIP</button>' +
+        '<span style="font-size:.72rem;color:var(--muted)">Increase SIP annually</span>' +
+      '</div>' +
+
+      // Step-up rate pills (hidden by default)
+      '<div id="sipStepupSection" style="display:none;margin-top:12px;">' +
+        '<div class="sip-label">Annual Step-up Rate</div>' +
+        '<div class="sip-pills">' + pillsHTML(STEPUPS, window.__sipStepup, 'sipsu', '%') + '</div>' +
+      '</div>' +
+
+      // Results
       '<div class="sip-result" id="sipResult">' +
+
+        // Normal SIP result
+        '<div style="font-size:.72rem;color:var(--muted);font-weight:600;padding:4px 0 6px;letter-spacing:.04em" id="sipNormalLabel">REGULAR SIP</div>' +
         '<div class="sip-result-row"><span class="lbl">Total Invested</span><span class="val" id="sipInvested">—</span></div>' +
         '<div class="sip-result-row profit"><span class="lbl">Returns Earned</span><span class="val" id="sipReturns">—</span></div>' +
         '<div class="sip-result-row corpus"><span class="lbl">Total Corpus</span><span class="val" id="sipCorpus">—</span></div>' +
+
+        // Step-up SIP result (hidden until toggled)
+        '<div id="sipStepupResultRow" style="display:none">' +
+          '<div style="font-size:.72rem;color:#FFB300;font-weight:600;padding:12px 0 6px;letter-spacing:.04em">STEP-UP SIP</div>' +
+          '<div class="sip-result-row"><span class="lbl">Total Invested</span><span class="val" id="sipSuInvested">—</span></div>' +
+          '<div class="sip-result-row profit"><span class="lbl">Returns Earned</span><span class="val" id="sipSuReturns">—</span></div>' +
+          '<div class="sip-result-row" style="border-bottom:none"><span class="lbl" style="color:#FFB300;font-weight:600">Total Corpus</span><span class="val" style="font-size:1.15rem;color:#FFB300" id="sipSuCorpus">—</span></div>' +
+        '</div>' +
+
       '</div>' +
     '</div>';
 
@@ -2026,34 +2085,60 @@ function showSIPCalc() {
   chat.appendChild(row);
   scrollBottom();
 
-  // Expose helpers to global scope for inline onclick
-  window.__sipSelYears = selYears;
-  window.__sipSelRate  = selRate;
-  window.__sipRender   = render;
+  window.__sipRender = doRender;
+
+  window.__sipToggleStepup = function() {
+    window.__sipStepupOn = !window.__sipStepupOn;
+    var sec = document.getElementById("sipStepupSection");
+    var btn = document.getElementById("sipStepupToggle");
+    var lbl = document.getElementById("sipNormalLabel");
+    if (window.__sipStepupOn) {
+      sec.style.display = "";
+      btn.textContent = "✕ Remove Step-up SIP";
+      btn.style.background = "rgba(255,77,109,.08)";
+      btn.style.borderColor = "rgba(255,77,109,.3)";
+      btn.style.color = "var(--red)";
+      if (lbl) lbl.style.display = "";
+    } else {
+      sec.style.display = "none";
+      btn.textContent = "+ Add Step-up SIP";
+      btn.style.background = "rgba(0,229,255,.08)";
+      btn.style.borderColor = "rgba(0,229,255,.25)";
+      btn.style.color = "var(--cyan)";
+      if (lbl) lbl.style.display = "none";
+    }
+    doRender();
+  };
+
   window.__sipPick = function(prefix, val) {
+    var allYears  = [3,5,7,10,13,15,20];
+    var allRates  = [8,10,12,13,14,15,18,20];
+    var allStepup = [5,10,15,20,25,30];
     if (prefix === 'sipy') {
       window.__sipSelYears = val;
-      [3,5,7,10,13,15,20].forEach(function(y) {
+      allYears.forEach(function(y) {
         var el = document.getElementById('sipy' + y);
         if (el) el.className = 'sip-pill' + (y === val ? ' active' : '');
       });
-    } else {
+    } else if (prefix === 'sipr') {
       window.__sipSelRate = val;
-      [8,10,12,13,14,15,18,20].forEach(function(r) {
+      allRates.forEach(function(r) {
         var el = document.getElementById('sipr' + r);
         if (el) el.className = 'sip-pill' + (r === val ? ' active' : '');
       });
+    } else if (prefix === 'sipsu') {
+      window.__sipStepup = val;
+      allStepup.forEach(function(s) {
+        var el = document.getElementById('sipsu' + s);
+        if (el) el.className = 'sip-pill' + (s === val ? ' active' : '');
+      });
     }
-    // Re-calc using current globals
-    var monthly = parseFloat(document.getElementById("sipAmt").value) || 0;
-    var res = document.getElementById("sipResult");
-    if (monthly <= 0) { res.classList.remove("show"); return; }
-    var c = calcSIP(monthly, window.__sipSelYears, window.__sipSelRate);
-    document.getElementById("sipInvested").textContent = fmtINR(c.invested);
-    document.getElementById("sipReturns").textContent  = "+" + fmtINR(c.returns);
-    document.getElementById("sipCorpus").textContent   = fmtINR(c.corpus);
-    res.classList.add("show");
+    doRender();
   };
+
+  // Hide the "REGULAR SIP" label until step-up is toggled on
+  var lbl = document.getElementById("sipNormalLabel");
+  if (lbl) lbl.style.display = "none";
 }
 
 // ── Market Summary Bar ────────────────────────────────────────────────────────
