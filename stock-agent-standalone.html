@@ -491,6 +491,29 @@
     .sip-row-val.pos { color:var(--green); }
     .sip-row-val.total { font-size:1.3rem; font-weight:800; color:var(--cyan); letter-spacing:-.02em; line-height:1; }
     .sip-row-val.total-su { font-size:1.3rem; font-weight:800; color:#FFB300; letter-spacing:-.02em; line-height:1; }
+
+    /* ── Homepage inline SIP Calculator ─────────────────────────────────── */
+    .home-sip-card { background:rgba(0,229,255,.03); border:1px solid rgba(0,229,255,.12); border-radius:14px; padding:16px 18px; margin-top:4px; }
+    .home-sip-field-lbl { font-size:.63rem; font-weight:700; letter-spacing:.9px; color:var(--muted); text-transform:uppercase; display:block; margin-bottom:7px; }
+    .home-sip-inp-wrap { display:flex; align-items:center; gap:8px; background:rgba(255,255,255,.04); border:1px solid rgba(255,255,255,.1); border-radius:9px; padding:9px 13px; margin-bottom:14px; }
+    .home-sip-inp-wrap:focus-within { border-color:var(--cyan); box-shadow:0 0 0 2px rgba(0,229,255,.08); }
+    .home-sip-rupee { font-size:1.15rem; font-weight:700; color:var(--cyan); flex-shrink:0; }
+    .home-sip-inp { flex:1; background:none; border:none; outline:none; font-size:1.15rem; font-weight:700; color:var(--text); width:100%; }
+    .home-sip-inp::placeholder { color:rgba(255,255,255,.2); font-weight:400; }
+    .home-sip-pills-row { margin-bottom:12px; }
+    .home-sip-pills { display:flex; flex-wrap:wrap; gap:6px; margin-top:6px; }
+    .home-sip-pill { font-size:.7rem; font-weight:600; padding:4px 11px; border-radius:20px; border:1px solid rgba(255,255,255,.1); background:rgba(255,255,255,.03); color:var(--muted); cursor:pointer; transition:all .15s; }
+    .home-sip-pill:hover { border-color:rgba(0,229,255,.3); color:rgba(0,229,255,.8); background:rgba(0,229,255,.05); }
+    .home-sip-pill.active { background:rgba(0,229,255,.1); border-color:var(--cyan); color:var(--cyan); }
+    .home-sip-divider { height:1px; background:rgba(255,255,255,.06); margin:12px 0; }
+    .home-sip-result { display:flex; gap:8px; }
+    .home-sip-stat { flex:1; background:rgba(255,255,255,.03); border:1px solid rgba(255,255,255,.07); border-radius:10px; padding:10px 8px; text-align:center; }
+    .home-sip-stat-lbl { font-size:.58rem; color:var(--muted); text-transform:uppercase; letter-spacing:.5px; margin-bottom:5px; }
+    .home-sip-stat-val { font-size:.85rem; font-weight:700; color:var(--text); }
+    .home-sip-stat-val.corpus { color:var(--cyan); font-size:.95rem; }
+    .home-sip-stat-val.pos { color:var(--green); }
+    .home-sip-fullbtn { display:block; width:100%; margin-top:12px; padding:8px; background:none; border:1px solid rgba(0,229,255,.15); border-radius:8px; color:rgba(0,229,255,.55); font-size:.7rem; cursor:pointer; transition:all .15s; text-align:center; font-family:inherit; }
+    .home-sip-fullbtn:hover { background:rgba(0,229,255,.06); border-color:rgba(0,229,255,.35); color:var(--cyan); }
   </style>
 </head>
 <body>
@@ -579,17 +602,36 @@
       </div>
     </div>
 
-    <!-- Tools -->
+    <!-- SIP Calculator (embedded) -->
     <div class="home-section">
-      <div class="home-section-hdr">Tools</div>
-      <div class="sugg-grid">
-        <div class="sugg-card tool-card" onclick="showSIPCalc()">
-          <span class="sugg-icon">🧮</span>
-          <div><div class="sugg-label">SIP Calculator</div><div class="sugg-sub">Plan your monthly investments &amp; returns</div></div>
+      <div class="home-section-hdr">SIP Calculator</div>
+      <div class="home-sip-card">
+        <div class="home-sip-field-lbl">Monthly Investment</div>
+        <div class="home-sip-inp-wrap">
+          <span class="home-sip-rupee">₹</span>
+          <input class="home-sip-inp" id="homeSipAmt" type="number" value="5000" min="100" oninput="_homeSipRender()">
         </div>
+        <div class="home-sip-pills-row">
+          <span class="home-sip-field-lbl">Duration</span>
+          <div class="home-sip-pills" id="homeSipYearPills"></div>
+        </div>
+        <div class="home-sip-pills-row">
+          <span class="home-sip-field-lbl">Expected return / yr</span>
+          <div class="home-sip-pills" id="homeSipRatePills"></div>
+        </div>
+        <div class="home-sip-divider"></div>
+        <div class="home-sip-result" id="homeSipResult"></div>
+        <button class="home-sip-fullbtn" onclick="showSIPCalc()">Open full calculator with Step-Up SIP →</button>
+      </div>
+    </div>
+
+    <!-- Screener -->
+    <div class="home-section">
+      <div class="home-section-hdr">Stock Screener</div>
+      <div class="sugg-grid" style="grid-template-columns:1fr">
         <div class="sugg-card tool-card" onclick="ask('screener: stocks with RSI below 35 above SMA50')">
           <span class="sugg-icon">🔬</span>
-          <div><div class="sugg-label">Stock Screener</div><div class="sugg-sub">Filter by RSI, MACD, SMA signals</div></div>
+          <div><div class="sugg-label">Filter Stocks by Signals</div><div class="sugg-sub">RSI · MACD · SMA50 · Buy/Avoid scores — Nifty 50 &amp; 100</div></div>
         </div>
       </div>
     </div>
@@ -635,6 +677,7 @@ var BACKEND_URL = "https://avinashai.onrender.com";
   fetch(_warmUrl, { signal: AbortSignal.timeout(30000) })
     .then(function(r) { if (r.ok) _setServerStatus("awake", "Server ready ✓"); })
     .catch(function(){});
+  setTimeout(_homeSipInit, 0);
 })();
 
 const STOCKS = {
@@ -1986,9 +2029,18 @@ function newChat() {
       '<div class="sugg-card" onclick="ask(\'top 5 stocks to buy today\')"><span class="sugg-icon">🚀</span><div><div class="sugg-label">Top Picks Today</div><div class="sugg-sub">Best BUY signals right now</div></div></div>' +
       '<div class="sugg-card" onclick="ask(\'worst stocks to avoid\')"><span class="sugg-icon">⚠️</span><div><div class="sugg-label">Stocks to Avoid</div><div class="sugg-sub">Bearish signals &amp; weak picks</div></div></div>' +
     '</div></div>' +
-    '<div class="home-section"><div class="home-section-hdr">Tools</div><div class="sugg-grid">' +
-      '<div class="sugg-card tool-card" onclick="showSIPCalc()"><span class="sugg-icon">🧮</span><div><div class="sugg-label">SIP Calculator</div><div class="sugg-sub">Plan your monthly investments &amp; returns</div></div></div>' +
-      '<div class="sugg-card tool-card" onclick="ask(\'screener: stocks with RSI below 35 above SMA50\')"><span class="sugg-icon">🔬</span><div><div class="sugg-label">Stock Screener</div><div class="sugg-sub">Filter by RSI, MACD, SMA signals</div></div></div>' +
+    '<div class="home-section"><div class="home-section-hdr">SIP Calculator</div>' +
+      '<div class="home-sip-card">' +
+        '<div class="home-sip-field-lbl">Monthly Investment</div>' +
+        '<div class="home-sip-inp-wrap"><span class="home-sip-rupee">₹</span><input class="home-sip-inp" id="homeSipAmt" type="number" value="5000" min="100" oninput="_homeSipRender()"></div>' +
+        '<div class="home-sip-pills-row"><span class="home-sip-field-lbl">Duration</span><div class="home-sip-pills" id="homeSipYearPills"></div></div>' +
+        '<div class="home-sip-pills-row"><span class="home-sip-field-lbl">Expected return / yr</span><div class="home-sip-pills" id="homeSipRatePills"></div></div>' +
+        '<div class="home-sip-divider"></div>' +
+        '<div class="home-sip-result" id="homeSipResult"></div>' +
+        '<button class="home-sip-fullbtn" onclick="showSIPCalc()">Open full calculator with Step-Up SIP →</button>' +
+      '</div></div>' +
+    '<div class="home-section"><div class="home-section-hdr">Stock Screener</div><div class="sugg-grid" style="grid-template-columns:1fr">' +
+      '<div class="sugg-card tool-card" onclick="ask(\'screener: stocks with RSI below 35 above SMA50\')"><span class="sugg-icon">🔬</span><div><div class="sugg-label">Filter Stocks by Signals</div><div class="sugg-sub">RSI · MACD · SMA50 · Buy/Avoid scores — Nifty 50 &amp; 100</div></div></div>' +
     '</div></div>' +
     '<div class="home-section"><div class="home-section-hdr">Sectors</div><div class="sector-pills">' +
       '<div class="sector-pill" onclick="ask(\'banking sector stocks\')">🏦 Banking</div>' +
@@ -2003,6 +2055,7 @@ function newChat() {
       '<div class="sector-pill" onclick="ask(\'manufacturing sector stocks\')">🏭 Mfg</div>' +
     '</div></div>';
   chat.appendChild(w);
+  _homeSipInit();
   _ctx.stocks = []; _ctx.sector = null;
   inp.value = ''; inp.style.height = 'auto'; inp.focus();
 }
@@ -2357,6 +2410,60 @@ async function wakeServer() {
   }
   scrollBottom();
 }
+
+// ── Homepage inline SIP Calculator ───────────────────────────────────────────
+(function() {
+  var _YEARS = [3, 5, 7, 10, 15, 20];
+  var _RATES = [8, 10, 12, 15];
+  var _selY = 10, _selR = 12;
+
+  function _fmt(n) {
+    if (n >= 1e7) return '₹' + (n/1e7).toFixed(2) + ' Cr';
+    if (n >= 1e5) return '₹' + (n/1e5).toFixed(2) + ' L';
+    return '₹' + Math.round(n).toLocaleString('en-IN');
+  }
+  function _calc(m, y, r) {
+    var rate = r/100/12, n = y*12;
+    var corpus = m * ((Math.pow(1+rate, n)-1)/rate) * (1+rate);
+    return { corpus: corpus, invested: m*n, returns: corpus - m*n };
+  }
+
+  window._homeSipRender = function() {
+    var inp = document.getElementById('homeSipAmt');
+    var res = document.getElementById('homeSipResult');
+    if (!res) return;
+    var m = parseFloat(inp && inp.value) || 5000;
+    var c = _calc(m, _selY, _selR);
+    res.innerHTML =
+      '<div class="home-sip-stat"><div class="home-sip-stat-lbl">Invested</div><div class="home-sip-stat-val">' + _fmt(c.invested) + '</div></div>' +
+      '<div class="home-sip-stat"><div class="home-sip-stat-lbl">Returns</div><div class="home-sip-stat-val pos">+' + _fmt(c.returns) + '</div></div>' +
+      '<div class="home-sip-stat"><div class="home-sip-stat-lbl">Corpus</div><div class="home-sip-stat-val corpus">' + _fmt(c.corpus) + '</div></div>';
+  };
+
+  window._homeSipPickY = function(y) {
+    _selY = y;
+    document.querySelectorAll('#homeSipYearPills .home-sip-pill').forEach(function(p) { p.classList.toggle('active', +p.dataset.v === y); });
+    window._homeSipRender();
+  };
+  window._homeSipPickR = function(r) {
+    _selR = r;
+    document.querySelectorAll('#homeSipRatePills .home-sip-pill').forEach(function(p) { p.classList.toggle('active', +p.dataset.v === r); });
+    window._homeSipRender();
+  };
+
+  window._homeSipInit = function() {
+    var yp = document.getElementById('homeSipYearPills');
+    var rp = document.getElementById('homeSipRatePills');
+    if (!yp || !rp) return;
+    yp.innerHTML = _YEARS.map(function(y) {
+      return '<button class="home-sip-pill' + (y===_selY?' active':'') + '" data-v="'+y+'" onclick="_homeSipPickY('+y+')">' + y + 'Y</button>';
+    }).join('');
+    rp.innerHTML = _RATES.map(function(r) {
+      return '<button class="home-sip-pill' + (r===_selR?' active':'') + '" data-v="'+r+'" onclick="_homeSipPickR('+r+')">' + r + '%</button>';
+    }).join('');
+    window._homeSipRender();
+  };
+})();
 
 // ── SIP Calculator ────────────────────────────────────────────────────────────
 function showSIPCalc() {
