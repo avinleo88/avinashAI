@@ -677,7 +677,7 @@ var BACKEND_URL = "https://avinashai.onrender.com";
   fetch(_warmUrl, { signal: AbortSignal.timeout(30000) })
     .then(function(r) { if (r.ok) _setServerStatus("awake", "Server ready ✓"); })
     .catch(function(){});
-  setTimeout(_homeSipInit, 0);
+  setTimeout(function() { window._homeSipInit && window._homeSipInit(); }, 0);
 })();
 
 const STOCKS = {
