@@ -519,6 +519,16 @@
     .home-sip-stat-val.pos { color:var(--green); }
     .home-sip-fullbtn { display:block; width:100%; margin-top:12px; padding:8px; background:none; border:1px solid rgba(0,229,255,.15); border-radius:8px; color:rgba(0,229,255,.55); font-size:.84rem; cursor:pointer; transition:all .15s; text-align:center; font-family:inherit; }
     .home-sip-fullbtn:hover { background:rgba(0,229,255,.06); border-color:rgba(0,229,255,.35); color:var(--cyan); }
+    .home-sip-tabs { display:flex; margin-bottom:14px; border:1px solid rgba(255,255,255,.1); border-radius:9px; overflow:hidden; }
+    .home-sip-tab { flex:1; padding:7px 6px; font-size:.76rem; font-weight:600; background:none; border:none; color:var(--muted); cursor:pointer; transition:all .15s; font-family:inherit; }
+    .home-sip-tab.active { background:rgba(0,229,255,.1); color:var(--cyan); }
+    @media (max-width:640px) {
+      .home-grid { grid-template-columns:1fr; }
+      .topbar { padding:10px 14px; }
+      .topbar-right .market-time { display:none; }
+      .chips { padding:6px 14px; }
+      .chat-input-wrap { padding:8px 14px 10px; }
+    }
   </style>
 </head>
 <body>
@@ -585,7 +595,11 @@
       <div>
         <div class="home-section-hdr">SIP Calculator</div>
         <div class="home-sip-card">
-          <div class="home-sip-field-lbl">Monthly Investment</div>
+          <div class="home-sip-tabs">
+            <button class="home-sip-tab active" data-mode="forward" onclick="_homeSipMode('forward')">Monthly → Corpus</button>
+            <button class="home-sip-tab" data-mode="reverse" onclick="_homeSipMode('reverse')">Target → Monthly</button>
+          </div>
+          <span class="home-sip-field-lbl" id="homeSipAmtLbl">Monthly Investment</span>
           <div class="home-sip-inp-wrap">
             <span class="home-sip-rupee">₹</span>
             <input class="home-sip-inp" id="homeSipAmt" type="number" value="5000" min="100" oninput="_homeSipRender()">
@@ -2035,7 +2049,8 @@ function newChat() {
       '<div>' +
         '<div class="home-section-hdr">SIP Calculator</div>' +
         '<div class="home-sip-card">' +
-          '<div class="home-sip-field-lbl">Monthly Investment</div>' +
+          '<div class="home-sip-tabs"><button class="home-sip-tab active" data-mode="forward" onclick="_homeSipMode(\'forward\')">Monthly → Corpus</button><button class="home-sip-tab" data-mode="reverse" onclick="_homeSipMode(\'reverse\')">Target → Monthly</button></div>' +
+          '<span class="home-sip-field-lbl" id="homeSipAmtLbl">Monthly Investment</span>' +
           '<div class="home-sip-inp-wrap"><span class="home-sip-rupee">₹</span><input class="home-sip-inp" id="homeSipAmt" type="number" value="5000" min="100" oninput="_homeSipRender()"></div>' +
           '<div class="home-sip-pills-row"><span class="home-sip-field-lbl">Duration</span><div class="home-sip-pills" id="homeSipYearPills"></div></div>' +
           '<div class="home-sip-pills-row"><span class="home-sip-field-lbl">Expected return / yr</span><div class="home-sip-pills" id="homeSipRatePills"></div></div>' +
@@ -2431,7 +2446,7 @@ async function wakeServer() {
 (function() {
   var _YEARS = [3, 5, 7, 10, 15, 20];
   var _RATES = [8, 10, 12, 15];
-  var _selY = 10, _selR = 12;
+  var _selY = 10, _selR = 12, _selMode = 'forward';
 
   function _fmt(n) {
     if (n >= 1e7) return '₹' + (n/1e7).toFixed(2) + ' Cr';
@@ -2443,17 +2458,31 @@ async function wakeServer() {
     var corpus = m * ((Math.pow(1+rate, n)-1)/rate) * (1+rate);
     return { corpus: corpus, invested: m*n, returns: corpus - m*n };
   }
+  function _calcRev(target, y, r) {
+    var rate = r/100/12, n = y*12;
+    var monthly = target / (((Math.pow(1+rate,n)-1)/rate) * (1+rate));
+    return { monthly: monthly, invested: monthly*n, returns: target - monthly*n };
+  }
 
   window._homeSipRender = function() {
     var inp = document.getElementById('homeSipAmt');
     var res = document.getElementById('homeSipResult');
     if (!res) return;
-    var m = parseFloat(inp && inp.value) || 5000;
-    var c = _calc(m, _selY, _selR);
-    res.innerHTML =
-      '<div class="home-sip-stat"><div class="home-sip-stat-lbl">Invested</div><div class="home-sip-stat-val">' + _fmt(c.invested) + '</div></div>' +
-      '<div class="home-sip-stat"><div class="home-sip-stat-lbl">Returns</div><div class="home-sip-stat-val pos">+' + _fmt(c.returns) + '</div></div>' +
-      '<div class="home-sip-stat"><div class="home-sip-stat-lbl">Corpus</div><div class="home-sip-stat-val corpus">' + _fmt(c.corpus) + '</div></div>';
+    var val = parseFloat(inp && inp.value) || 0;
+    if (!val) { res.innerHTML = ''; return; }
+    if (_selMode === 'forward') {
+      var c = _calc(val, _selY, _selR);
+      res.innerHTML =
+        '<div class="home-sip-stat"><div class="home-sip-stat-lbl">Invested</div><div class="home-sip-stat-val">' + _fmt(c.invested) + '</div></div>' +
+        '<div class="home-sip-stat"><div class="home-sip-stat-lbl">Returns</div><div class="home-sip-stat-val pos">+' + _fmt(c.returns) + '</div></div>' +
+        '<div class="home-sip-stat"><div class="home-sip-stat-lbl">Corpus</div><div class="home-sip-stat-val corpus">' + _fmt(c.corpus) + '</div></div>';
+    } else {
+      var rv = _calcRev(val, _selY, _selR);
+      res.innerHTML =
+        '<div class="home-sip-stat" style="flex:1.3"><div class="home-sip-stat-lbl">SIP needed/mo</div><div class="home-sip-stat-val corpus">' + _fmt(rv.monthly) + '</div></div>' +
+        '<div class="home-sip-stat"><div class="home-sip-stat-lbl">Total invested</div><div class="home-sip-stat-val">' + _fmt(rv.invested) + '</div></div>' +
+        '<div class="home-sip-stat"><div class="home-sip-stat-lbl">Returns</div><div class="home-sip-stat-val pos">+' + _fmt(rv.returns) + '</div></div>';
+    }
   };
 
   window._homeSipPickY = function(y) {
@@ -2466,11 +2495,23 @@ async function wakeServer() {
     document.querySelectorAll('#homeSipRatePills .home-sip-pill').forEach(function(p) { p.classList.toggle('active', +p.dataset.v === r); });
     window._homeSipRender();
   };
+  window._homeSipMode = function(mode) {
+    _selMode = mode;
+    document.querySelectorAll('.home-sip-tab').forEach(function(t) {
+      t.classList.toggle('active', t.dataset.mode === mode);
+    });
+    var lbl = document.getElementById('homeSipAmtLbl');
+    var inp = document.getElementById('homeSipAmt');
+    if (lbl) lbl.textContent = mode === 'forward' ? 'Monthly Investment' : 'Target Corpus';
+    if (inp) inp.value = mode === 'forward' ? '5000' : '10000000';
+    window._homeSipRender();
+  };
 
   window._homeSipInit = function() {
     var yp = document.getElementById('homeSipYearPills');
     var rp = document.getElementById('homeSipRatePills');
     if (!yp || !rp) return;
+    _selMode = 'forward';
     yp.innerHTML = _YEARS.map(function(y) {
       return '<button class="home-sip-pill' + (y===_selY?' active':'') + '" data-v="'+y+'" onclick="_homeSipPickY('+y+')">' + y + 'Y</button>';
     }).join('');
