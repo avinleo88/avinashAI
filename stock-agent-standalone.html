@@ -2252,10 +2252,10 @@ async function sendMsg() {
         bubble.innerHTML = '<div class="status-row"><div class="spin"></div><span style="font-size:.78rem;color:var(--cyan)">Server waking up, retrying…</span></div>';
       });
       var _sData = await _sr.json();
-      var _sMeta = { universe: screenerUniverse, total_scanned: screenerUniverse === 'nifty100' ? 100 : 50 };
-      renderScreener(_sData, sparams, bubble, _sMeta);
+      var _sMeta = { universe: _sData.universe || screenerUniverse, total_scanned: _sData.total_scanned || (screenerUniverse === 'nifty100' ? 100 : 50) };
+      renderScreener(Array.isArray(_sData) ? _sData : (_sData.results || []), sparams, bubble, _sMeta);
     } catch(_se) {
-      bubble.innerHTML = '<span style="color:var(--red)">Screener failed. Check your connection.<br><small>' + _se.message + '</small></span>';
+      bubble.innerHTML = '<span style="color:var(--red)">Screener failed. Check your connection.</span>';
     }
     if (bubble._row) addCopyBtn(bubble._row, bubble);
     sendBtn.disabled = false; inp.focus();
