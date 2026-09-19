@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>Stock Agent — NSE/BSE</title>
+  <title>Dalal Street — Powered by AI</title>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -481,8 +481,8 @@
   <div class="logo">
     <div class="logo-icon">📈</div>
     <div>
-      <div class="logo-text">StockAgent</div>
-      <div class="logo-sub">NSE / BSE · LIVE · FREE</div>
+      <div class="logo-text">Dalal Street</div>
+      <div class="logo-sub">Powered by AI · LIVE · FREE</div>
     </div>
   </div>
   <div class="topbar-right">
@@ -518,8 +518,8 @@
       <span class="welcome-icon">📈</span>
       <div class="welcome-glow"></div>
     </div>
-    <h2>StockAgent</h2>
-    <p class="welcome-sub">AI-powered NSE / BSE analysis · Live data</p>
+    <h2>Dalal Street</h2>
+    <p class="welcome-sub">Powered by AI · NSE / BSE · Live data</p>
     <div class="welcome-badges">
       <span class="welcome-badge live">● LIVE</span>
       <span class="welcome-badge free">FREE</span>
@@ -1534,7 +1534,7 @@ var _lastPriceHistory = {}; // populated by buildResponse; read by sendMsg to dr
 
 function _greetMsg() {
   return [
-    "## Hi! I'm StockAgent 👋",
+    "## Hi! I'm Dalal Street AI 👋",
     "I analyse NSE/BSE stocks using live data. Try asking:",
     "- **\"Should I buy Reliance?\"** — get a BUY / HOLD / AVOID signal",
     "- **\"TCS vs Infosys\"** — side-by-side comparison",
@@ -1920,8 +1920,8 @@ function newChat() {
     : '';
   // Rebuild welcome HTML
   w.innerHTML = '<div class="welcome-hero"><span class="welcome-icon">📈</span><div class="welcome-glow"></div></div>' +
-    '<h2>StockAgent</h2>' +
-    '<p class="welcome-sub">AI-powered NSE / BSE analysis · Live data</p>' +
+    '<h2>Dalal Street</h2>' +
+    '<p class="welcome-sub">Powered by AI · NSE / BSE · Live data</p>' +
     '<div class="welcome-badges"><span class="welcome-badge live">● LIVE</span><span class="welcome-badge free">FREE</span><span class="welcome-badge ai">AI-POWERED</span></div>' +
     '<div class="server-status-bar sleeping" id="serverStatusBar"><div class="server-dot sleeping" id="serverDot"></div><span class="server-label" id="serverLabel">Backend sleeping</span><button class="server-wake-btn" id="serverWakeBtn" onclick="wakeServer()">⚡ Wake up</button></div>' +
     '<div class="sugg-grid">' +
@@ -2038,7 +2038,7 @@ function addCopyBtn(row, bubble) {
     var pw = window.open('', '_blank');
     if (!pw) { alert('Allow popups for this site to export as PDF.'); return; }
     pw.document.write('<!DOCTYPE html><html><head>' +
-      '<title>StockAgent Analysis — ' + dateStr + '</title>' +
+      '<title>Dalal Street AI — Analysis ' + dateStr + '</title>' +
       '<style>' +
       'body{font-family:Arial,sans-serif;font-size:11pt;padding:30px 40px;color:#111;max-width:820px;margin:0 auto}' +
       'h2,h3{margin:14px 0 6px;color:#111}' +
@@ -2055,7 +2055,7 @@ function addCopyBtn(row, bubble) {
       '</style></head><body>' +
       '<div style="display:flex;justify-content:space-between;align-items:center;' +
         'border-bottom:2px solid #111;padding-bottom:10px;margin-bottom:20px">' +
-        '<strong style="font-size:14pt">&#x1F4CA; StockAgent Analysis</strong>' +
+        '<strong style="font-size:14pt">&#x1F4CA; Dalal Street AI — Analysis</strong>' +
         '<span style="font-size:9pt;color:#555">' + dateStr + ' · avinleo88.github.io/avinashAI</span>' +
       '</div>' +
       bubble.innerHTML +
