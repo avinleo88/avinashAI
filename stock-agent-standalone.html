@@ -121,9 +121,9 @@
       display:flex; flex-direction:column; gap:18px;
       scrollbar-width:thin; scrollbar-color:rgba(255,255,255,0.08) transparent;
     }
-    .welcome { text-align:center; margin:auto; max-width:560px; padding:10px 0 20px; }
-    .welcome-hero { position:relative; display:inline-block; margin-bottom:18px; }
-    .welcome-icon { font-size:3.4rem; display:block; position:relative; z-index:1; filter:drop-shadow(0 0 22px rgba(0,229,255,.4)); }
+    .welcome { text-align:center; margin:auto; max-width:560px; padding:6px 0 14px; }
+    .welcome-hero { position:relative; display:inline-block; margin-bottom:10px; }
+    .welcome-icon { font-size:2.4rem; display:block; position:relative; z-index:1; filter:drop-shadow(0 0 22px rgba(0,229,255,.4)); }
     .welcome-glow { position:absolute; inset:-22px; border-radius:50%; background:radial-gradient(circle,rgba(0,229,255,.12) 0%,transparent 70%); pointer-events:none; animation:glow-pulse 3s ease infinite; }
     @keyframes glow-pulse { 0%,100%{opacity:.7} 50%{opacity:1} }
     .welcome h2 {
@@ -252,7 +252,7 @@
     code { background:rgba(255,255,255,.07); padding:1px 6px; border-radius:4px; font-size:.83em; }
 
     /* ── Welcome suggestion grid ──────────────────────────────────────────── */
-    .home-section { margin-top:20px; text-align:left; }
+    .home-section { margin-top:14px; text-align:left; }
     .home-section-hdr {
       font-size:.6rem; font-weight:700; letter-spacing:1.6px; color:var(--muted);
       text-transform:uppercase; margin-bottom:8px; padding-left:2px;
@@ -572,6 +572,29 @@
       <button class="server-wake-btn" id="serverWakeBtn" onclick="wakeServer()">⚡ Wake up</button>
     </div>
 
+    <!-- SIP Calculator (embedded) -->
+    <div class="home-section">
+      <div class="home-section-hdr">SIP Calculator</div>
+      <div class="home-sip-card">
+        <div class="home-sip-field-lbl">Monthly Investment</div>
+        <div class="home-sip-inp-wrap">
+          <span class="home-sip-rupee">₹</span>
+          <input class="home-sip-inp" id="homeSipAmt" type="number" value="5000" min="100" oninput="_homeSipRender()">
+        </div>
+        <div class="home-sip-pills-row">
+          <span class="home-sip-field-lbl">Duration</span>
+          <div class="home-sip-pills" id="homeSipYearPills"></div>
+        </div>
+        <div class="home-sip-pills-row">
+          <span class="home-sip-field-lbl">Expected return / yr</span>
+          <div class="home-sip-pills" id="homeSipRatePills"></div>
+        </div>
+        <div class="home-sip-divider"></div>
+        <div class="home-sip-result" id="homeSipResult"></div>
+        <button class="home-sip-fullbtn" onclick="showSIPCalc()">Open full calculator with Step-Up SIP →</button>
+      </div>
+    </div>
+
     <!-- Markets -->
     <div class="home-section">
       <div class="home-section-hdr">Markets</div>
@@ -599,29 +622,6 @@
           <span class="sugg-icon">⚠️</span>
           <div><div class="sugg-label">Stocks to Avoid</div><div class="sugg-sub">Bearish signals &amp; weak picks</div></div>
         </div>
-      </div>
-    </div>
-
-    <!-- SIP Calculator (embedded) -->
-    <div class="home-section">
-      <div class="home-section-hdr">SIP Calculator</div>
-      <div class="home-sip-card">
-        <div class="home-sip-field-lbl">Monthly Investment</div>
-        <div class="home-sip-inp-wrap">
-          <span class="home-sip-rupee">₹</span>
-          <input class="home-sip-inp" id="homeSipAmt" type="number" value="5000" min="100" oninput="_homeSipRender()">
-        </div>
-        <div class="home-sip-pills-row">
-          <span class="home-sip-field-lbl">Duration</span>
-          <div class="home-sip-pills" id="homeSipYearPills"></div>
-        </div>
-        <div class="home-sip-pills-row">
-          <span class="home-sip-field-lbl">Expected return / yr</span>
-          <div class="home-sip-pills" id="homeSipRatePills"></div>
-        </div>
-        <div class="home-sip-divider"></div>
-        <div class="home-sip-result" id="homeSipResult"></div>
-        <button class="home-sip-fullbtn" onclick="showSIPCalc()">Open full calculator with Step-Up SIP →</button>
       </div>
     </div>
 
@@ -2021,14 +2021,6 @@ function newChat() {
     '<p class="welcome-sub">Powered by AI · NSE / BSE · Live data</p>' +
     '<div class="welcome-badges"><span class="welcome-badge live">● LIVE</span><span class="welcome-badge free">FREE</span><span class="welcome-badge ai">AI-POWERED</span></div>' +
     '<div class="server-status-bar sleeping" id="serverStatusBar"><div class="server-dot sleeping" id="serverDot"></div><span class="server-label" id="serverLabel">Backend sleeping</span><button class="server-wake-btn" id="serverWakeBtn" onclick="wakeServer()">⚡ Wake up</button></div>' +
-    '<div class="home-section"><div class="home-section-hdr">Markets</div><div class="sugg-grid">' +
-      '<div class="sugg-card" onclick="ask(\'market overview\')"><span class="sugg-icon">📊</span><div><div class="sugg-label">Market Overview</div><div class="sugg-sub">Nifty 50 &amp; Sensex snapshot</div></div></div>' +
-      '<div class="sugg-card" onclick="ask(\'market sentiment\')"><span class="sugg-icon">🧭</span><div><div class="sugg-label">Market Sentiment</div><div class="sugg-sub">Fear &amp; greed · bull/bear mood</div></div></div>' +
-    '</div></div>' +
-    '<div class="home-section"><div class="home-section-hdr">AI Picks</div><div class="sugg-grid">' +
-      '<div class="sugg-card" onclick="ask(\'top 5 stocks to buy today\')"><span class="sugg-icon">🚀</span><div><div class="sugg-label">Top Picks Today</div><div class="sugg-sub">Best BUY signals right now</div></div></div>' +
-      '<div class="sugg-card" onclick="ask(\'worst stocks to avoid\')"><span class="sugg-icon">⚠️</span><div><div class="sugg-label">Stocks to Avoid</div><div class="sugg-sub">Bearish signals &amp; weak picks</div></div></div>' +
-    '</div></div>' +
     '<div class="home-section"><div class="home-section-hdr">SIP Calculator</div>' +
       '<div class="home-sip-card">' +
         '<div class="home-sip-field-lbl">Monthly Investment</div>' +
@@ -2039,6 +2031,14 @@ function newChat() {
         '<div class="home-sip-result" id="homeSipResult"></div>' +
         '<button class="home-sip-fullbtn" onclick="showSIPCalc()">Open full calculator with Step-Up SIP →</button>' +
       '</div></div>' +
+    '<div class="home-section"><div class="home-section-hdr">Markets</div><div class="sugg-grid">' +
+      '<div class="sugg-card" onclick="ask(\'market overview\')"><span class="sugg-icon">📊</span><div><div class="sugg-label">Market Overview</div><div class="sugg-sub">Nifty 50 &amp; Sensex snapshot</div></div></div>' +
+      '<div class="sugg-card" onclick="ask(\'market sentiment\')"><span class="sugg-icon">🧭</span><div><div class="sugg-label">Market Sentiment</div><div class="sugg-sub">Fear &amp; greed · bull/bear mood</div></div></div>' +
+    '</div></div>' +
+    '<div class="home-section"><div class="home-section-hdr">AI Picks</div><div class="sugg-grid">' +
+      '<div class="sugg-card" onclick="ask(\'top 5 stocks to buy today\')"><span class="sugg-icon">🚀</span><div><div class="sugg-label">Top Picks Today</div><div class="sugg-sub">Best BUY signals right now</div></div></div>' +
+      '<div class="sugg-card" onclick="ask(\'worst stocks to avoid\')"><span class="sugg-icon">⚠️</span><div><div class="sugg-label">Stocks to Avoid</div><div class="sugg-sub">Bearish signals &amp; weak picks</div></div></div>' +
+    '</div></div>' +
     '<div class="home-section"><div class="home-section-hdr">Stock Screener</div><div class="sugg-grid" style="grid-template-columns:1fr">' +
       '<div class="sugg-card tool-card" onclick="ask(\'screener: stocks with RSI below 35 above SMA50\')"><span class="sugg-icon">🔬</span><div><div class="sugg-label">Filter Stocks by Signals</div><div class="sugg-sub">RSI · MACD · SMA50 · Buy/Avoid scores — Nifty 50 &amp; 100</div></div></div>' +
     '</div></div>' +
