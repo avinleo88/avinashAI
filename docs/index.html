@@ -2631,7 +2631,7 @@ function showSIPCalc() {
   };
 
   window.__sipPick = function(prefix, val) {
-    var maps = { sipy:[3,5,7,10,13,15,20], sipr:[8,10,12,13,14,15,18,20], sipsu:[5,10,15,20,25,30] };
+    var maps = { sipy:[3,5,7,10,13,15,20], sipr:[8,10,12,13,14,15,18,20], sipsu:[5,7,9,11,13,15] };
     if (prefix==='sipy') window.__sipSelYears = val;
     else if (prefix==='sipr') window.__sipSelRate = val;
     else if (prefix==='sipsu') window.__sipStepup = val;
