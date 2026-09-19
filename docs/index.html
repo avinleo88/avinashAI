@@ -160,7 +160,7 @@
     .server-wake-btn:hover { background:rgba(0,229,255,.22); transform:translateY(-1px); box-shadow:0 4px 14px rgba(0,229,255,.18); }
     .server-wake-btn:disabled { opacity:.5; cursor:default; transform:none; box-shadow:none; }
     .sugg-grid {
-      display:grid; grid-template-columns:1fr 1fr; gap:9px; margin-top:22px; text-align:left;
+      display:grid; grid-template-columns:1fr 1fr; gap:9px; text-align:left;
     }
     .row { display:flex; gap:10px; animation:fadeUp .25s ease; max-width:820px; width:100%; margin:0 auto; }
     .row.user { justify-content:flex-end; }
@@ -252,9 +252,12 @@
     code { background:rgba(255,255,255,.07); padding:1px 6px; border-radius:4px; font-size:.83em; }
 
     /* ── Welcome suggestion grid ──────────────────────────────────────────── */
-    .sugg-grid {
-      display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-top:20px; text-align:left;
+    .home-section { margin-top:20px; text-align:left; }
+    .home-section-hdr {
+      font-size:.6rem; font-weight:700; letter-spacing:1.6px; color:var(--muted);
+      text-transform:uppercase; margin-bottom:8px; padding-left:2px;
     }
+    .sugg-grid { display:grid; grid-template-columns:1fr 1fr; gap:8px; }
     .sugg-card {
       display:flex; align-items:flex-start; gap:11px; padding:13px 14px; border-radius:13px;
       background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.07);
@@ -264,9 +267,24 @@
       background:rgba(0,229,255,0.07); border-color:rgba(0,229,255,0.3);
       transform:translateY(-2px); box-shadow:0 6px 20px rgba(0,0,0,0.35), 0 0 0 1px rgba(0,229,255,.1);
     }
+    .sugg-card.tool-card {
+      background:rgba(168,85,247,.05); border-color:rgba(168,85,247,.15);
+    }
+    .sugg-card.tool-card:hover {
+      background:rgba(168,85,247,.1); border-color:rgba(168,85,247,.4);
+      box-shadow:0 6px 20px rgba(0,0,0,0.35), 0 0 0 1px rgba(168,85,247,.15);
+    }
     .sugg-icon { font-size:1.25rem; flex-shrink:0; margin-top:1px; }
     .sugg-label { font-size:0.8rem; font-weight:600; color:var(--text); line-height:1.3; }
     .sugg-sub   { font-size:0.7rem; color:var(--muted); margin-top:3px; line-height:1.4; }
+    /* Sector pills row */
+    .sector-pills { display:flex; flex-wrap:wrap; gap:7px; margin-top:8px; }
+    .sector-pill {
+      font-size:.72rem; font-weight:500; padding:5px 13px; border-radius:20px; cursor:pointer;
+      background:rgba(255,255,255,.04); border:1px solid rgba(255,255,255,.09);
+      color:var(--muted); transition:all .15s;
+    }
+    .sector-pill:hover { background:rgba(0,229,255,.08); border-color:rgba(0,229,255,.3); color:var(--cyan); }
 
     /* ── Follow-up chips after response ───────────────────────────────────── */
     .followup-row {
@@ -530,30 +548,66 @@
       <span class="server-label" id="serverLabel">Backend sleeping</span>
       <button class="server-wake-btn" id="serverWakeBtn" onclick="wakeServer()">⚡ Wake up</button>
     </div>
-    <div class="sugg-grid">
-      <div class="sugg-card" onclick="ask('top 5 stocks to buy today')">
-        <span class="sugg-icon">🚀</span>
-        <div><div class="sugg-label">Top picks today</div><div class="sugg-sub">Best BUY signals right now</div></div>
+
+    <!-- Markets -->
+    <div class="home-section">
+      <div class="home-section-hdr">Markets</div>
+      <div class="sugg-grid">
+        <div class="sugg-card" onclick="ask('market overview')">
+          <span class="sugg-icon">📊</span>
+          <div><div class="sugg-label">Market Overview</div><div class="sugg-sub">Nifty 50 &amp; Sensex snapshot</div></div>
+        </div>
+        <div class="sugg-card" onclick="ask('market sentiment')">
+          <span class="sugg-icon">🧭</span>
+          <div><div class="sugg-label">Market Sentiment</div><div class="sugg-sub">Fear &amp; greed · bull/bear mood</div></div>
+        </div>
       </div>
-      <div class="sugg-card" onclick="ask('market overview')">
-        <span class="sugg-icon">📊</span>
-        <div><div class="sugg-label">Market overview</div><div class="sugg-sub">Nifty 50 &amp; Sensex snapshot</div></div>
+    </div>
+
+    <!-- AI Picks -->
+    <div class="home-section">
+      <div class="home-section-hdr">AI Picks</div>
+      <div class="sugg-grid">
+        <div class="sugg-card" onclick="ask('top 5 stocks to buy today')">
+          <span class="sugg-icon">🚀</span>
+          <div><div class="sugg-label">Top Picks Today</div><div class="sugg-sub">Best BUY signals right now</div></div>
+        </div>
+        <div class="sugg-card" onclick="ask('worst stocks to avoid')">
+          <span class="sugg-icon">⚠️</span>
+          <div><div class="sugg-label">Stocks to Avoid</div><div class="sugg-sub">Bearish signals &amp; weak picks</div></div>
+        </div>
       </div>
-      <div class="sugg-card" onclick="ask('banking sector stocks')">
-        <span class="sugg-icon">🏦</span>
-        <div><div class="sugg-label">Banking sector</div><div class="sugg-sub">HDFC, ICICI, SBI &amp; more</div></div>
+    </div>
+
+    <!-- Tools -->
+    <div class="home-section">
+      <div class="home-section-hdr">Tools</div>
+      <div class="sugg-grid">
+        <div class="sugg-card tool-card" onclick="showSIPCalc()">
+          <span class="sugg-icon">🧮</span>
+          <div><div class="sugg-label">SIP Calculator</div><div class="sugg-sub">Plan your monthly investments &amp; returns</div></div>
+        </div>
+        <div class="sugg-card tool-card" onclick="ask('screener: stocks with RSI below 35 above SMA50')">
+          <span class="sugg-icon">🔬</span>
+          <div><div class="sugg-label">Stock Screener</div><div class="sugg-sub">Filter by RSI, MACD, SMA signals</div></div>
+        </div>
       </div>
-      <div class="sugg-card" onclick="ask('worst stocks to avoid')">
-        <span class="sugg-icon">⚠️</span>
-        <div><div class="sugg-label">Stocks to avoid</div><div class="sugg-sub">Bearish signals &amp; weak picks</div></div>
-      </div>
-      <div class="sugg-card" onclick="ask('best defence stocks')">
-        <span class="sugg-icon">🛡️</span>
-        <div><div class="sugg-label">Defence sector</div><div class="sugg-sub">HAL, BEL, Mazagon Dock</div></div>
-      </div>
-      <div class="sugg-card" onclick="ask('what is RSI and how to read it')">
-        <span class="sugg-icon">❓</span>
-        <div><div class="sugg-label">How to read RSI</div><div class="sugg-sub">Understand the indicators</div></div>
+    </div>
+
+    <!-- Sectors -->
+    <div class="home-section">
+      <div class="home-section-hdr">Sectors</div>
+      <div class="sector-pills">
+        <div class="sector-pill" onclick="ask('banking sector stocks')">🏦 Banking</div>
+        <div class="sector-pill" onclick="ask('IT sector stocks')">💻 IT</div>
+        <div class="sector-pill" onclick="ask('pharma sector stocks')">💊 Pharma</div>
+        <div class="sector-pill" onclick="ask('auto sector stocks')">🚗 Auto</div>
+        <div class="sector-pill" onclick="ask('defence sector stocks')">🛡️ Defence</div>
+        <div class="sector-pill" onclick="ask('energy sector stocks')">⚡ Energy</div>
+        <div class="sector-pill" onclick="ask('FMCG sector stocks')">🛒 FMCG</div>
+        <div class="sector-pill" onclick="ask('metal sector stocks')">⚙️ Metals</div>
+        <div class="sector-pill" onclick="ask('realty sector stocks')">🏗️ Realty</div>
+        <div class="sector-pill" onclick="ask('manufacturing sector stocks')">🏭 Mfg</div>
       </div>
     </div>
   </div>
@@ -1924,14 +1978,30 @@ function newChat() {
     '<p class="welcome-sub">Powered by AI · NSE / BSE · Live data</p>' +
     '<div class="welcome-badges"><span class="welcome-badge live">● LIVE</span><span class="welcome-badge free">FREE</span><span class="welcome-badge ai">AI-POWERED</span></div>' +
     '<div class="server-status-bar sleeping" id="serverStatusBar"><div class="server-dot sleeping" id="serverDot"></div><span class="server-label" id="serverLabel">Backend sleeping</span><button class="server-wake-btn" id="serverWakeBtn" onclick="wakeServer()">⚡ Wake up</button></div>' +
-    '<div class="sugg-grid">' +
-      '<div class="sugg-card" onclick="ask(\'top 5 stocks to buy today\')"><span class="sugg-icon">🚀</span><div><div class="sugg-label">Top picks today</div><div class="sugg-sub">Best BUY signals right now</div></div></div>' +
-      '<div class="sugg-card" onclick="ask(\'market overview\')"><span class="sugg-icon">📊</span><div><div class="sugg-label">Market overview</div><div class="sugg-sub">Nifty 50 &amp; Sensex snapshot</div></div></div>' +
-      '<div class="sugg-card" onclick="ask(\'banking sector stocks\')"><span class="sugg-icon">🏦</span><div><div class="sugg-label">Banking sector</div><div class="sugg-sub">HDFC, ICICI, SBI &amp; more</div></div></div>' +
-      '<div class="sugg-card" onclick="ask(\'worst stocks to avoid\')"><span class="sugg-icon">⚠️</span><div><div class="sugg-label">Stocks to avoid</div><div class="sugg-sub">Bearish signals &amp; weak picks</div></div></div>' +
-      '<div class="sugg-card" onclick="ask(\'best defence stocks\')"><span class="sugg-icon">🛡️</span><div><div class="sugg-label">Defence sector</div><div class="sugg-sub">HAL, BEL, Mazagon Dock</div></div></div>' +
-      '<div class="sugg-card" onclick="ask(\'what is RSI and how to read it\')"><span class="sugg-icon">❓</span><div><div class="sugg-label">How to read RSI</div><div class="sugg-sub">Understand the indicators</div></div></div>' +
-    '</div>';
+    '<div class="home-section"><div class="home-section-hdr">Markets</div><div class="sugg-grid">' +
+      '<div class="sugg-card" onclick="ask(\'market overview\')"><span class="sugg-icon">📊</span><div><div class="sugg-label">Market Overview</div><div class="sugg-sub">Nifty 50 &amp; Sensex snapshot</div></div></div>' +
+      '<div class="sugg-card" onclick="ask(\'market sentiment\')"><span class="sugg-icon">🧭</span><div><div class="sugg-label">Market Sentiment</div><div class="sugg-sub">Fear &amp; greed · bull/bear mood</div></div></div>' +
+    '</div></div>' +
+    '<div class="home-section"><div class="home-section-hdr">AI Picks</div><div class="sugg-grid">' +
+      '<div class="sugg-card" onclick="ask(\'top 5 stocks to buy today\')"><span class="sugg-icon">🚀</span><div><div class="sugg-label">Top Picks Today</div><div class="sugg-sub">Best BUY signals right now</div></div></div>' +
+      '<div class="sugg-card" onclick="ask(\'worst stocks to avoid\')"><span class="sugg-icon">⚠️</span><div><div class="sugg-label">Stocks to Avoid</div><div class="sugg-sub">Bearish signals &amp; weak picks</div></div></div>' +
+    '</div></div>' +
+    '<div class="home-section"><div class="home-section-hdr">Tools</div><div class="sugg-grid">' +
+      '<div class="sugg-card tool-card" onclick="showSIPCalc()"><span class="sugg-icon">🧮</span><div><div class="sugg-label">SIP Calculator</div><div class="sugg-sub">Plan your monthly investments &amp; returns</div></div></div>' +
+      '<div class="sugg-card tool-card" onclick="ask(\'screener: stocks with RSI below 35 above SMA50\')"><span class="sugg-icon">🔬</span><div><div class="sugg-label">Stock Screener</div><div class="sugg-sub">Filter by RSI, MACD, SMA signals</div></div></div>' +
+    '</div></div>' +
+    '<div class="home-section"><div class="home-section-hdr">Sectors</div><div class="sector-pills">' +
+      '<div class="sector-pill" onclick="ask(\'banking sector stocks\')">🏦 Banking</div>' +
+      '<div class="sector-pill" onclick="ask(\'IT sector stocks\')">💻 IT</div>' +
+      '<div class="sector-pill" onclick="ask(\'pharma sector stocks\')">💊 Pharma</div>' +
+      '<div class="sector-pill" onclick="ask(\'auto sector stocks\')">🚗 Auto</div>' +
+      '<div class="sector-pill" onclick="ask(\'defence sector stocks\')">🛡️ Defence</div>' +
+      '<div class="sector-pill" onclick="ask(\'energy sector stocks\')">⚡ Energy</div>' +
+      '<div class="sector-pill" onclick="ask(\'FMCG sector stocks\')">🛒 FMCG</div>' +
+      '<div class="sector-pill" onclick="ask(\'metal sector stocks\')">⚙️ Metals</div>' +
+      '<div class="sector-pill" onclick="ask(\'realty sector stocks\')">🏗️ Realty</div>' +
+      '<div class="sector-pill" onclick="ask(\'manufacturing sector stocks\')">🏭 Mfg</div>' +
+    '</div></div>';
   chat.appendChild(w);
   _ctx.stocks = []; _ctx.sector = null;
   inp.value = ''; inp.style.height = 'auto'; inp.focus();
