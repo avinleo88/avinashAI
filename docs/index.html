@@ -121,28 +121,29 @@
       display:flex; flex-direction:column; gap:18px;
       scrollbar-width:thin; scrollbar-color:rgba(255,255,255,0.08) transparent;
     }
-    .welcome { text-align:center; margin:auto; max-width:560px; padding:6px 0 14px; }
-    .welcome-hero { position:relative; display:inline-block; margin-bottom:10px; }
-    .welcome-icon { font-size:2.4rem; display:block; position:relative; z-index:1; filter:drop-shadow(0 0 22px rgba(0,229,255,.4)); }
-    .welcome-glow { position:absolute; inset:-22px; border-radius:50%; background:radial-gradient(circle,rgba(0,229,255,.12) 0%,transparent 70%); pointer-events:none; animation:glow-pulse 3s ease infinite; }
+    .welcome { width:100%; padding:4px 0 10px; }
+    .welcome-hero { display:none; }
+    .welcome-hero-strip { display:flex; align-items:center; gap:10px; margin-bottom:10px; flex-wrap:wrap; }
+    .welcome-icon { font-size:1.8rem; flex-shrink:0; filter:drop-shadow(0 0 14px rgba(0,229,255,.4)); }
+    .welcome-glow { display:none; }
     @keyframes glow-pulse { 0%,100%{opacity:.7} 50%{opacity:1} }
     .welcome h2 {
-      font-size:1.75rem; font-weight:800; margin-bottom:6px; letter-spacing:-.4px;
+      font-size:1.25rem; font-weight:800; margin:0; letter-spacing:-.3px; line-height:1.2;
       background:linear-gradient(120deg,#ffffff 25%,var(--cyan) 65%,rgba(168,85,247,.95) 100%);
       -webkit-background-clip:text; -webkit-text-fill-color:transparent; background-clip:text;
     }
-    .welcome-sub { font-size:.82rem; color:var(--muted); line-height:1.6; }
-    .welcome-badges { display:flex; justify-content:center; gap:6px; margin:10px 0 0; flex-wrap:wrap; }
-    .welcome-badge { font-size:.67rem; font-weight:600; padding:3px 10px; border-radius:12px; letter-spacing:.4px; }
+    .welcome-sub { font-size:.72rem; color:var(--muted); line-height:1.4; }
+    .welcome-badges { display:flex; gap:5px; flex-wrap:wrap; align-items:center; margin:0; }
+    .welcome-badge { font-size:.62rem; font-weight:600; padding:2px 8px; border-radius:12px; letter-spacing:.4px; }
     .welcome-badge.live { color:var(--green); background:rgba(0,255,163,.1); border:1px solid rgba(0,255,163,.2); }
     .welcome-badge.free { color:var(--cyan);  background:rgba(0,229,255,.1); border:1px solid rgba(0,229,255,.2); }
     .welcome-badge.ai   { color:rgba(168,85,247,.9); background:rgba(168,85,247,.1); border:1px solid rgba(168,85,247,.2); }
     /* Server status */
     .server-status-bar {
-      display:inline-flex; align-items:center; gap:10px; margin:18px auto 0;
-      padding:9px 18px; border-radius:40px;
+      display:inline-flex; align-items:center; gap:8px; margin:0 0 0 auto;
+      padding:5px 12px; border-radius:40px;
       background:rgba(255,255,255,.04); border:1px solid rgba(255,255,255,.09);
-      font-size:.8rem; transition:border-color .3s, background .3s;
+      font-size:.72rem; transition:border-color .3s, background .3s; flex-shrink:0;
     }
     .server-status-bar.awake  { border-color:rgba(0,255,163,.3); background:rgba(0,255,163,.05); }
     .server-status-bar.waking { border-color:rgba(0,229,255,.35); }
@@ -252,11 +253,15 @@
     code { background:rgba(255,255,255,.07); padding:1px 6px; border-radius:4px; font-size:.83em; }
 
     /* ── Welcome suggestion grid ──────────────────────────────────────────── */
-    .home-section { margin-top:14px; text-align:left; }
+    .home-section { margin-top:10px; text-align:left; }
     .home-section-hdr {
       font-size:.6rem; font-weight:700; letter-spacing:1.6px; color:var(--muted);
-      text-transform:uppercase; margin-bottom:8px; padding-left:2px;
+      text-transform:uppercase; margin-bottom:6px; padding-left:2px;
     }
+    .home-grid { display:grid; grid-template-columns:1fr 1fr; gap:14px; align-items:start; margin-top:10px; }
+    .home-grid-right { display:flex; flex-direction:column; gap:10px; }
+    .home-grid-right .home-section { margin-top:0; }
+    .home-section-full { margin-top:10px; text-align:left; }
     .sugg-grid { display:grid; grid-template-columns:1fr 1fr; gap:8px; }
     .sugg-card {
       display:flex; align-items:flex-start; gap:11px; padding:13px 14px; border-radius:13px;
@@ -555,89 +560,92 @@
 
 <div class="chat" id="chat">
   <div class="welcome" id="welcome">
-    <div class="welcome-hero">
+    <!-- Compact hero strip -->
+    <div class="welcome-hero-strip">
       <span class="welcome-icon">📈</span>
-      <div class="welcome-glow"></div>
-    </div>
-    <h2>Dalal Street</h2>
-    <p class="welcome-sub">Powered by AI · NSE / BSE · Live data</p>
-    <div class="welcome-badges">
-      <span class="welcome-badge live">● LIVE</span>
-      <span class="welcome-badge free">FREE</span>
-      <span class="welcome-badge ai">AI-POWERED</span>
-    </div>
-    <div class="server-status-bar sleeping" id="serverStatusBar">
-      <div class="server-dot sleeping" id="serverDot"></div>
-      <span class="server-label" id="serverLabel">Backend sleeping</span>
-      <button class="server-wake-btn" id="serverWakeBtn" onclick="wakeServer()">⚡ Wake up</button>
-    </div>
-
-    <!-- SIP Calculator (embedded) -->
-    <div class="home-section">
-      <div class="home-section-hdr">SIP Calculator</div>
-      <div class="home-sip-card">
-        <div class="home-sip-field-lbl">Monthly Investment</div>
-        <div class="home-sip-inp-wrap">
-          <span class="home-sip-rupee">₹</span>
-          <input class="home-sip-inp" id="homeSipAmt" type="number" value="5000" min="100" oninput="_homeSipRender()">
-        </div>
-        <div class="home-sip-pills-row">
-          <span class="home-sip-field-lbl">Duration</span>
-          <div class="home-sip-pills" id="homeSipYearPills"></div>
-        </div>
-        <div class="home-sip-pills-row">
-          <span class="home-sip-field-lbl">Expected return / yr</span>
-          <div class="home-sip-pills" id="homeSipRatePills"></div>
-        </div>
-        <div class="home-sip-divider"></div>
-        <div class="home-sip-result" id="homeSipResult"></div>
-        <button class="home-sip-fullbtn" onclick="showSIPCalc()">Open full calculator with Step-Up SIP →</button>
+      <div>
+        <h2>Dalal Street</h2>
+        <p class="welcome-sub">Powered by AI · NSE / BSE · Live data</p>
+      </div>
+      <div class="welcome-badges">
+        <span class="welcome-badge live">● LIVE</span>
+        <span class="welcome-badge free">FREE</span>
+        <span class="welcome-badge ai">AI-POWERED</span>
+      </div>
+      <div class="server-status-bar sleeping" id="serverStatusBar">
+        <div class="server-dot sleeping" id="serverDot"></div>
+        <span class="server-label" id="serverLabel">Backend sleeping</span>
+        <button class="server-wake-btn" id="serverWakeBtn" onclick="wakeServer()">⚡ Wake up</button>
       </div>
     </div>
 
-    <!-- Markets -->
-    <div class="home-section">
-      <div class="home-section-hdr">Markets</div>
-      <div class="sugg-grid">
-        <div class="sugg-card" onclick="ask('market overview')">
-          <span class="sugg-icon">📊</span>
-          <div><div class="sugg-label">Market Overview</div><div class="sugg-sub">Nifty 50 &amp; Sensex snapshot</div></div>
+    <!-- 2-column grid -->
+    <div class="home-grid">
+      <!-- Left: SIP Calculator -->
+      <div>
+        <div class="home-section-hdr">SIP Calculator</div>
+        <div class="home-sip-card">
+          <div class="home-sip-field-lbl">Monthly Investment</div>
+          <div class="home-sip-inp-wrap">
+            <span class="home-sip-rupee">₹</span>
+            <input class="home-sip-inp" id="homeSipAmt" type="number" value="5000" min="100" oninput="_homeSipRender()">
+          </div>
+          <div class="home-sip-pills-row">
+            <span class="home-sip-field-lbl">Duration</span>
+            <div class="home-sip-pills" id="homeSipYearPills"></div>
+          </div>
+          <div class="home-sip-pills-row">
+            <span class="home-sip-field-lbl">Expected return / yr</span>
+            <div class="home-sip-pills" id="homeSipRatePills"></div>
+          </div>
+          <div class="home-sip-divider"></div>
+          <div class="home-sip-result" id="homeSipResult"></div>
+          <button class="home-sip-fullbtn" onclick="showSIPCalc()">Open full calculator with Step-Up SIP →</button>
         </div>
-        <div class="sugg-card" onclick="ask('market sentiment')">
-          <span class="sugg-icon">🧭</span>
-          <div><div class="sugg-label">Market Sentiment</div><div class="sugg-sub">Fear &amp; greed · bull/bear mood</div></div>
+      </div>
+
+      <!-- Right: Markets + AI Picks + Screener -->
+      <div class="home-grid-right">
+        <div class="home-section">
+          <div class="home-section-hdr">Markets</div>
+          <div class="sugg-grid">
+            <div class="sugg-card" onclick="ask('market overview')">
+              <span class="sugg-icon">📊</span>
+              <div><div class="sugg-label">Market Overview</div><div class="sugg-sub">Nifty 50 &amp; Sensex snapshot</div></div>
+            </div>
+            <div class="sugg-card" onclick="ask('market sentiment')">
+              <span class="sugg-icon">🧭</span>
+              <div><div class="sugg-label">Market Sentiment</div><div class="sugg-sub">Fear &amp; greed · bull/bear mood</div></div>
+            </div>
+          </div>
+        </div>
+        <div class="home-section">
+          <div class="home-section-hdr">AI Picks</div>
+          <div class="sugg-grid">
+            <div class="sugg-card" onclick="ask('top 5 stocks to buy today')">
+              <span class="sugg-icon">🚀</span>
+              <div><div class="sugg-label">Top Picks Today</div><div class="sugg-sub">Best BUY signals right now</div></div>
+            </div>
+            <div class="sugg-card" onclick="ask('worst stocks to avoid')">
+              <span class="sugg-icon">⚠️</span>
+              <div><div class="sugg-label">Stocks to Avoid</div><div class="sugg-sub">Bearish signals &amp; weak picks</div></div>
+            </div>
+          </div>
+        </div>
+        <div class="home-section">
+          <div class="home-section-hdr">Stock Screener</div>
+          <div class="sugg-grid" style="grid-template-columns:1fr">
+            <div class="sugg-card tool-card" onclick="ask('screener: stocks with RSI below 35 above SMA50')">
+              <span class="sugg-icon">🔬</span>
+              <div><div class="sugg-label">Filter Stocks by Signals</div><div class="sugg-sub">RSI · MACD · SMA50 · Buy/Avoid scores — Nifty 50 &amp; 100</div></div>
+            </div>
+          </div>
         </div>
       </div>
     </div>
 
-    <!-- AI Picks -->
-    <div class="home-section">
-      <div class="home-section-hdr">AI Picks</div>
-      <div class="sugg-grid">
-        <div class="sugg-card" onclick="ask('top 5 stocks to buy today')">
-          <span class="sugg-icon">🚀</span>
-          <div><div class="sugg-label">Top Picks Today</div><div class="sugg-sub">Best BUY signals right now</div></div>
-        </div>
-        <div class="sugg-card" onclick="ask('worst stocks to avoid')">
-          <span class="sugg-icon">⚠️</span>
-          <div><div class="sugg-label">Stocks to Avoid</div><div class="sugg-sub">Bearish signals &amp; weak picks</div></div>
-        </div>
-      </div>
-    </div>
-
-    <!-- Screener -->
-    <div class="home-section">
-      <div class="home-section-hdr">Stock Screener</div>
-      <div class="sugg-grid" style="grid-template-columns:1fr">
-        <div class="sugg-card tool-card" onclick="ask('screener: stocks with RSI below 35 above SMA50')">
-          <span class="sugg-icon">🔬</span>
-          <div><div class="sugg-label">Filter Stocks by Signals</div><div class="sugg-sub">RSI · MACD · SMA50 · Buy/Avoid scores — Nifty 50 &amp; 100</div></div>
-        </div>
-      </div>
-    </div>
-
-    <!-- Sectors -->
-    <div class="home-section">
+    <!-- Sectors — full width -->
+    <div class="home-section-full">
       <div class="home-section-hdr">Sectors</div>
       <div class="sector-pills">
         <div class="sector-pill" onclick="ask('banking sector stocks')">🏦 Banking</div>
@@ -2016,33 +2024,41 @@ function newChat() {
     ? ''  // already removed, just rebuild
     : '';
   // Rebuild welcome HTML
-  w.innerHTML = '<div class="welcome-hero"><span class="welcome-icon">📈</span><div class="welcome-glow"></div></div>' +
-    '<h2>Dalal Street</h2>' +
-    '<p class="welcome-sub">Powered by AI · NSE / BSE · Live data</p>' +
-    '<div class="welcome-badges"><span class="welcome-badge live">● LIVE</span><span class="welcome-badge free">FREE</span><span class="welcome-badge ai">AI-POWERED</span></div>' +
-    '<div class="server-status-bar sleeping" id="serverStatusBar"><div class="server-dot sleeping" id="serverDot"></div><span class="server-label" id="serverLabel">Backend sleeping</span><button class="server-wake-btn" id="serverWakeBtn" onclick="wakeServer()">⚡ Wake up</button></div>' +
-    '<div class="home-section"><div class="home-section-hdr">SIP Calculator</div>' +
-      '<div class="home-sip-card">' +
-        '<div class="home-sip-field-lbl">Monthly Investment</div>' +
-        '<div class="home-sip-inp-wrap"><span class="home-sip-rupee">₹</span><input class="home-sip-inp" id="homeSipAmt" type="number" value="5000" min="100" oninput="_homeSipRender()"></div>' +
-        '<div class="home-sip-pills-row"><span class="home-sip-field-lbl">Duration</span><div class="home-sip-pills" id="homeSipYearPills"></div></div>' +
-        '<div class="home-sip-pills-row"><span class="home-sip-field-lbl">Expected return / yr</span><div class="home-sip-pills" id="homeSipRatePills"></div></div>' +
-        '<div class="home-sip-divider"></div>' +
-        '<div class="home-sip-result" id="homeSipResult"></div>' +
-        '<button class="home-sip-fullbtn" onclick="showSIPCalc()">Open full calculator with Step-Up SIP →</button>' +
-      '</div></div>' +
-    '<div class="home-section"><div class="home-section-hdr">Markets</div><div class="sugg-grid">' +
-      '<div class="sugg-card" onclick="ask(\'market overview\')"><span class="sugg-icon">📊</span><div><div class="sugg-label">Market Overview</div><div class="sugg-sub">Nifty 50 &amp; Sensex snapshot</div></div></div>' +
-      '<div class="sugg-card" onclick="ask(\'market sentiment\')"><span class="sugg-icon">🧭</span><div><div class="sugg-label">Market Sentiment</div><div class="sugg-sub">Fear &amp; greed · bull/bear mood</div></div></div>' +
-    '</div></div>' +
-    '<div class="home-section"><div class="home-section-hdr">AI Picks</div><div class="sugg-grid">' +
-      '<div class="sugg-card" onclick="ask(\'top 5 stocks to buy today\')"><span class="sugg-icon">🚀</span><div><div class="sugg-label">Top Picks Today</div><div class="sugg-sub">Best BUY signals right now</div></div></div>' +
-      '<div class="sugg-card" onclick="ask(\'worst stocks to avoid\')"><span class="sugg-icon">⚠️</span><div><div class="sugg-label">Stocks to Avoid</div><div class="sugg-sub">Bearish signals &amp; weak picks</div></div></div>' +
-    '</div></div>' +
-    '<div class="home-section"><div class="home-section-hdr">Stock Screener</div><div class="sugg-grid" style="grid-template-columns:1fr">' +
-      '<div class="sugg-card tool-card" onclick="ask(\'screener: stocks with RSI below 35 above SMA50\')"><span class="sugg-icon">🔬</span><div><div class="sugg-label">Filter Stocks by Signals</div><div class="sugg-sub">RSI · MACD · SMA50 · Buy/Avoid scores — Nifty 50 &amp; 100</div></div></div>' +
-    '</div></div>' +
-    '<div class="home-section"><div class="home-section-hdr">Sectors</div><div class="sector-pills">' +
+  w.innerHTML =
+    '<div class="welcome-hero-strip">' +
+      '<span class="welcome-icon">📈</span>' +
+      '<div><h2>Dalal Street</h2><p class="welcome-sub">Powered by AI · NSE / BSE · Live data</p></div>' +
+      '<div class="welcome-badges"><span class="welcome-badge live">● LIVE</span><span class="welcome-badge free">FREE</span><span class="welcome-badge ai">AI-POWERED</span></div>' +
+      '<div class="server-status-bar sleeping" id="serverStatusBar"><div class="server-dot sleeping" id="serverDot"></div><span class="server-label" id="serverLabel">Backend sleeping</span><button class="server-wake-btn" id="serverWakeBtn" onclick="wakeServer()">⚡ Wake up</button></div>' +
+    '</div>' +
+    '<div class="home-grid">' +
+      '<div>' +
+        '<div class="home-section-hdr">SIP Calculator</div>' +
+        '<div class="home-sip-card">' +
+          '<div class="home-sip-field-lbl">Monthly Investment</div>' +
+          '<div class="home-sip-inp-wrap"><span class="home-sip-rupee">₹</span><input class="home-sip-inp" id="homeSipAmt" type="number" value="5000" min="100" oninput="_homeSipRender()"></div>' +
+          '<div class="home-sip-pills-row"><span class="home-sip-field-lbl">Duration</span><div class="home-sip-pills" id="homeSipYearPills"></div></div>' +
+          '<div class="home-sip-pills-row"><span class="home-sip-field-lbl">Expected return / yr</span><div class="home-sip-pills" id="homeSipRatePills"></div></div>' +
+          '<div class="home-sip-divider"></div>' +
+          '<div class="home-sip-result" id="homeSipResult"></div>' +
+          '<button class="home-sip-fullbtn" onclick="showSIPCalc()">Open full calculator with Step-Up SIP →</button>' +
+        '</div>' +
+      '</div>' +
+      '<div class="home-grid-right">' +
+        '<div class="home-section"><div class="home-section-hdr">Markets</div><div class="sugg-grid">' +
+          '<div class="sugg-card" onclick="ask(\'market overview\')"><span class="sugg-icon">📊</span><div><div class="sugg-label">Market Overview</div><div class="sugg-sub">Nifty 50 &amp; Sensex snapshot</div></div></div>' +
+          '<div class="sugg-card" onclick="ask(\'market sentiment\')"><span class="sugg-icon">🧭</span><div><div class="sugg-label">Market Sentiment</div><div class="sugg-sub">Fear &amp; greed · bull/bear mood</div></div></div>' +
+        '</div></div>' +
+        '<div class="home-section"><div class="home-section-hdr">AI Picks</div><div class="sugg-grid">' +
+          '<div class="sugg-card" onclick="ask(\'top 5 stocks to buy today\')"><span class="sugg-icon">🚀</span><div><div class="sugg-label">Top Picks Today</div><div class="sugg-sub">Best BUY signals right now</div></div></div>' +
+          '<div class="sugg-card" onclick="ask(\'worst stocks to avoid\')"><span class="sugg-icon">⚠️</span><div><div class="sugg-label">Stocks to Avoid</div><div class="sugg-sub">Bearish signals &amp; weak picks</div></div></div>' +
+        '</div></div>' +
+        '<div class="home-section"><div class="home-section-hdr">Stock Screener</div><div class="sugg-grid" style="grid-template-columns:1fr">' +
+          '<div class="sugg-card tool-card" onclick="ask(\'screener: stocks with RSI below 35 above SMA50\')"><span class="sugg-icon">🔬</span><div><div class="sugg-label">Filter Stocks by Signals</div><div class="sugg-sub">RSI · MACD · SMA50 · Buy/Avoid scores — Nifty 50 &amp; 100</div></div></div>' +
+        '</div></div>' +
+      '</div>' +
+    '</div>' +
+    '<div class="home-section-full"><div class="home-section-hdr">Sectors</div><div class="sector-pills">' +
       '<div class="sector-pill" onclick="ask(\'banking sector stocks\')">🏦 Banking</div>' +
       '<div class="sector-pill" onclick="ask(\'IT sector stocks\')">💻 IT</div>' +
       '<div class="sector-pill" onclick="ask(\'pharma sector stocks\')">💊 Pharma</div>' +
