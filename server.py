@@ -728,6 +728,33 @@ def ping():
     return Response('{"status":"ok"}', content_type="application/json")
 
 
+@app.route("/fundamentals/<symbol>")
+def fundamentals(symbol):
+    """Return key fundamentals for a stock using yfinance info."""
+    try:
+        info = yf.Ticker(symbol).info or {}
+        def trend(val):
+            if val is None: return None
+            if val > 0.03:  return "up"
+            if val < -0.03: return "down"
+            return "flat"
+        rev_growth  = info.get("revenueGrowth")
+        eps_growth  = info.get("earningsGrowth")
+        de_ratio    = info.get("debtToEquity")
+        pe          = info.get("trailingPE")
+        debt_level  = None
+        if de_ratio is not None:
+            debt_level = "Low" if de_ratio < 30 else "Medium" if de_ratio < 100 else "High"
+        return Response(json.dumps({
+            "revenue_trend": trend(rev_growth),
+            "eps_trend":     trend(eps_growth),
+            "debt_level":    debt_level,
+            "pe_ratio":      round(pe, 1) if pe and pe > 0 else None,
+        }), content_type="application/json", headers={"Access-Control-Allow-Origin": "*"})
+    except Exception as e:
+        return json.dumps({"error": str(e)}), 502, {"Access-Control-Allow-Origin": "*"}
+
+
 @app.route("/search")
 def search():
     q = request.args.get("q", "").lower().strip()

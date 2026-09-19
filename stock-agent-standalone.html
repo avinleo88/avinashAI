@@ -312,6 +312,43 @@
     .screener-pill.avoid { color:var(--red);   border-color:rgba(255,77,109,.25); background:rgba(255,77,109,.06); }
     .screener-price { font-size:0.8rem; font-weight:600; text-align:right; min-width:60px; }
     .screener-chg   { font-size:0.72rem; font-weight:600; min-width:48px; text-align:right; }
+    /* ── Stock Card ──────────────────────────────────────────────────────────── */
+    .sc-card { background:rgba(255,255,255,.03); border-radius:16px; padding:20px 22px; border:1px solid rgba(255,255,255,.08); margin:4px 0; max-width:480px; }
+    .sc-name { font-size:.95rem; font-weight:700; color:var(--text); letter-spacing:.8px; text-transform:uppercase; margin-bottom:6px; }
+    .sc-price-row { display:flex; align-items:baseline; gap:10px; margin-bottom:16px; }
+    .sc-price { font-size:1.35rem; font-weight:700; color:var(--text); }
+    .sc-chg { font-size:.85rem; font-weight:600; }
+    .sc-chg.pos { color:var(--green); }
+    .sc-chg.neg { color:var(--red); }
+    .sc-section-hdr { font-size:.6rem; font-weight:700; letter-spacing:1.8px; color:var(--muted); text-transform:uppercase; margin:16px 0 5px; }
+    .sc-sep { height:1px; background:rgba(255,255,255,.07); margin-bottom:10px; }
+    .sc-verdict-row { display:flex; align-items:center; gap:12px; margin-bottom:6px; }
+    .sc-verdict { font-size:.9rem; font-weight:700; padding:4px 14px; border-radius:8px; display:inline-flex; align-items:center; gap:6px; }
+    .sc-verdict.buy   { color:var(--green); background:rgba(0,255,163,.1); border:1px solid rgba(0,255,163,.25); }
+    .sc-verdict.hold  { color:var(--amber); background:rgba(255,179,0,.1); border:1px solid rgba(255,179,0,.25); }
+    .sc-verdict.avoid { color:var(--red);   background:rgba(255,77,109,.1); border:1px solid rgba(255,77,109,.25); }
+    .sc-conf { font-size:.78rem; color:var(--muted); }
+    .sc-conf span { color:var(--text); font-weight:600; }
+    .sc-why { list-style:none; padding:0; margin:4px 0 0; }
+    .sc-why li { font-size:.8rem; padding:2px 0; display:flex; gap:6px; align-items:flex-start; line-height:1.4; }
+    .sc-why li.ok   { color:var(--green); }
+    .sc-why li.warn { color:var(--amber); }
+    .sc-tech-grid { display:grid; grid-template-columns:1fr 1fr; gap:0; margin-top:2px; }
+    .sc-row { display:flex; justify-content:space-between; font-size:.8rem; padding:5px 0; border-bottom:1px solid rgba(255,255,255,.04); }
+    .sc-row:last-child { border-bottom:none; }
+    .sc-lbl { color:var(--muted); }
+    .sc-val { font-weight:600; color:var(--text); }
+    .sc-val.pos { color:var(--green); }
+    .sc-val.neg { color:var(--red); }
+    .sc-risk { display:inline-block; font-size:.8rem; font-weight:600; padding:4px 14px; border-radius:6px; margin-top:4px; }
+    .sc-risk.low    { color:var(--green); background:rgba(0,255,163,.1); border:1px solid rgba(0,255,163,.25); }
+    .sc-risk.medium { color:var(--amber); background:rgba(255,179,0,.1); border:1px solid rgba(255,179,0,.25); }
+    .sc-risk.high   { color:var(--red);   background:rgba(255,77,109,.1); border:1px solid rgba(255,77,109,.25); }
+    .sc-fund-row { display:flex; justify-content:space-between; font-size:.8rem; padding:5px 0; border-bottom:1px solid rgba(255,255,255,.04); }
+    .sc-fund-row:last-child { border-bottom:none; }
+    .sc-arrow-up   { color:var(--green); font-weight:700; font-size:.9rem; }
+    .sc-arrow-down { color:var(--red);   font-weight:700; font-size:.9rem; }
+    .sc-arrow-flat { color:var(--muted); font-weight:700; font-size:.9rem; }
     /* ── SIP Calculator ─────────────────────────────────────────────────────── */
     .sip-card {
       background: rgba(255,255,255,.03); border-radius:20px; padding:24px;
@@ -732,40 +769,42 @@ function parseResult(result) {
     changePct: Math.round(((current - prev) / prev) * 1000) / 10,
     sma20: Math.round(sma(prices, 20) * 100) / 100,
     sma50: Math.round(sma(prices, 50) * 100) / 100,
+    sma200: prices.length >= 200 ? Math.round(sma(prices, 200) * 100) / 100 : null,
     rsi: rsi, macd: macd, volRatio: volRatio,
     ret1w: ret1w, ret1m: ret1m,
+    ret3m: prices.length >= 66  ? Math.round(((current - prices[prices.length - 66])  / prices[prices.length - 66])  * 1000) / 10 : null,
+    ret1y: prices.length >= 252 ? Math.round(((current - prices[prices.length - 252]) / prices[prices.length - 252]) * 1000) / 10 : null,
     hi52: Math.round(hi52 * 100) / 100,
     lo52: Math.round(lo52 * 100) / 100,
     w52pct: w52pct,
-    prices: prices.slice(-30),
+    prices: prices.slice(-60),
   };
 }
 
 function analyse(d) {
   var score = 0, flags = [], warns = [];
-  if (d.rsi < 30)      { score += 2; flags.push("RSI " + d.rsi + " — oversold (buy zone)"); }
-  else if (d.rsi < 45) { score += 1; flags.push("RSI " + d.rsi + " — slightly oversold"); }
-  else if (d.rsi > 70) { score -= 2; warns.push("RSI " + d.rsi + " — overbought (risky entry)"); }
+  if (d.rsi < 30)      { score += 2; flags.push("RSI " + d.rsi + " — deep oversold, potential entry"); }
+  else if (d.rsi < 45) { score += 1; flags.push("RSI " + d.rsi + " — mildly oversold"); }
+  else if (d.rsi > 70) { score -= 2; warns.push("RSI " + d.rsi + " — overbought, correction risk"); }
   else if (d.rsi > 60) { score -= 1; warns.push("RSI " + d.rsi + " — approaching overbought"); }
-  else                   flags.push("RSI " + d.rsi + " — neutral zone");
+  else                   flags.push("RSI " + d.rsi + " — neutral range");
 
-  if (d.current > d.sma20 && d.sma20 > d.sma50)      { score += 2; flags.push("Price > SMA20 > SMA50 — bullish trend"); }
-  else if (d.current > d.sma20)                         { score += 1; flags.push("Price above SMA20 — short-term bullish"); }
-  else if (d.current < d.sma20 && d.sma20 < d.sma50) { score -= 2; warns.push("Price < SMA20 < SMA50 — bearish trend"); }
-  else if (d.current < d.sma20)                         { score -= 1; warns.push("Price below SMA20 — short-term bearish"); }
+  if (d.current > d.sma20 && d.sma20 > d.sma50)      { score += 2; flags.push("Trading above 20 & 50-day moving average"); }
+  else if (d.current > d.sma20)                         { score += 1; flags.push("Above 20-day moving average"); }
+  else if (d.current < d.sma20 && d.sma20 < d.sma50) { score -= 2; warns.push("Below 20 & 50-day moving average — bearish"); }
+  else if (d.current < d.sma20)                         { score -= 1; warns.push("Below 20-day moving average"); }
 
-  if (d.macd > 0) { score += 1; flags.push("MACD +" + d.macd + " — bullish momentum"); }
-  else             { score -= 1; warns.push("MACD " + d.macd + " — bearish momentum"); }
+  if (d.macd > 0) { score += 1; flags.push("Positive MACD — bullish momentum"); }
+  else             { score -= 1; warns.push("Negative MACD — bearish momentum"); }
 
-  if (d.w52pct < 20)      { score += 1; flags.push("Near 52-week low (" + d.w52pct + "%) — value zone"); }
-  else if (d.w52pct > 85) { score -= 1; warns.push("Near 52-week high (" + d.w52pct + "%) — correction risk"); }
-  else                      flags.push("52-week position: " + d.w52pct + "% of range");
+  if (d.w52pct < 20)      { score += 1; flags.push("Near 52-week low — value zone"); }
+  else if (d.w52pct > 85) { score -= 1; warns.push("Near 52-week high — limited upside"); }
 
-  if (d.volRatio > 1.5)      { score += 1; flags.push("Volume " + d.volRatio + "x above average — strong interest"); }
-  else if (d.volRatio < 0.5) { score -= 1; warns.push("Volume " + d.volRatio + "x below average — low interest"); }
+  if (d.volRatio > 1.5)      { score += 1; flags.push("Strong buying volume (" + d.volRatio + "x avg)"); }
+  else if (d.volRatio < 0.5) { score -= 1; warns.push("Weak volume — low market interest"); }
 
-  if (d.ret1m > 10)       { score += 1; flags.push("1-month return: +" + d.ret1m + "% — momentum"); }
-  else if (d.ret1m < -10) { score -= 1; warns.push("1-month return: " + d.ret1m + "% — weak performance"); }
+  if (d.ret1m > 10)       { score += 1; flags.push("+" + d.ret1m + "% in 1 month — strong momentum"); }
+  else if (d.ret1m < -10) { score -= 1; warns.push(d.ret1m + "% in 1 month — weak performance"); }
 
   var verdict = score >= 4 ? "STRONG BUY" : score >= 2 ? "BUY" : score >= 0 ? "HOLD" : score >= -2 ? "AVOID" : "STRONG AVOID";
   return { score: score, verdict: verdict, flags: flags, warns: warns };
@@ -773,6 +812,91 @@ function analyse(d) {
 
 function ipr(n) {
   return "Rs." + n.toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+}
+
+// ── Stock Card Renderer ───────────────────────────────────────────────────────
+function renderStockCard(d, sig) {
+  var confidence = Math.round(Math.max(10, Math.min(95, 50 + sig.score * 5.5)));
+  var vc = sig.verdict.includes("BUY") ? "buy" : sig.verdict.includes("AVOID") ? "avoid" : "hold";
+  var emoji = (sig.verdict === "STRONG BUY" || sig.verdict === "BUY") ? "🟢" : sig.verdict === "HOLD" ? "🟡" : "🔴";
+  var chgSign = d.changePct >= 0 ? "+" : "";
+  var chgCls  = d.changePct >= 0 ? "pos" : "neg";
+  var risk = "medium", riskLabel = "Medium";
+  if (sig.score >= 3 && d.w52pct < 55) { risk = "low"; riskLabel = "Low"; }
+  else if (sig.score < -1 || d.w52pct > 82) { risk = "high"; riskLabel = "High"; }
+  var fundId = "scfund-" + d.symbol.replace(/[^a-z0-9]/gi, "");
+
+  var h = '<div class="sc-card">';
+  h += '<div class="sc-name">' + d.name + '</div>';
+  h += '<div class="sc-price-row">';
+  h += '<span class="sc-price">₹' + d.current.toLocaleString("en-IN") + '</span>';
+  h += '<span class="sc-chg ' + chgCls + '">' + chgSign + d.changePct + '%</span>';
+  h += '</div>';
+
+  // AI VIEW
+  h += '<div class="sc-section-hdr">AI VIEW</div><div class="sc-sep"></div>';
+  h += '<div class="sc-verdict-row">';
+  h += '<span class="sc-verdict ' + vc + '">' + emoji + '&nbsp;' + sig.verdict + '</span>';
+  h += '</div>';
+  h += '<div class="sc-conf" style="margin-top:4px">Confidence: <span>' + confidence + '/100</span></div>';
+
+  // WHY
+  h += '<div class="sc-section-hdr">WHY?</div>';
+  h += '<ul class="sc-why">';
+  sig.flags.forEach(function(f) { h += '<li class="ok">✓&nbsp;' + f + '</li>'; });
+  sig.warns.forEach(function(w) { h += '<li class="warn">⚠&nbsp;' + w + '</li>'; });
+  h += '</ul>';
+
+  // TECHNICALS
+  h += '<div class="sc-section-hdr">TECHNICALS</div><div class="sc-sep"></div>';
+  h += '<div class="sc-tech-grid">';
+  h += '<div class="sc-row"><span class="sc-lbl">RSI (14)</span><span class="sc-val' + (d.rsi < 35 ? " pos" : d.rsi > 65 ? " neg" : "") + '">' + d.rsi + '</span></div>';
+  h += '<div class="sc-row"><span class="sc-lbl">MACD</span><span class="sc-val ' + (d.macd > 0 ? "pos" : "neg") + '">' + (d.macd > 0 ? "Bullish" : "Bearish") + '</span></div>';
+  h += '<div class="sc-row"><span class="sc-lbl">20 DMA</span><span class="sc-val">₹' + d.sma20.toLocaleString("en-IN") + '</span></div>';
+  h += '<div class="sc-row"><span class="sc-lbl">50 DMA</span><span class="sc-val">₹' + d.sma50.toLocaleString("en-IN") + '</span></div>';
+  if (d.sma200) { h += '<div class="sc-row"><span class="sc-lbl">200 DMA</span><span class="sc-val">₹' + d.sma200.toLocaleString("en-IN") + '</span></div>'; }
+  h += '<div class="sc-row"><span class="sc-lbl">52W range</span><span class="sc-val">' + d.w52pct + '%</span></div>';
+  h += '<div class="sc-row"><span class="sc-lbl">1M return</span><span class="sc-val ' + (d.ret1m >= 0 ? "pos" : "neg") + '">' + (d.ret1m >= 0 ? "+" : "") + d.ret1m + '%</span></div>';
+  h += '<div class="sc-row"><span class="sc-lbl">Volume</span><span class="sc-val">' + d.volRatio + 'x avg</span></div>';
+  h += '</div>';
+
+  // FUNDAMENTALS (async loaded)
+  h += '<div class="sc-section-hdr">FUNDAMENTALS</div><div class="sc-sep"></div>';
+  h += '<div id="' + fundId + '"><span style="font-size:.72rem;color:var(--muted)">Loading…</span></div>';
+
+  // RISK
+  h += '<div class="sc-section-hdr">RISK</div>';
+  h += '<span class="sc-risk ' + risk + '">' + riskLabel + '</span>';
+
+  h += '<p style="font-size:.65rem;color:var(--muted);margin-top:14px;margin-bottom:0">⚠ Technical analysis only — not financial advice. Do your own research.</p>';
+  h += '</div>';
+  return h;
+}
+
+async function loadFundamentals(symbol) {
+  var fundId = "scfund-" + symbol.replace(/[^a-z0-9]/gi, "");
+  var el = document.getElementById(fundId);
+  if (!el) return;
+  var backend = BACKEND_URL || "http://localhost:5050";
+  try {
+    var r = await fetch(backend + "/fundamentals/" + encodeURIComponent(symbol), { signal: AbortSignal.timeout(18000) });
+    if (!r.ok) throw new Error("HTTP " + r.status);
+    var f = await r.json();
+    if (f.error) throw new Error(f.error);
+    function arrow(trend) {
+      if (trend === "up")   return '<span class="sc-arrow-up">↑</span>';
+      if (trend === "down") return '<span class="sc-arrow-down">↓</span>';
+      return '<span class="sc-arrow-flat">→</span>';
+    }
+    var rows = "";
+    if (f.revenue_trend) rows += '<div class="sc-fund-row"><span class="sc-lbl">Revenue</span>' + arrow(f.revenue_trend) + '</div>';
+    if (f.eps_trend)     rows += '<div class="sc-fund-row"><span class="sc-lbl">EPS</span>'     + arrow(f.eps_trend)     + '</div>';
+    if (f.debt_level)    rows += '<div class="sc-fund-row"><span class="sc-lbl">Debt</span><span class="sc-val">' + f.debt_level + '</span></div>';
+    if (f.pe_ratio)      rows += '<div class="sc-fund-row"><span class="sc-lbl">P/E</span><span class="sc-val">' + f.pe_ratio + '</span></div>';
+    el.innerHTML = rows || '<span style="font-size:.72rem;color:var(--muted)">Not available</span>';
+  } catch(_) {
+    el.innerHTML = '<span style="font-size:.72rem;color:var(--muted)">Not available</span>';
+  }
 }
 
 async function buildResponse(query, onStatus) {
@@ -1229,8 +1353,9 @@ async function buildResponse(query, onStatus) {
 
     emit("## " + (unique.length > 1 ? "Comparison" : "Analysis"));
     emit();
-    onStatus("Fetching " + unique.map(function(s) { return s.replace(".NS","").replace(".BO",""); }).join(", ") + " simultaneously...");
-    var stockFetched = await fetchAll(unique, "3mo");
+    onStatus("Fetching " + unique.map(function(s) { return s.replace(".NS","").replace(".BO",""); }).join(", ") + "...");
+    var fetchPeriod = unique.length === 1 ? "1y" : "3mo";
+    var stockFetched = await fetchAll(unique, fetchPeriod);
     // If all fetches still failed, try NSE search as last resort
     var allNull = stockFetched.every(function(item) { return !item.result; });
     if (allNull) {
@@ -1238,7 +1363,7 @@ async function buildResponse(query, onStatus) {
       var searched = await searchSymbol(query);
       if (searched) {
         unique = [searched.symbol];
-        stockFetched = await fetchAll(unique, "3mo");
+        stockFetched = await fetchAll(unique, fetchPeriod);
       } else {
         // Nothing found — give a helpful guided message
         emit("I couldn't find a stock matching **\"" + query + "\"**.");
@@ -1255,7 +1380,25 @@ async function buildResponse(query, onStatus) {
     // Save context for follow-up questions ("is it safe?", "compare it with X")
     _ctx.stocks = unique; _ctx.sector = null;
     var stockResults = [];
-    var _priceHistory = {};  // symbol -> prices array for sparklines
+    var _priceHistory = {};
+
+    // ── Single stock → rich HTML card ───────────────────────────────────────
+    if (unique.length === 1) {
+      var sItem = stockFetched[0];
+      if (sItem && sItem.result) {
+        var sD = parseResult(sItem.result);
+        if (sD) {
+          if (sD.prices && sD.prices.length > 5) _priceHistory[sD.symbol] = { prices: sD.prices, name: sD.name };
+          _lastPriceHistory = _priceHistory;
+          var sSig = analyse(sD);
+          return renderStockCard(sD, sSig);
+        }
+      }
+      emit("Couldn't parse data for **" + unique[0] + "**. Please try again.");
+      return lines.join("\n");
+    }
+
+    // ── Multiple stocks → comparison table ──────────────────────────────────
     stockFetched.forEach(function(item) {
       if (!item.result) return; // skip silently — already searched NSE
       var d = parseResult(item.result);
@@ -1284,6 +1427,7 @@ async function buildResponse(query, onStatus) {
       emit();
       emit("---");
       emit();
+      stockResults.push({ d: d, sig: sig });
     });
     if (stockResults.length > 1) {
       var best = stockResults.reduce(function(a, b) { return a.sig.score > b.sig.score ? a : b; });
@@ -2042,9 +2186,12 @@ async function sendMsg() {
       scrollBottom();
     });
     clearInterval(pulse);
-    _finishBubble(md(result));
+    var isHtmlResult = result.trim().startsWith('<');
+    _finishBubble(isHtmlResult ? result : md(result));
     // Append sparklines/comparison chart for individual stock queries
     if (Object.keys(_lastPriceHistory).length > 0) appendSparklines(bubble);
+    // For single stock HTML card: load fundamentals async
+    if (isHtmlResult && _ctx.stocks.length === 1) loadFundamentals(_ctx.stocks[0]);
     // Async: fetch and append news headlines for 1-2 stocks
     if (_ctx.stocks.length >= 1 && _ctx.stocks.length <= 2) appendNewsAsync(bubble, _ctx.stocks);
   } catch(e) {
