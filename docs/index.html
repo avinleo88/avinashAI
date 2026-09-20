@@ -602,7 +602,7 @@
           <span class="home-sip-field-lbl" id="homeSipAmtLbl">Monthly Investment</span>
           <div class="home-sip-inp-wrap">
             <span class="home-sip-rupee">₹</span>
-            <input class="home-sip-inp" id="homeSipAmt" type="number" value="5000" min="100" oninput="_homeSipRender()">
+            <input class="home-sip-inp" id="homeSipAmt" type="text" inputmode="numeric" value="5,000" oninput="_homeSipOnInput(this)">
           </div>
           <div class="home-sip-pills-row">
             <span class="home-sip-field-lbl">Duration</span>
@@ -2051,7 +2051,7 @@ function newChat() {
         '<div class="home-sip-card">' +
           '<div class="home-sip-tabs"><button class="home-sip-tab active" data-mode="forward" onclick="_homeSipMode(\'forward\')">Monthly → Corpus</button><button class="home-sip-tab" data-mode="reverse" onclick="_homeSipMode(\'reverse\')">Target → Monthly</button></div>' +
           '<span class="home-sip-field-lbl" id="homeSipAmtLbl">Monthly Investment</span>' +
-          '<div class="home-sip-inp-wrap"><span class="home-sip-rupee">₹</span><input class="home-sip-inp" id="homeSipAmt" type="number" value="5000" min="100" oninput="_homeSipRender()"></div>' +
+          '<div class="home-sip-inp-wrap"><span class="home-sip-rupee">₹</span><input class="home-sip-inp" id="homeSipAmt" type="text" inputmode="numeric" value="5,000" oninput="_homeSipOnInput(this)"></div>' +
           '<div class="home-sip-pills-row"><span class="home-sip-field-lbl">Duration</span><div class="home-sip-pills" id="homeSipYearPills"></div></div>' +
           '<div class="home-sip-pills-row"><span class="home-sip-field-lbl">Expected return / yr</span><div class="home-sip-pills" id="homeSipRatePills"></div></div>' +
           '<div class="home-sip-divider"></div>' +
@@ -2464,11 +2464,34 @@ async function wakeServer() {
     return { monthly: monthly, invested: monthly*n, returns: target - monthly*n };
   }
 
+  // Indian digit grouping: 10000000 -> "1,00,00,000"
+  function _grpIN(s) {
+    s = String(s).replace(/\D/g, '').replace(/^0+(?=\d)/, '');
+    if (!s) return '';
+    var last3 = s.slice(-3), rest = s.slice(0, -3);
+    return rest ? rest.replace(/\B(?=(\d{2})+(?!\d))/g, ',') + ',' + last3 : last3;
+  }
+
+  window._homeSipOnInput = function(inp) {
+    var oldVal = inp.value, selStart = inp.selectionStart;
+    var digitsBefore = oldVal.slice(0, selStart).replace(/\D/g, '').length;
+    var formatted = _grpIN(oldVal);
+    inp.value = formatted;
+    // restore caret after the same number of digits
+    var pos = 0, cnt = 0;
+    while (pos < formatted.length && cnt < digitsBefore) {
+      if (/\d/.test(formatted[pos])) cnt++;
+      pos++;
+    }
+    try { inp.setSelectionRange(pos, pos); } catch (e) {}
+    window._homeSipRender();
+  };
+
   window._homeSipRender = function() {
     var inp = document.getElementById('homeSipAmt');
     var res = document.getElementById('homeSipResult');
     if (!res) return;
-    var val = parseFloat(inp && inp.value) || 0;
+    var val = parseFloat((inp && inp.value || '').replace(/,/g, '')) || 0;
     if (!val) { res.innerHTML = ''; return; }
     if (_selMode === 'forward') {
       var c = _calc(val, _selY, _selR);
@@ -2503,7 +2526,7 @@ async function wakeServer() {
     var lbl = document.getElementById('homeSipAmtLbl');
     var inp = document.getElementById('homeSipAmt');
     if (lbl) lbl.textContent = mode === 'forward' ? 'Monthly Investment' : 'Target Corpus';
-    if (inp) inp.value = mode === 'forward' ? '5000' : '10000000';
+    if (inp) inp.value = mode === 'forward' ? '5,000' : '1,00,00,000';
     window._homeSipRender();
   };
 
@@ -2512,6 +2535,8 @@ async function wakeServer() {
     var rp = document.getElementById('homeSipRatePills');
     if (!yp || !rp) return;
     _selMode = 'forward';
+    var amtInp = document.getElementById('homeSipAmt');
+    if (amtInp) amtInp.value = _grpIN(amtInp.value);
     yp.innerHTML = _YEARS.map(function(y) {
       return '<button class="home-sip-pill' + (y===_selY?' active':'') + '" data-v="'+y+'" onclick="_homeSipPickY('+y+')">' + y + 'Y</button>';
     }).join('');
