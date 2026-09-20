@@ -2465,12 +2465,13 @@ async function wakeServer() {
   }
 
   // Indian digit grouping: 10000000 -> "1,00,00,000"
-  function _grpIN(s) {
+  window._grpIN = function(s) {
     s = String(s).replace(/\D/g, '').replace(/^0+(?=\d)/, '');
     if (!s) return '';
     var last3 = s.slice(-3), rest = s.slice(0, -3);
     return rest ? rest.replace(/\B(?=(\d{2})+(?!\d))/g, ',') + ',' + last3 : last3;
-  }
+  };
+  var _grpIN = window._grpIN;
 
   window._homeSipOnInput = function(inp) {
     var oldVal = inp.value, selStart = inp.selectionStart;
@@ -2628,7 +2629,7 @@ function showSIPCalc() {
   }
 
   function doRender() {
-    var monthly = parseFloat(document.getElementById("sipAmt").value) || 0;
+    var monthly = parseFloat((document.getElementById("sipAmt").value || '').replace(/,/g, '')) || 0;
     var res = document.getElementById("sipResult");
     if (monthly <= 0) { res.classList.remove("show"); return; }
     var base = calcSIP(monthly, window.__sipSelYears, window.__sipSelRate);
@@ -2651,7 +2652,7 @@ function showSIPCalc() {
       '<div class="sip-card-title">🧮 SIP Calculator</div>' +
       '<div class="sip-section-label">Monthly Investment</div>' +
       '<div class="sip-amount-wrap"><span class="sip-currency">\u20B9</span>' +
-        '<input class="sip-amount-inp" id="sipAmt" type="number" placeholder="Enter amount" min="1" oninput="__sipRender()"/>' +
+        '<input class="sip-amount-inp" id="sipAmt" type="text" inputmode="numeric" placeholder="Enter amount" oninput="__sipOnInput(this)"/>' +
       '</div>' +
       '<div class="sip-section-label">Investment Period</div>' +
       '<div class="sip-pills">' + pillsHTML(YEARS, window.__sipSelYears, 'sipy', ' yrs') + '</div>' +
@@ -2677,6 +2678,19 @@ function showSIPCalc() {
   scrollBottom();
 
   window.__sipRender = doRender;
+  window.__sipOnInput = function(inp) {
+    var oldVal = inp.value, selStart = inp.selectionStart;
+    var digitsBefore = oldVal.slice(0, selStart).replace(/\D/g, '').length;
+    var formatted = window._grpIN(oldVal);
+    inp.value = formatted;
+    var pos = 0, cnt = 0;
+    while (pos < formatted.length && cnt < digitsBefore) {
+      if (/\d/.test(formatted[pos])) cnt++;
+      pos++;
+    }
+    try { inp.setSelectionRange(pos, pos); } catch (e) {}
+    doRender();
+  };
 
   window.__sipToggleStepup = function() {
     window.__sipStepupOn = !window.__sipStepupOn;
