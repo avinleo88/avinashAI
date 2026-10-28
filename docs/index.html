@@ -2707,87 +2707,186 @@ async function wakeServer() {
 function _drawSIPChart(monthly, years, rate, stepup) {
   var canvas = document.getElementById("sipProjChart");
   if (!canvas || monthly <= 0) return;
-  var W = canvas.offsetWidth || 400, H = 110;
+
+  // Replace canvas to remove stale event listeners
+  var fresh = canvas.cloneNode(false);
+  canvas.parentNode.replaceChild(fresh, canvas);
+  canvas = fresh;
+  canvas.id = "sipProjChart";
+  canvas.style.cursor = "crosshair";
+
+  var W = canvas.offsetWidth || 400, H = 120;
   var DPR = window.devicePixelRatio || 1;
   canvas.width = W * DPR; canvas.height = H * DPR;
   canvas.style.width = W + "px"; canvas.style.height = H + "px";
   var ctx = canvas.getContext("2d");
   ctx.scale(DPR, DPR);
+
   function calcCorpusAt(y) {
     var r = rate/100/12, n = y*12;
     return monthly * ((Math.pow(1+r,n)-1)/r) * (1+r);
   }
   function calcSUCorpusAt(y) {
     if (!stepup) return calcCorpusAt(y);
-    var r = rate/100/12, s = stepup/100, corpus=0;
-    for (var k=0; k<y; k++) {
-      var m = monthly * Math.pow(1+s,k);
-      corpus += m * ((Math.pow(1+r,12)-1)/r) * (1+r) * Math.pow(1+r,12*(y-k-1));
+    var r = rate/100/12, s = stepup/100, corpus = 0;
+    for (var k = 0; k < y; k++) {
+      var m = monthly * Math.pow(1+s, k);
+      corpus += m * ((Math.pow(1+r,12)-1)/r) * (1+r) * Math.pow(1+r, 12*(y-k-1));
     }
     return corpus;
   }
   function investedAt(y) { return monthly * y * 12; }
+  function fmt(n) {
+    return n >= 1e7 ? "₹"+(n/1e7).toFixed(2)+"Cr" : n >= 1e5 ? "₹"+(n/1e5).toFixed(2)+"L" : "₹"+Math.round(n).toLocaleString("en-IN");
+  }
+
   var pts = [];
-  for (var y = 1; y <= years; y++) {
+  for (var y = 1; y <= years; y++)
     pts.push({ y:y, inv:investedAt(y), reg:calcCorpusAt(y), su:calcSUCorpusAt(y) });
-  }
+
   var maxVal = Math.max.apply(null, pts.map(function(p) { return Math.max(p.reg, p.su); }));
-  var PAD = { t:8, r:8, b:22, l:8 };
+  var PAD = { t:8, r:10, b:22, l:8 };
   var pw = W - PAD.l - PAD.r, ph = H - PAD.t - PAD.b;
-  function spx(i) { return PAD.l + (i / Math.max(years - 1, 1)) * pw; }
+  function spx(i) { return PAD.l + (i / Math.max(years-1, 1)) * pw; }
   function spy(v)  { return PAD.t + ph - (v / maxVal) * ph; }
-  ctx.strokeStyle = "rgba(255,255,255,0.04)"; ctx.lineWidth = 1;
-  [0.25, 0.5, 0.75, 1].forEach(function(f) {
-    var yy = PAD.t + ph * (1-f);
-    ctx.beginPath(); ctx.moveTo(PAD.l, yy); ctx.lineTo(W-PAD.r, yy); ctx.stroke();
-  });
-  var gradInv = ctx.createLinearGradient(0, PAD.t, 0, H);
-  gradInv.addColorStop(0, "rgba(255,255,255,0.08)"); gradInv.addColorStop(1, "rgba(255,255,255,0.01)");
-  ctx.beginPath();
-  ctx.moveTo(spx(0), spy(pts[0].inv));
-  pts.forEach(function(p,i) { ctx.lineTo(spx(i), spy(p.inv)); });
-  ctx.lineTo(spx(years-1), H); ctx.lineTo(spx(0), H); ctx.closePath();
-  ctx.fillStyle = gradInv; ctx.fill();
-  var gradReg = ctx.createLinearGradient(0, PAD.t, 0, H);
-  gradReg.addColorStop(0, "rgba(0,229,255,0.3)"); gradReg.addColorStop(1, "rgba(0,229,255,0.02)");
-  ctx.beginPath();
-  ctx.moveTo(spx(0), spy(pts[0].reg));
-  pts.forEach(function(p,i) { ctx.lineTo(spx(i), spy(p.reg)); });
-  ctx.lineTo(spx(years-1), H); ctx.lineTo(spx(0), H); ctx.closePath();
-  ctx.fillStyle = gradReg; ctx.fill();
-  ctx.beginPath();
-  ctx.moveTo(spx(0), spy(pts[0].reg));
-  pts.forEach(function(p,i) { ctx.lineTo(spx(i), spy(p.reg)); });
-  ctx.strokeStyle = "#00e5ff"; ctx.lineWidth = 1.8; ctx.lineJoin = "round"; ctx.stroke();
-  if (stepup > 0) {
-    var gradSU = ctx.createLinearGradient(0, PAD.t, 0, H);
-    gradSU.addColorStop(0, "rgba(255,179,0,0.25)"); gradSU.addColorStop(1, "rgba(255,179,0,0.01)");
-    ctx.beginPath();
-    ctx.moveTo(spx(0), spy(pts[0].su));
-    pts.forEach(function(p,i) { ctx.lineTo(spx(i), spy(p.su)); });
+
+  function paint(hoverIdx) {
+    ctx.clearRect(0, 0, W, H);
+
+    // Grid
+    ctx.strokeStyle = "rgba(255,255,255,0.04)"; ctx.lineWidth = 1;
+    [0.25, 0.5, 0.75, 1].forEach(function(f) {
+      var yy = PAD.t + ph*(1-f);
+      ctx.beginPath(); ctx.moveTo(PAD.l, yy); ctx.lineTo(W-PAD.r, yy); ctx.stroke();
+    });
+
+    // Invested area
+    var gradInv = ctx.createLinearGradient(0, PAD.t, 0, H);
+    gradInv.addColorStop(0, "rgba(255,255,255,0.08)"); gradInv.addColorStop(1, "rgba(255,255,255,0.01)");
+    ctx.beginPath(); ctx.moveTo(spx(0), spy(pts[0].inv));
+    pts.forEach(function(p,i) { ctx.lineTo(spx(i), spy(p.inv)); });
     ctx.lineTo(spx(years-1), H); ctx.lineTo(spx(0), H); ctx.closePath();
-    ctx.fillStyle = gradSU; ctx.fill();
-    ctx.beginPath();
-    ctx.moveTo(spx(0), spy(pts[0].su));
-    pts.forEach(function(p,i) { ctx.lineTo(spx(i), spy(p.su)); });
-    ctx.strokeStyle = "#ffb300"; ctx.lineWidth = 1.8; ctx.lineJoin = "round"; ctx.stroke();
-  }
-  ctx.fillStyle = "rgba(255,255,255,0.28)"; ctx.font = "9px Inter,sans-serif"; ctx.textAlign = "center";
-  var xstep = Math.max(1, Math.floor(years / 5));
-  pts.forEach(function(p, i) {
-    if (p.y === 1 || p.y % xstep === 0 || p.y === years) {
-      ctx.fillText(p.y + "Y", spx(i), H - 4);
+    ctx.fillStyle = gradInv; ctx.fill();
+
+    // Regular SIP area + line
+    var gradReg = ctx.createLinearGradient(0, PAD.t, 0, H);
+    gradReg.addColorStop(0, "rgba(0,229,255,0.3)"); gradReg.addColorStop(1, "rgba(0,229,255,0.02)");
+    ctx.beginPath(); ctx.moveTo(spx(0), spy(pts[0].reg));
+    pts.forEach(function(p,i) { ctx.lineTo(spx(i), spy(p.reg)); });
+    ctx.lineTo(spx(years-1), H); ctx.lineTo(spx(0), H); ctx.closePath();
+    ctx.fillStyle = gradReg; ctx.fill();
+    ctx.beginPath(); ctx.moveTo(spx(0), spy(pts[0].reg));
+    pts.forEach(function(p,i) { ctx.lineTo(spx(i), spy(p.reg)); });
+    ctx.strokeStyle = "#00e5ff"; ctx.lineWidth = 1.8; ctx.lineJoin = "round"; ctx.stroke();
+
+    // Step-up area + line
+    if (stepup > 0) {
+      var gradSU = ctx.createLinearGradient(0, PAD.t, 0, H);
+      gradSU.addColorStop(0, "rgba(255,179,0,0.25)"); gradSU.addColorStop(1, "rgba(255,179,0,0.01)");
+      ctx.beginPath(); ctx.moveTo(spx(0), spy(pts[0].su));
+      pts.forEach(function(p,i) { ctx.lineTo(spx(i), spy(p.su)); });
+      ctx.lineTo(spx(years-1), H); ctx.lineTo(spx(0), H); ctx.closePath();
+      ctx.fillStyle = gradSU; ctx.fill();
+      ctx.beginPath(); ctx.moveTo(spx(0), spy(pts[0].su));
+      pts.forEach(function(p,i) { ctx.lineTo(spx(i), spy(p.su)); });
+      ctx.strokeStyle = "#ffb300"; ctx.lineWidth = 1.8; ctx.lineJoin = "round"; ctx.stroke();
     }
-  });
-  var lblEl = document.getElementById("sipProjLabels");
-  if (lblEl) {
-    function fmt(n) { return n >= 1e7 ? "₹" + (n/1e7).toFixed(1)+"Cr" : n >= 1e5 ? "₹"+(n/1e5).toFixed(1)+"L" : "₹"+Math.round(n).toLocaleString("en-IN"); }
-    var last = pts[pts.length-1];
-    var lhtml = '<span style="color:rgba(255,255,255,.35)">▬ Invested: ' + fmt(last.inv) + '</span>';
-    lhtml += '<span style="color:var(--cyan)">▬ Corpus: ' + fmt(last.reg) + '</span>';
-    if (stepup > 0) lhtml += '<span style="color:var(--amber)">▬ Step-up: ' + fmt(last.su) + '</span>';
+
+    // Year labels
+    ctx.fillStyle = "rgba(255,255,255,0.28)"; ctx.font = "9px Inter,sans-serif"; ctx.textAlign = "center";
+    var xstep = Math.max(1, Math.floor(years/5));
+    pts.forEach(function(p,i) {
+      if (p.y === 1 || p.y % xstep === 0 || p.y === years)
+        ctx.fillText(p.y+"Y", spx(i), H-4);
+    });
+
+    // Hover overlay
+    if (hoverIdx >= 0 && hoverIdx < pts.length) {
+      var p = pts[hoverIdx];
+      var hx = spx(hoverIdx);
+
+      // Vertical dashed line
+      ctx.save();
+      ctx.strokeStyle = "rgba(255,255,255,0.25)"; ctx.lineWidth = 1;
+      ctx.setLineDash([3,3]);
+      ctx.beginPath(); ctx.moveTo(hx, PAD.t); ctx.lineTo(hx, H-PAD.b); ctx.stroke();
+      ctx.restore();
+
+      // Dots on each series
+      var dots = [{ y: spy(p.inv), c: "rgba(255,255,255,0.7)" },
+                  { y: spy(p.reg), c: "#00e5ff" }];
+      if (stepup > 0) dots.push({ y: spy(p.su), c: "#ffb300" });
+      dots.forEach(function(d) {
+        ctx.beginPath(); ctx.arc(hx, d.y, 4, 0, Math.PI*2);
+        ctx.fillStyle = d.c; ctx.fill();
+        ctx.strokeStyle = "rgba(7,10,18,0.8)"; ctx.lineWidth = 1.5; ctx.stroke();
+      });
+
+      // Tooltip box
+      var lines = [
+        { t: "Year "+p.y,            c: "#ffffff",              bold: true  },
+        { t: "Invested: "+fmt(p.inv), c: "rgba(255,255,255,.55)", bold: false },
+        { t: "Corpus:   "+fmt(p.reg), c: "#00e5ff",              bold: false },
+      ];
+      if (stepup > 0) lines.push({ t: "Step-up:  "+fmt(p.su), c: "#ffb300", bold: false });
+
+      var LH = 16, TP = 10, TW = 158, TH = lines.length * LH + TP * 2 - 2;
+      var tx = hx + 10;
+      if (tx + TW > W - PAD.r) tx = hx - TW - 10;
+      var ty = PAD.t + 4;
+
+      // Box
+      ctx.save();
+      ctx.fillStyle = "rgba(7,10,22,0.93)";
+      ctx.strokeStyle = "rgba(255,255,255,0.14)"; ctx.lineWidth = 1;
+      var br = 7;
+      ctx.beginPath();
+      ctx.moveTo(tx+br, ty); ctx.lineTo(tx+TW-br, ty);
+      ctx.quadraticCurveTo(tx+TW, ty, tx+TW, ty+br);
+      ctx.lineTo(tx+TW, ty+TH-br);
+      ctx.quadraticCurveTo(tx+TW, ty+TH, tx+TW-br, ty+TH);
+      ctx.lineTo(tx+br, ty+TH);
+      ctx.quadraticCurveTo(tx, ty+TH, tx, ty+TH-br);
+      ctx.lineTo(tx, ty+br);
+      ctx.quadraticCurveTo(tx, ty, tx+br, ty);
+      ctx.closePath(); ctx.fill(); ctx.stroke();
+      ctx.restore();
+
+      // Text
+      lines.forEach(function(line, i) {
+        ctx.font = (line.bold ? "600 " : "500 ") + "10px Inter,sans-serif";
+        ctx.fillStyle = line.c; ctx.textAlign = "left";
+        ctx.fillText(line.t, tx + TP, ty + TP + 10 + i * LH);
+      });
+    }
+  }
+
+  function setLabels(p) {
+    var lblEl = document.getElementById("sipProjLabels");
+    if (!lblEl) return;
+    var lhtml = p ? '<span style="color:rgba(255,255,255,.7);font-weight:600">Year '+p.y+'&nbsp; </span>' : '';
+    lhtml += '<span style="color:rgba(255,255,255,.35)">▬ Invested: '+fmt(p ? p.inv : pts[pts.length-1].inv)+'</span> ';
+    lhtml += '<span style="color:var(--cyan)">▬ Corpus: '+fmt(p ? p.reg : pts[pts.length-1].reg)+'</span>';
+    if (stepup > 0) lhtml += ' <span style="color:var(--amber)">▬ Step-up: '+fmt(p ? p.su : pts[pts.length-1].su)+'</span>';
     lblEl.innerHTML = lhtml;
   }
+
+  paint(-1);
+  setLabels(null);
+
+  canvas.addEventListener("mousemove", function(e) {
+    var rect = canvas.getBoundingClientRect();
+    var mx = e.clientX - rect.left;
+    var idx = Math.round((mx - PAD.l) / pw * (years-1));
+    idx = Math.max(0, Math.min(years-1, idx));
+    paint(idx);
+    setLabels(pts[idx]);
+  });
+
+  canvas.addEventListener("mouseleave", function() {
+    paint(-1);
+    setLabels(null);
+  });
 }
 
 // ── SIP Calculator ────────────────────────────────────────────────────────────
