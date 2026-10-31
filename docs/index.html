@@ -671,6 +671,83 @@
     }
     .wl-add-btn:hover { background:rgba(255,179,0,0.12); border-color:rgba(255,179,0,0.4); }
     .wl-add-btn.added { background:rgba(0,255,163,0.06); border-color:rgba(0,255,163,0.2); color:var(--green); }
+
+    /* ── Charts Section ─────────────────────────────────────────────────── */
+    .charts-wrap {
+      display:grid; grid-template-columns:1fr 380px; gap:14px; margin-bottom:16px;
+    }
+    @media (max-width:900px) { .charts-wrap { grid-template-columns:1fr; } }
+    .chart-card {
+      background:var(--surf); border:1px solid var(--border); border-radius:14px; padding:20px;
+    }
+    .chart-card-hdr {
+      display:flex; justify-content:space-between; align-items:center; margin-bottom:14px; flex-wrap:wrap; gap:8px;
+    }
+    .chart-idx-tabs { display:flex; gap:4px; }
+    .chart-idx-tab {
+      font-size:.8rem; font-weight:600; padding:5px 12px; border-radius:7px; cursor:pointer;
+      background:transparent; border:1px solid transparent; color:var(--muted); font-family:inherit; transition:all .15s;
+    }
+    .chart-idx-tab.active { background:rgba(16,185,129,0.12); color:var(--green); border-color:rgba(16,185,129,0.25); }
+    .chart-idx-tab:hover:not(.active) { color:var(--text); background:rgba(255,255,255,0.04); }
+    .chart-period-tabs { display:flex; gap:2px; }
+    .chart-period-tab {
+      font-size:.76rem; font-weight:600; padding:4px 9px; border-radius:6px; cursor:pointer;
+      background:transparent; border:none; color:var(--muted); font-family:inherit; transition:all .12s;
+    }
+    .chart-period-tab.active { background:rgba(255,255,255,0.08); color:var(--text); }
+    .chart-period-tab:hover:not(.active) { color:var(--text); }
+    .chart-price-row {
+      display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:12px;
+    }
+    .chart-current-price { font-size:1.9rem; font-weight:800; color:var(--text); font-variant-numeric:tabular-nums; line-height:1; }
+    .chart-price-chg { font-size:.9rem; font-weight:600; margin-top:6px; font-variant-numeric:tabular-nums; }
+    .chart-price-chg.up   { color:var(--green); }
+    .chart-price-chg.down { color:var(--red); }
+    .chart-name-lbl { font-size:.7rem; font-weight:700; letter-spacing:.1em; color:var(--muted); text-transform:uppercase; align-self:flex-start; margin-top:4px; }
+    .chart-canvas-wrap { position:relative; }
+    .chart-canvas-wrap canvas { width:100%; height:200px; display:block; cursor:crosshair; border-radius:6px; }
+    .chart-loading {
+      position:absolute; inset:0; display:flex; align-items:center; justify-content:center;
+      font-size:.86rem; color:var(--muted); background:var(--surf); border-radius:6px;
+    }
+    .chart-loading.hidden { display:none; }
+    .charts-right-col { display:flex; flex-direction:column; gap:14px; }
+    .movers-card { flex:0 0 auto; }
+    .movers-hdr { display:flex; justify-content:space-between; align-items:center; margin-bottom:14px; }
+    .movers-title { font-size:.92rem; font-weight:700; color:var(--text); }
+    .movers-toggle { display:flex; background:var(--surf2); border-radius:8px; padding:3px; gap:2px; }
+    .mv-tab {
+      font-size:.78rem; font-weight:600; padding:4px 12px; border-radius:6px; cursor:pointer;
+      background:transparent; border:none; color:var(--muted); font-family:inherit; transition:all .12s;
+    }
+    .mv-tab.active { background:var(--surf); color:var(--text); }
+    .movers-loading { font-size:.84rem; color:var(--muted); padding:8px 0; }
+    .mover-row {
+      display:flex; align-items:center; justify-content:space-between;
+      padding:8px 0; border-bottom:1px solid var(--border);
+    }
+    .mover-row:last-child { border-bottom:none; }
+    .mover-info { flex:1; min-width:0; }
+    .mover-name { font-size:.88rem; font-weight:600; color:var(--text); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+    .mover-sym  { font-size:.75rem; color:var(--muted); }
+    .mover-right { text-align:right; flex-shrink:0; }
+    .mover-price { font-size:.88rem; font-weight:600; color:var(--text); font-variant-numeric:tabular-nums; }
+    .mover-chg   { font-size:.82rem; font-weight:700; font-variant-numeric:tabular-nums; }
+    .mover-chg.up   { color:var(--green); }
+    .mover-chg.down { color:var(--red); }
+    .sector-hm-card { flex:1; }
+    .sector-hm-hdr  { display:flex; justify-content:space-between; align-items:center; margin-bottom:14px; }
+    .sector-hm-sub  { font-size:.75rem; color:var(--muted); }
+    .sector-hm-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:6px; }
+    .hm-cell {
+      border-radius:9px; padding:10px 8px; cursor:pointer; transition:all .15s; text-align:center;
+      border:1px solid transparent;
+    }
+    .hm-cell:hover { filter:brightness(1.2); }
+    .hm-cell-name { font-size:.72rem; font-weight:700; color:rgba(255,255,255,0.85); letter-spacing:.02em; line-height:1.3; }
+    .hm-cell-chg  { font-size:.78rem; font-weight:800; color:#fff; margin-top:4px; font-variant-numeric:tabular-nums; }
+    /* ── /Charts Section ─────────────────────────────────────────────────── */
   </style>
 </head>
 <body>
@@ -740,6 +817,57 @@
         </div>
       </div>
     </div>
+
+    <!-- ── Charts Section ──────────────────────────────────────────── -->
+    <div class="charts-wrap">
+      <div class="chart-card main-chart-card">
+        <div class="chart-card-hdr">
+          <div class="chart-idx-tabs">
+            <button class="chart-idx-tab active" id="ctabNifty"      onclick="switchChartIndex('nifty')">NIFTY 50</button>
+            <button class="chart-idx-tab"        id="ctabSensex"     onclick="switchChartIndex('sensex')">SENSEX</button>
+            <button class="chart-idx-tab"        id="ctabBankNifty"  onclick="switchChartIndex('banknifty')">BANK NIFTY</button>
+          </div>
+          <div class="chart-period-tabs">
+            <button class="chart-period-tab active" onclick="switchChartPeriod('5d',  this)">1W</button>
+            <button class="chart-period-tab"        onclick="switchChartPeriod('1mo', this)">1M</button>
+            <button class="chart-period-tab"        onclick="switchChartPeriod('3mo', this)">3M</button>
+            <button class="chart-period-tab"        onclick="switchChartPeriod('6mo', this)">6M</button>
+            <button class="chart-period-tab"        onclick="switchChartPeriod('1y',  this)">1Y</button>
+          </div>
+        </div>
+        <div class="chart-price-row">
+          <div>
+            <div class="chart-current-price" id="mainChartPrice">—</div>
+            <div class="chart-price-chg"     id="mainChartChg">—</div>
+          </div>
+          <div class="chart-name-lbl" id="mainChartName">NIFTY 50</div>
+        </div>
+        <div class="chart-canvas-wrap">
+          <canvas id="mainIndexCanvas"></canvas>
+          <div class="chart-loading" id="mainChartLoader">Loading chart…</div>
+        </div>
+      </div>
+      <div class="charts-right-col">
+        <div class="chart-card movers-card">
+          <div class="movers-hdr">
+            <span class="movers-title">Top Movers</span>
+            <div class="movers-toggle">
+              <button class="mv-tab active" id="mvGainBtn" onclick="switchMovers('gain')">Gainers</button>
+              <button class="mv-tab"        id="mvLoseBtn" onclick="switchMovers('lose')">Losers</button>
+            </div>
+          </div>
+          <div id="moversListWrap"><div class="movers-loading">Loading…</div></div>
+        </div>
+        <div class="chart-card sector-hm-card">
+          <div class="sector-hm-hdr">
+            <span class="movers-title">Sector Heatmap</span>
+            <span class="sector-hm-sub">% change today</span>
+          </div>
+          <div class="sector-hm-grid" id="sectorHmGrid"><div class="movers-loading">Loading…</div></div>
+        </div>
+      </div>
+    </div>
+    <!-- ── /Charts Section ─────────────────────────────────────────── -->
 
     <!-- 2-column grid -->
     <div class="home-grid">
@@ -3574,6 +3702,256 @@ async function showWatchlist() {
   wlBubble.innerHTML = html;
   scrollBottom();
 }
+
+// ── Charts ────────────────────────────────────────────────────────────
+
+var _chartState = { index: 'nifty', period: '5d', data: {} };
+var _chartSymMap  = { nifty: '%5ENSEI', sensex: '%5EBSESN', banknifty: '%5ENSEBANK' };
+var _chartNameMap = { nifty: 'NIFTY 50', sensex: 'SENSEX', banknifty: 'BANK NIFTY' };
+
+function switchChartIndex(idx) {
+  _chartState.index = idx;
+  document.getElementById('ctabNifty').className     = 'chart-idx-tab' + (idx === 'nifty'     ? ' active' : '');
+  document.getElementById('ctabSensex').className    = 'chart-idx-tab' + (idx === 'sensex'    ? ' active' : '');
+  document.getElementById('ctabBankNifty').className = 'chart-idx-tab' + (idx === 'banknifty' ? ' active' : '');
+  var n = document.getElementById('mainChartName');
+  if (n) n.textContent = _chartNameMap[idx];
+  _loadAndDrawChart();
+}
+
+function switchChartPeriod(period, btn) {
+  _chartState.period = period;
+  document.querySelectorAll('.chart-period-tab').forEach(function(b){ b.className = 'chart-period-tab'; });
+  if (btn) btn.className = 'chart-period-tab active';
+  _loadAndDrawChart();
+}
+
+async function _loadAndDrawChart() {
+  var key    = _chartState.index + '_' + _chartState.period;
+  var loader = document.getElementById('mainChartLoader');
+  if (loader) loader.className = 'chart-loading';
+  var prices, current, changePct;
+  if (_chartState.data[key]) {
+    var c = _chartState.data[key];
+    prices = c.prices; current = c.current; changePct = c.changePct;
+  } else {
+    try {
+      var sym     = _chartSymMap[_chartState.index];
+      var results = await fetchAll([sym], _chartState.period);
+      var d       = parseResult(results[0] && results[0].result);
+      if (!d || !d.prices || d.prices.length < 2) throw new Error('no data');
+      prices = d.prices; current = d.current; changePct = d.changePct;
+      _chartState.data[key] = { prices: prices, current: current, changePct: changePct };
+    } catch(e) {
+      if (loader) { loader.textContent = 'Chart unavailable'; loader.className = 'chart-loading'; }
+      return;
+    }
+  }
+  if (loader) loader.className = 'chart-loading hidden';
+  var priceEl = document.getElementById('mainChartPrice');
+  var chgEl   = document.getElementById('mainChartChg');
+  if (priceEl) priceEl.textContent = current.toLocaleString('en-IN', { maximumFractionDigits: 2 });
+  if (chgEl) {
+    var isUp = changePct >= 0;
+    chgEl.textContent = (isUp ? '▲ +' : '▼ ') + Math.abs(changePct).toFixed(2) + '%';
+    chgEl.className   = 'chart-price-chg ' + (isUp ? 'up' : 'down');
+  }
+  _drawMainChart(prices, changePct >= 0);
+}
+
+function _drawMainChart(prices, isUp) {
+  var canvas = document.getElementById('mainIndexCanvas');
+  if (!canvas || !prices || prices.length < 2) return;
+  var fresh = canvas.cloneNode(false);
+  canvas.parentNode.replaceChild(fresh, canvas);
+  canvas = fresh; canvas.id = 'mainIndexCanvas';
+  var DPR = window.devicePixelRatio || 1;
+  var W = canvas.offsetWidth || 600, H = 200;
+  canvas.width = W * DPR; canvas.height = H * DPR;
+  canvas.style.width = W + 'px'; canvas.style.height = H + 'px';
+  var ctx = canvas.getContext('2d');
+  ctx.scale(DPR, DPR);
+  var PAD = { l: 14, r: 14, t: 14, b: 28 };
+  var pw = W - PAD.l - PAD.r, ph = H - PAD.t - PAD.b;
+  var minP = Math.min.apply(null, prices), maxP = Math.max.apply(null, prices);
+  var rng = maxP - minP || 1;
+  var color = isUp ? '#10b981' : '#ef4444';
+  function xOf(i) { return PAD.l + (i / (prices.length - 1)) * pw; }
+  function yOf(p) { return PAD.t + ph - ((p - minP) / rng) * ph; }
+  var grad = ctx.createLinearGradient(0, PAD.t, 0, PAD.t + ph);
+  grad.addColorStop(0, isUp ? 'rgba(16,185,129,0.25)' : 'rgba(239,68,68,0.25)');
+  grad.addColorStop(1, 'rgba(0,0,0,0)');
+
+  function drawBase() {
+    ctx.beginPath();
+    ctx.moveTo(xOf(0), yOf(prices[0]));
+    for (var i = 1; i < prices.length; i++) ctx.lineTo(xOf(i), yOf(prices[i]));
+    ctx.lineTo(xOf(prices.length - 1), PAD.t + ph);
+    ctx.lineTo(xOf(0), PAD.t + ph);
+    ctx.closePath();
+    ctx.fillStyle = grad; ctx.fill();
+    ctx.beginPath();
+    ctx.moveTo(xOf(0), yOf(prices[0]));
+    for (var i = 1; i < prices.length; i++) ctx.lineTo(xOf(i), yOf(prices[i]));
+    ctx.strokeStyle = color; ctx.lineWidth = 2; ctx.lineJoin = 'round'; ctx.stroke();
+    // X axis labels
+    var nL = Math.min(6, prices.length);
+    ctx.fillStyle = 'rgba(107,119,132,0.9)'; ctx.font = '10px system-ui'; ctx.textAlign = 'center';
+    for (var li = 0; li < nL; li++) {
+      var ii = Math.round(li * (prices.length - 1) / (nL - 1));
+      ctx.fillText((li + 1).toString(), xOf(ii), H - 8);
+    }
+  }
+  drawBase();
+
+  var pts = prices.map(function(p, i) { return { x: xOf(i), y: yOf(p), p: p }; });
+  canvas.addEventListener('mousemove', function(e) {
+    var rect = canvas.getBoundingClientRect();
+    var mx   = (e.clientX - rect.left) * (W / rect.width);
+    var best = pts.reduce(function(a, b) { return Math.abs(b.x - mx) < Math.abs(a.x - mx) ? b : a; });
+    ctx.clearRect(0, 0, W, H);
+    drawBase();
+    ctx.setLineDash([4, 3]);
+    ctx.beginPath(); ctx.moveTo(best.x, PAD.t); ctx.lineTo(best.x, PAD.t + ph);
+    ctx.strokeStyle = 'rgba(255,255,255,0.2)'; ctx.lineWidth = 1; ctx.stroke();
+    ctx.setLineDash([]);
+    ctx.beginPath(); ctx.arc(best.x, best.y, 4, 0, Math.PI * 2);
+    ctx.fillStyle = color; ctx.fill();
+    ctx.beginPath(); ctx.arc(best.x, best.y, 2, 0, Math.PI * 2);
+    ctx.fillStyle = '#fff'; ctx.fill();
+    var txt = best.p.toLocaleString('en-IN', { maximumFractionDigits: 2 });
+    ctx.font = 'bold 11px system-ui';
+    var txw = ctx.measureText(txt).width + 16, txh = 24;
+    var tx = Math.max(4, Math.min(best.x - txw / 2, W - txw - 4));
+    var ty = best.y - txh - 8; if (ty < PAD.t) ty = best.y + 10;
+    ctx.fillStyle = 'rgba(13,17,23,0.92)';
+    ctx.beginPath();
+    if (ctx.roundRect) ctx.roundRect(tx, ty, txw, txh, 5); else ctx.rect(tx, ty, txw, txh);
+    ctx.fill();
+    ctx.strokeStyle = color; ctx.lineWidth = 1; ctx.stroke();
+    ctx.fillStyle = '#fff'; ctx.textAlign = 'left';
+    ctx.fillText(txt, tx + 8, ty + 16);
+  });
+  canvas.addEventListener('mouseleave', function() { ctx.clearRect(0,0,W,H); drawBase(); });
+}
+
+// ── Sector Heatmap ────────────────────────────────────────────────────
+
+var _SECTOR_DISPLAY = [
+  { name:'IT',      key:'IT'      }, { name:'Banking', key:'BANKING' },
+  { name:'Auto',    key:'AUTO'    }, { name:'Pharma',  key:'PHARMA'  },
+  { name:'Energy',  key:'OIL'     }, { name:'FMCG',    key:'FMCG'    },
+  { name:'Metal',   key:'METAL'   }, { name:'Realty',  key:'REALTY'  },
+  { name:'Media',   key:'MEDIA'   },
+];
+
+async function loadSectorHeatmap() {
+  var grid = document.getElementById('sectorHmGrid');
+  if (!grid) return;
+  var hasSectors = typeof SECTORS !== 'undefined' && Object.keys(SECTORS).length > 0;
+  if (!hasSectors) { _renderHeatmapStatic(grid); return; }
+  var toFetch = [];
+  var sectorMeta = _SECTOR_DISPLAY.map(function(s) {
+    var stocks = SECTORS[s.key] || [];
+    var pick = stocks[0] || null;
+    if (pick) toFetch.push(pick);
+    return { name: s.name, sym: pick };
+  });
+  if (!toFetch.length) { _renderHeatmapStatic(grid); return; }
+  try {
+    var results = await fetchAll(toFetch, '5d');
+    var idx = 0, html = '';
+    sectorMeta.forEach(function(s) {
+      var chg = 0;
+      if (s.sym) {
+        var d = parseResult(results[idx] && results[idx].result);
+        if (d) chg = d.changePct;
+        idx++;
+      }
+      var isUp = chg >= 0;
+      var intensity = Math.min(Math.abs(chg) / 3, 1);
+      var bg, border;
+      if (isUp) {
+        bg     = 'rgba(16,' + Math.round(100 + intensity * 85) + ',129,' + (0.15 + intensity * 0.35) + ')';
+        border = 'rgba(16,185,129,' + (0.2 + intensity * 0.3) + ')';
+      } else {
+        bg     = 'rgba(' + Math.round(180 + intensity * 59) + ',68,68,' + (0.15 + intensity * 0.35) + ')';
+        border = 'rgba(239,68,68,' + (0.2 + intensity * 0.3) + ')';
+      }
+      html += '<div class="hm-cell" style="background:' + bg + ';border-color:' + border + '" onclick="ask(\'' + s.name + ' sector stocks\')">'
+            + '<div class="hm-cell-name">' + s.name + '</div>'
+            + '<div class="hm-cell-chg">' + (isUp ? '+' : '') + chg.toFixed(2) + '%</div></div>';
+    });
+    grid.innerHTML = html;
+  } catch(e) { _renderHeatmapStatic(grid); }
+}
+
+function _renderHeatmapStatic(grid) {
+  grid.innerHTML = ['IT','Banking','Auto','Pharma','Energy','FMCG','Metal','Realty','Media'].map(function(s) {
+    return '<div class="hm-cell" style="background:rgba(255,255,255,0.04);border-color:var(--border)" onclick="ask(\'' + s + ' sector stocks\')">'
+         + '<div class="hm-cell-name">' + s + '</div><div class="hm-cell-chg" style="color:var(--muted)">—</div></div>';
+  }).join('');
+}
+
+// ── Top Movers ────────────────────────────────────────────────────────
+
+var _moversCache = null, _moversMode = 'gain';
+
+function switchMovers(mode) {
+  _moversMode = mode;
+  document.getElementById('mvGainBtn').className = 'mv-tab' + (mode === 'gain' ? ' active' : '');
+  document.getElementById('mvLoseBtn').className = 'mv-tab' + (mode === 'lose' ? ' active' : '');
+  if (_moversCache) _renderMovers(_moversCache);
+}
+
+function _renderMovers(data) {
+  var wrap = document.getElementById('moversListWrap');
+  if (!wrap) return;
+  var sorted = data.slice().sort(function(a, b) {
+    return _moversMode === 'gain' ? b.change_pct - a.change_pct : a.change_pct - b.change_pct;
+  }).slice(0, 6);
+  wrap.innerHTML = sorted.map(function(s) {
+    var isUp = s.change_pct >= 0;
+    var sym  = (s.symbol || '').replace('.NS', '');
+    return '<div class="mover-row" onclick="ask(\'' + (s.name || sym).replace(/'/g, "\\'") + '\')">'
+         + '<div class="mover-info"><div class="mover-name">' + (s.name || sym) + '</div>'
+         + '<div class="mover-sym">' + sym + '</div></div>'
+         + '<div class="mover-right">'
+         + '<div class="mover-price">₹' + (s.price || 0).toLocaleString('en-IN', { maximumFractionDigits: 2 }) + '</div>'
+         + '<div class="mover-chg ' + (isUp ? 'up' : 'down') + '">' + (isUp ? '+' : '') + s.change_pct.toFixed(2) + '%</div>'
+         + '</div></div>';
+  }).join('');
+}
+
+async function loadMoversPanel() {
+  var wrap = document.getElementById('moversListWrap');
+  if (!wrap) return;
+  try {
+    var backend = BACKEND_URL || 'http://localhost:5050';
+    var rr   = await fetchWithRetry(backend + '/recommendations', { signal: AbortSignal.timeout(25000) });
+    var data = await rr.json();
+    if (data && data.length) { _moversCache = data; _renderMovers(data); }
+    else wrap.innerHTML = '<div class="movers-loading">No data available</div>';
+  } catch(e) { wrap.innerHTML = '<div class="movers-loading">Could not load movers</div>'; }
+}
+
+// ── Init charts ───────────────────────────────────────────────────────
+
+function initChartsSection() {
+  if (!document.getElementById('mainIndexCanvas')) return;
+  _loadAndDrawChart();
+  loadMoversPanel();
+  loadSectorHeatmap();
+}
+
+setTimeout(initChartsSection, 500);
+window.addEventListener('resize', function() {
+  var key = _chartState.index + '_' + _chartState.period;
+  if (_chartState.data[key]) {
+    var c = _chartState.data[key];
+    _drawMainChart(c.prices, c.changePct >= 0);
+  }
+});
 </script>
 </body>
 </html>
