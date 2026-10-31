@@ -1492,7 +1492,12 @@ async function buildResponse(query, onStatus) {
       emit("⚠️ Could not fetch recommendations. Try again in a moment.");
     } else {
       var count = parseInt((q.match(/\d+/) || ["5"])[0]) || 5;
-      var buys = recsData.slice(0, count);
+      var buys = recsData.filter(function(s) { return (s.score != null ? s.score : 0) >= 2; }).slice(0, count);
+      if (buys.length === 0) {
+        emit("No strong BUY signals found in Nifty 50 right now — market may be neutral. Try **screener** or ask about a specific stock.");
+        emit("⚠️ *Rule-based technical analysis only — not financial advice.*");
+        return lines.join("\n");
+      }
       emit("*Found **" + buys.length + "** stocks with strong buy signals — based on 3-month technical analysis across all Nifty 50 stocks:*");
       emit();
       emit("> **RSI** *(Relative Strength Index)* — Momentum on a 0–100 scale. **Below 30** = oversold, potential entry point. **Above 70** = overbought, correction risk. Sweet spot: 40–60.");
@@ -1500,7 +1505,7 @@ async function buildResponse(query, onStatus) {
       emit("> **MACD** *(Moving Avg Convergence Divergence)* — Measures momentum direction. **Positive** = bullish momentum building. **Negative** = bearish momentum.");
       emit();
       buys.forEach(function(s, idx) {
-        var verdictLabel = s.verdict || (s.score >= 4 ? "STRONG BUY" : s.score >= 2 ? "BUY" : s.score >= 0 ? "HOLD" : "AVOID");
+        var verdictLabel = s.score >= 4 ? "STRONG BUY" : "BUY";
         var arrow = s.change_pct >= 0 ? "+" : "";
         emit("### " + (idx + 1) + ". " + (s.name || s.symbol));
         emit("**Price:** ₹" + s.price.toLocaleString("en-IN") + "  " + arrow + s.change_pct.toFixed(2) + "%");
