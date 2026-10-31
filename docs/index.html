@@ -8,44 +8,45 @@
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
     :root {
-      --bg:     #070a12;
-      --surf:   rgba(255,255,255,0.04);
-      --border: rgba(255,255,255,0.08);
-      --cyan:   #00e5ff;
-      --purple: #a855f7;
-      --green:  #00ffa3;
-      --amber:  #ffb300;
-      --red:    #ff4d6d;
-      --text:   #e2e8f0;
-      --muted:  rgba(255,255,255,0.38);
+      --bg:     #07090f;
+      --surf:   #0d1117;
+      --surf2:  #111827;
+      --border: rgba(255,255,255,0.07);
+      --text:   #f1f5f9;
+      --muted:  #6b7784;
+      --green:  #10b981;
+      --red:    #ef4444;
+      --cyan:   #06b6d4;
+      --amber:  #f59e0b;
+      --purple: #8b5cf6;
+      --blue:   #3b82f6;
     }
     body {
       font-family: 'Inter', sans-serif;
       background: var(--bg); color: var(--text);
       height: 100vh; display: flex; flex-direction: column;
-      background-image:
-        radial-gradient(ellipse 70% 40% at 5% 0%,   rgba(0,229,255,0.07) 0%, transparent 55%),
-        radial-gradient(ellipse 50% 40% at 95% 100%, rgba(168,85,247,0.07) 0%, transparent 55%);
     }
     .topbar {
       display:flex; align-items:center; justify-content:space-between;
-      padding:12px 24px; border-bottom:1px solid var(--border);
-      background:rgba(7,10,18,0.95); backdrop-filter:blur(12px); flex-shrink:0;
+      padding:14px 28px; border-bottom:1px solid var(--border);
+      background:var(--bg); flex-shrink:0;
     }
     .logo { display:flex; align-items:center; gap:10px; }
     .logo-icon {
-      width:32px; height:32px; border-radius:9px;
-      background:linear-gradient(135deg,rgba(0,229,255,0.25),rgba(168,85,247,0.25));
-      border:1px solid rgba(0,229,255,0.3);
-      display:flex; align-items:center; justify-content:center; font-size:1.14rem;
+      width:34px; height:34px; border-radius:9px;
+      background:rgba(16,185,129,0.12); border:1px solid rgba(16,185,129,0.25);
+      display:flex; align-items:center; justify-content:center;
     }
     .logo-text {
-      font-weight:700; font-size:1.14rem;
-      background:linear-gradient(120deg,#fff 40%,var(--cyan));
-      -webkit-background-clip:text; -webkit-text-fill-color:transparent; background-clip:text;
+      font-weight:800; font-size:1.05rem; letter-spacing:.12em; color:var(--text);
     }
     .logo-sub { font-size:.74rem; color:var(--muted); letter-spacing:0.08em; }
-    .topbar-right { display:flex; align-items:center; gap:12px; }
+    .topbar-right { display:flex; align-items:center; gap:14px; }
+    .live-badge {
+      font-size:.72rem; font-weight:700; letter-spacing:.1em;
+      padding:4px 10px; border-radius:8px;
+      color:var(--green); background:rgba(16,185,129,0.1); border:1px solid rgba(16,185,129,0.25);
+    }
     .market-time { font-size:.82rem; color:var(--muted); font-variant-numeric:tabular-nums; display:flex; align-items:center; gap:8px; }
     .nse-badge { font-size:.78rem; font-weight:600; padding:2px 8px; border-radius:10px; white-space:nowrap; }
     .nse-badge.open   { color:var(--green); background:rgba(0,255,163,.08); border:1px solid rgba(0,255,163,.2); }
@@ -68,6 +69,7 @@
 
     /* ── Scrolling ticker ─────────────────────────────────────────────────── */
     .market-bar {
+      display:none;
       height:32px; border-bottom:1px solid var(--border);
       background:rgba(0,0,0,0.25); flex-shrink:0;
       overflow:hidden; position:relative;
@@ -98,25 +100,28 @@
 
     /* ── Chips ────────────────────────────────────────────────────────────── */
     .chips {
-      display:flex; align-items:center; gap:6px; padding:6px 20px;
+      display:flex; align-items:center; gap:2px; padding:8px 24px;
       border-bottom:1px solid var(--border);
-      overflow-x:auto; flex-shrink:0; scrollbar-width:none;
+      background:var(--bg); overflow-x:auto; flex-shrink:0; scrollbar-width:none;
     }
     .chips::-webkit-scrollbar { display:none; }
     .chip {
-      display:inline-flex; align-items:center; gap:5px;
-      padding:5px 12px; border-radius:20px; font-size:.88rem;
-      cursor:pointer; white-space:nowrap; flex-shrink:0; transition:all 0.18s;
-      background:var(--surf); border:1px solid var(--border); color:var(--muted);
+      display:inline-flex; align-items:center; gap:6px;
+      padding:7px 16px; border-radius:8px; font-size:.88rem; font-weight:500;
+      cursor:pointer; white-space:nowrap; flex-shrink:0; transition:all 0.15s;
+      background:transparent; border:none; color:var(--muted);
     }
-    .chip:hover { border-color:rgba(0,229,255,0.4); color:var(--cyan); background:rgba(0,229,255,0.06); }
-    .home-chip { color:var(--text) !important; border-color:rgba(255,255,255,0.15) !important; }
-    .home-chip:hover { border-color:rgba(255,255,255,0.35) !important; color:#fff !important; background:rgba(255,255,255,0.07) !important; }
+    .chip:hover { color:var(--text); background:rgba(255,255,255,0.05); }
     .chip.primary {
-      background:rgba(0,229,255,0.07); border-color:rgba(0,229,255,0.2); color:rgba(0,229,255,0.85);
+      background:rgba(16,185,129,0.12); color:var(--green); border:1px solid rgba(16,185,129,0.2);
     }
-    .chip.primary:hover { background:rgba(0,229,255,0.12); border-color:rgba(0,229,255,0.45); color:var(--cyan); }
-    .chip-divider { width:1px; height:18px; background:var(--border); flex-shrink:0; margin:0 2px; }
+    .chip.primary:hover { background:rgba(16,185,129,0.2); color:var(--green); }
+    .chip.active, .chip.home-chip {
+      background:rgba(16,185,129,0.15); color:var(--green) !important; border:1px solid rgba(16,185,129,0.25) !important;
+      font-weight:600;
+    }
+    .chip.home-chip:hover { background:rgba(16,185,129,0.22) !important; }
+    .chip-divider { width:1px; height:16px; background:var(--border); flex-shrink:0; margin:0 6px; }
     .movers-grid { display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-top:4px; }
     .movers-col h4 { font-size:.94rem; font-weight:600; margin-bottom:8px; }
     .movers-col.gainers h4 { color:var(--green); }
@@ -131,7 +136,7 @@
     .heat-tile .ht-pct  { font-size:1.02rem; font-weight:700; color:#fff; margin-top:4px; }
     .chat {
       flex:1; overflow-y:auto; padding:24px;
-      display:flex; flex-direction:column; gap:18px;
+      display:flex; flex-direction:column; gap:18px; background:var(--bg);
       scrollbar-width:thin; scrollbar-color:rgba(255,255,255,0.08) transparent;
     }
     .welcome { width:100%; padding:4px 0 10px; }
@@ -168,6 +173,46 @@
     .sys-status.error  .sys-dot { background:var(--red); }
     .sys-status:not(.awake):not(.waking):not(.error) .sys-dot { background:var(--amber); animation:pulse-dot 2s ease infinite; }
     .sys-label { color:var(--text); font-weight:500; }
+    /* ── Market Dashboard Hero ─────────────────────────────────────────────── */
+    .dash-hero { background:var(--surf); border:1px solid var(--border); border-radius:14px; padding:22px 24px; margin-bottom:16px; }
+    .dash-hero-hdr { display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:20px; }
+    .dash-title { font-size:1.5rem; font-weight:700; color:var(--text); }
+    .dash-sub { font-size:.88rem; color:var(--muted); margin-top:4px; }
+    .mkt-live-badge { font-size:.72rem; font-weight:700; letter-spacing:.1em; padding:5px 12px; border-radius:8px; color:var(--green); background:rgba(16,185,129,0.1); border:1px solid rgba(16,185,129,0.25); }
+    .dash-index-row { display:grid; grid-template-columns:repeat(3,1fr); gap:12px; }
+    .dash-index-card { background:var(--surf2); border:1px solid var(--border); border-radius:12px; padding:18px 20px; cursor:pointer; transition:all .18s; }
+    .dash-index-card:hover { border-color:rgba(16,185,129,0.3); background:rgba(16,185,129,0.04); }
+    .dash-idx-label { font-size:.7rem; font-weight:700; letter-spacing:.1em; color:var(--muted); text-transform:uppercase; margin-bottom:10px; }
+    .dash-idx-price { font-size:1.55rem; font-weight:700; color:var(--text); font-variant-numeric:tabular-nums; margin-bottom:8px; }
+    .dash-idx-chg { font-size:.88rem; font-weight:600; font-variant-numeric:tabular-nums; }
+    .dash-idx-chg.up { color:var(--green); }
+    .dash-idx-chg.down { color:var(--red); }
+    @media (max-width:640px) { .dash-index-row { grid-template-columns:1fr 1fr; } .dash-index-card:last-child { display:none; } }
+    /* ── Market Stats Grid ─────────────────────────────────────────────────── */
+    .stats-grid { display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+    .stat-card { background:var(--surf); border:1px solid var(--border); border-radius:14px; padding:18px; cursor:pointer; transition:all .18s; }
+    .stat-card:hover { border-color:rgba(255,255,255,0.14); transform:translateY(-2px); }
+    .stat-icon { width:34px; height:34px; border-radius:9px; border:1px solid; display:flex; align-items:center; justify-content:center; margin-bottom:12px; }
+    .stat-label { font-size:.72rem; font-weight:700; letter-spacing:.08em; color:var(--muted); text-transform:uppercase; margin-bottom:6px; }
+    .stat-value { font-size:1.55rem; font-weight:700; color:var(--text); margin-bottom:4px; }
+    .stat-value.green { color:var(--green); }
+    .stat-value.red   { color:var(--red); }
+    .stat-sub { font-size:.8rem; color:var(--muted); }
+    /* ── AI Insights ───────────────────────────────────────────────────────── */
+    .ai-powered-badge { font-size:.68rem; font-weight:700; letter-spacing:.08em; padding:3px 9px; border-radius:7px; color:var(--purple); background:rgba(139,92,246,0.12); border:1px solid rgba(139,92,246,0.25); }
+    .ai-insight-card { background:var(--surf); border:1px solid var(--border); border-radius:12px; padding:18px 20px; cursor:pointer; transition:all .18s; margin-bottom:10px; }
+    .ai-insight-card:hover { transform:translateY(-1px); }
+    .ai-insight-card.buy:hover   { border-color:rgba(16,185,129,0.3); }
+    .ai-insight-card.avoid:hover { border-color:rgba(239,68,68,0.3); }
+    .ai-ic-title    { font-size:.82rem; font-weight:600; color:var(--muted); margin-bottom:8px; }
+    .ai-ic-headline { font-size:1.2rem; font-weight:700; color:var(--text); margin-bottom:6px; }
+    .ai-ic-desc     { font-size:.84rem; color:var(--muted); margin-bottom:12px; line-height:1.5; }
+    .ai-ic-link     { font-size:.88rem; font-weight:600; color:var(--green); }
+    .ai-ic-link.avoid { color:var(--red); }
+    .ai-signal-badge { font-size:.72rem; font-weight:600; padding:3px 10px; border-radius:7px; }
+    .ai-signal-badge.buy   { color:var(--green); background:rgba(16,185,129,0.12); border:1px solid rgba(16,185,129,0.2); }
+    .ai-signal-badge.avoid { color:var(--red);   background:rgba(239,68,68,0.12);   border:1px solid rgba(239,68,68,0.2); }
+    .ai-insight-disclaimer { font-size:.76rem; color:var(--muted); margin-top:4px; }
     .sugg-grid {
       display:grid; grid-template-columns:1fr 1fr; gap:9px; text-align:left;
     }
@@ -183,13 +228,11 @@
     .bubble { padding:13px 16px; border-radius:16px; font-size:1.04rem; line-height:1.7; max-width:calc(100% - 44px); }
     .row.user .bubble { background:rgba(168,85,247,.1); border:1px solid rgba(168,85,247,.2); border-radius:16px 4px 16px 16px; }
     .row.bot  .bubble {
-      background: rgba(255,255,255,0.025);
-      backdrop-filter: blur(16px);
-      -webkit-backdrop-filter: blur(16px);
-      border: 1px solid rgba(255,255,255,0.07);
-      border-left: 2px solid rgba(0,229,255,0.25);
+      background: var(--surf);
+      border: 1px solid var(--border);
+      border-left: 2px solid rgba(16,185,129,0.3);
       border-radius: 4px 16px 16px 16px;
-      box-shadow: 0 4px 24px rgba(0,0,0,0.25), inset 0 1px 0 rgba(255,255,255,0.04);
+      box-shadow: 0 2px 12px rgba(0,0,0,0.2);
     }
     .bubble h2,.bubble h3 { font-size:1.14rem; color:#fff; margin:12px 0 6px; font-weight:600; }
     .bubble h2:first-child,.bubble h3:first-child { margin-top:0; }
@@ -547,30 +590,43 @@
     .sip-proj-labels { display:flex; justify-content:space-between; font-size:.76rem; color:var(--muted); margin-bottom:8px; flex-wrap:wrap; gap:6px; }
 
     /* ── Homepage inline SIP Calculator ─────────────────────────────────── */
-    .home-sip-card { background:rgba(0,229,255,.03); border:1px solid rgba(0,229,255,.12); border-radius:14px; padding:16px 18px; margin-top:4px; }
-    .home-sip-field-lbl { font-size:.76rem; font-weight:700; letter-spacing:.9px; color:var(--muted); text-transform:uppercase; display:block; margin-bottom:7px; }
-    .home-sip-inp-wrap { display:flex; align-items:center; gap:8px; background:rgba(255,255,255,.04); border:1px solid rgba(255,255,255,.1); border-radius:9px; padding:9px 13px; margin-bottom:14px; }
-    .home-sip-inp-wrap:focus-within { border-color:var(--cyan); box-shadow:0 0 0 2px rgba(0,229,255,.08); }
-    .home-sip-rupee { font-size:1.38rem; font-weight:700; color:var(--cyan); flex-shrink:0; }
-    .home-sip-inp { flex:1; background:none; border:none; outline:none; font-size:1.38rem; font-weight:700; color:var(--text); width:100%; }
-    .home-sip-inp::placeholder { color:rgba(255,255,255,.2); font-weight:400; }
-    .home-sip-pills-row { margin-bottom:12px; }
-    .home-sip-pills { display:flex; flex-wrap:wrap; gap:6px; margin-top:6px; }
-    .home-sip-pill { font-size:.84rem; font-weight:600; padding:4px 11px; border-radius:20px; border:1px solid rgba(255,255,255,.1); background:rgba(255,255,255,.03); color:var(--muted); cursor:pointer; transition:all .15s; }
-    .home-sip-pill:hover { border-color:rgba(0,229,255,.3); color:rgba(0,229,255,.8); background:rgba(0,229,255,.05); }
-    .home-sip-pill.active { background:rgba(0,229,255,.1); border-color:var(--cyan); color:var(--cyan); }
+    .home-sip-card { background:var(--surf); border:1px solid var(--border); border-radius:14px; padding:24px; }
+    .home-sip-header { display:flex; justify-content:space-between; align-items:center; margin-bottom:20px; }
+    .home-sip-title { font-size:1.05rem; font-weight:700; color:var(--text); }
+    .home-sip-badge { font-size:.68rem; font-weight:700; letter-spacing:.08em; padding:3px 10px; border-radius:7px; color:var(--green); background:rgba(16,185,129,0.1); border:1px solid rgba(16,185,129,0.2); }
+    .home-sip-tabs { display:flex; gap:0; background:var(--surf2); border-radius:9px; padding:3px; margin-bottom:18px; }
+    .home-sip-tab { flex:1; padding:7px 10px; border:none; background:transparent; color:var(--muted); font-size:.82rem; font-weight:500; border-radius:7px; cursor:pointer; transition:all .15s; font-family:inherit; }
+    .home-sip-tab.active { background:var(--surf); color:var(--text); font-weight:600; box-shadow:0 1px 3px rgba(0,0,0,0.3); }
+    .home-sip-field-lbl { font-size:.68rem; font-weight:700; letter-spacing:.1em; color:var(--muted); text-transform:uppercase; display:block; margin-bottom:8px; }
+    .home-sip-inp-wrap { display:flex; align-items:center; gap:2px; padding-bottom:10px; border-bottom:1px solid var(--border); margin-bottom:16px; }
+    .home-sip-rupee { font-size:1.8rem; font-weight:700; color:var(--text); line-height:1; }
+    .home-sip-inp { background:transparent; border:none; outline:none; font-size:1.8rem; font-weight:700; color:var(--text); width:100%; font-family:inherit; font-variant-numeric:tabular-nums; }
+    .home-sip-pills-row { margin-bottom:14px; }
+    .home-sip-pills { display:grid; gap:6px; margin-top:6px; }
+    .home-sip-pill { padding:8px 6px; border-radius:8px; font-size:.84rem; font-weight:500; cursor:pointer; background:var(--surf2); border:1px solid var(--border); color:var(--muted); text-align:center; transition:all .15s; }
+    .home-sip-pill.active { background:rgba(16,185,129,0.12); border-color:rgba(16,185,129,0.35); color:var(--green); font-weight:700; }
+    .home-sip-pill:hover:not(.active) { border-color:rgba(255,255,255,0.15); color:var(--text); }
+    .home-sip-result { background:var(--surf2); border:1px solid var(--border); border-radius:12px; padding:18px; margin:16px 0 0; }
+    .home-sip-result-lbl { font-size:.68rem; font-weight:700; letter-spacing:.1em; color:var(--muted); text-transform:uppercase; margin-bottom:10px; }
+    .home-sip-result-val { font-size:1.8rem; font-weight:800; color:var(--green); margin-bottom:14px; font-variant-numeric:tabular-nums; }
+    .home-sip-breakdown { border-top:1px solid var(--border); padding-top:12px; }
+    .home-sip-brow { display:flex; justify-content:space-between; align-items:center; padding:5px 0; font-size:.88rem; }
+    .home-sip-brow .lbl { color:var(--muted); }
+    .home-sip-brow .val { font-weight:600; color:var(--text); font-variant-numeric:tabular-nums; }
+    .home-sip-brow .val.green { color:var(--green); }
+    .home-sip-progress { height:5px; border-radius:3px; background:var(--surf2); border:1px solid var(--border); display:flex; overflow:hidden; margin-top:12px; margin-bottom:6px; }
+    .home-sip-prog-invested { background:var(--blue); height:100%; transition:width .4s; }
+    .home-sip-prog-returns  { background:var(--green); height:100%; transition:width .4s; }
+    .home-sip-prog-labels   { display:flex; justify-content:space-between; font-size:.74rem; color:var(--muted); margin-bottom:14px; }
+    .home-sip-cta { display:block; width:100%; padding:13px; text-align:center; border-radius:10px; font-size:.92rem; font-weight:600; color:var(--bg); background:var(--green); border:none; cursor:pointer; transition:all .18s; font-family:inherit; box-sizing:border-box; margin-top:14px; }
+    .home-sip-cta:hover { background:#0ea371; transform:translateY(-1px); }
     .home-sip-divider { height:1px; background:rgba(255,255,255,.06); margin:12px 0; }
-    .home-sip-result { display:flex; gap:8px; }
     .home-sip-stat { flex:1; background:rgba(255,255,255,.03); border:1px solid rgba(255,255,255,.07); border-radius:10px; padding:10px 8px; text-align:center; }
     .home-sip-stat-lbl { font-size:.7rem; color:var(--muted); text-transform:uppercase; letter-spacing:.5px; margin-bottom:5px; }
     .home-sip-stat-val { font-size:1.02rem; font-weight:700; color:var(--text); }
     .home-sip-stat-val.corpus { color:var(--cyan); font-size:1.14rem; }
     .home-sip-stat-val.pos { color:var(--green); }
-    .home-sip-fullbtn { display:block; width:100%; margin-top:12px; padding:8px; background:none; border:1px solid rgba(0,229,255,.15); border-radius:8px; color:rgba(0,229,255,.55); font-size:.84rem; cursor:pointer; transition:all .15s; text-align:center; font-family:inherit; }
-    .home-sip-fullbtn:hover { background:rgba(0,229,255,.06); border-color:rgba(0,229,255,.35); color:var(--cyan); }
-    .home-sip-tabs { display:flex; margin-bottom:14px; border:1px solid rgba(255,255,255,.1); border-radius:9px; overflow:hidden; }
-    .home-sip-tab { flex:1; padding:7px 6px; font-size:.76rem; font-weight:600; background:none; border:none; color:var(--muted); cursor:pointer; transition:all .15s; font-family:inherit; }
-    .home-sip-tab.active { background:rgba(0,229,255,.1); color:var(--cyan); }
+    .home-sip-fullbtn { display:none; }
     @media (max-width:640px) {
       .home-grid { grid-template-columns:1fr; }
       .home-sip-result { flex-direction:column; }
@@ -621,19 +677,14 @@
 
 <div class="topbar">
   <div class="logo">
-    <div class="logo-icon">📈</div>
-    <div>
-      <div class="logo-text">Dalal Street</div>
-      <div class="logo-sub">AI · NSE/BSE · Live</div>
+    <div class="logo-icon">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#10b981" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 7 13.5 15.5 8.5 10.5 2 17"/><polyline points="16 7 22 7 22 13"/></svg>
     </div>
+    <span class="logo-text">DALAL STREET</span>
   </div>
   <div class="topbar-right">
     <div class="market-time" id="istTime"></div>
-    <button class="new-chat-btn" onclick="newChat()" title="Start a new conversation">
-      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 .49-4"/></svg>
-      New chat
-    </button>
-    <div class="status-pill"><div class="dot"></div> Live</div>
+    <div class="live-badge" id="liveBadge">● LIVE</div>
   </div>
 </div>
 
@@ -642,37 +693,51 @@
 </div>
 
 <div class="chips" id="chipsBar">
-  <div class="chip home-chip" onclick="newChat()" title="Home">🏠</div>
+  <div class="chip home-chip" onclick="newChat()" title="Home">
+    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+    Home
+  </div>
+  <div class="chip" onclick="showLiveMarket()">Live Market</div>
+  <div class="chip" onclick="showTopMovers()">Top Movers</div>
+  <div class="chip" onclick="showSectorHeatmap()">Sectors</div>
+  <div class="chip" onclick="ask('screener: stocks with RSI below 35 above SMA50')">Screener</div>
+  <div class="chip" onclick="showWatchlist()">Watchlist</div>
   <div class="chip-divider"></div>
-  <div class="chip primary" onclick="showLiveMarket()">📡 Live</div>
-  <div class="chip primary" onclick="showTopMovers()">📈 Movers</div>
-  <div class="chip primary" onclick="showSectorHeatmap()">🌡️ Sectors</div>
-  <div class="chip-divider"></div>
-  <div class="chip" onclick="ask('market sentiment')">🧭 Sentiment</div>
-  <div class="chip" onclick="ask('screener: stocks with RSI below 35 above SMA50')">🔬 Screener</div>
-  <div class="chip-divider"></div>
-  <div class="chip" onclick="showSIPCalc()">🧮 SIP</div>
-  <div class="chip" onclick="showWatchlist()">⭐ Watchlist</div>
+  <div class="chip" onclick="ask('market sentiment')">Sentiment</div>
+  <div class="chip" onclick="showSIPCalc()">SIP Calc</div>
   <span id="dynamicChips"></span>
 </div>
 
 <div class="chat" id="chat">
   <div class="welcome" id="welcome">
-    <!-- Compact hero strip -->
-    <div class="welcome-hero-strip">
-      <span class="welcome-icon">📈</span>
-      <div>
-        <h2>Dalal Street</h2>
-        <p class="welcome-sub">Powered by AI · NSE / BSE · Live data</p>
+    <!-- Market Dashboard hero -->
+    <div class="dash-hero">
+      <div class="dash-hero-hdr">
+        <div>
+          <div class="dash-title">Market Dashboard</div>
+          <div class="dash-sub">Your Indian market intelligence hub</div>
+        </div>
+        <div style="display:flex;align-items:center;gap:10px">
+          <div class="sys-status" id="serverStatusBar"><div class="sys-dot" id="serverDot"></div><span class="sys-label" id="serverLabel">Connecting…</span></div>
+          <div class="mkt-live-badge" id="mktLiveBadge">● MARKET LIVE</div>
+        </div>
       </div>
-      <div class="welcome-badges">
-        <span class="welcome-badge live">● LIVE</span>
-        <span class="welcome-badge free">FREE</span>
-        <span class="welcome-badge ai">AI-POWERED</span>
-      </div>
-      <div class="sys-status" id="serverStatusBar">
-        <div class="sys-dot" id="serverDot"></div>
-        <span class="sys-label" id="serverLabel">Connecting…</span>
+      <div class="dash-index-row">
+        <div class="dash-index-card" id="dashNifty" onclick="ask('nifty 50')">
+          <div class="dash-idx-label">NIFTY 50</div>
+          <div class="dash-idx-price" id="dashNiftyPrice">—</div>
+          <div class="dash-idx-chg" id="dashNiftyChg">—</div>
+        </div>
+        <div class="dash-index-card" id="dashSensex" onclick="ask('sensex')">
+          <div class="dash-idx-label">SENSEX</div>
+          <div class="dash-idx-price" id="dashSensexPrice">—</div>
+          <div class="dash-idx-chg" id="dashSensexChg">—</div>
+        </div>
+        <div class="dash-index-card" id="dashBankNifty" onclick="ask('bank nifty')">
+          <div class="dash-idx-label">BANK NIFTY</div>
+          <div class="dash-idx-price" id="dashBankNiftyPrice">—</div>
+          <div class="dash-idx-chg" id="dashBankNiftyChg">—</div>
+        </div>
       </div>
     </div>
 
@@ -681,74 +746,68 @@
       <!-- Left: SIP Calculator -->
       <div>
         <div class="home-section-hdr">SIP Calculator</div>
-        <div class="home-sip-card">
-          <div class="home-sip-tabs">
-            <button class="home-sip-tab active" data-mode="forward" onclick="_homeSipMode('forward')">Monthly → Corpus</button>
-            <button class="home-sip-tab" data-mode="reverse" onclick="_homeSipMode('reverse')">Target → Monthly</button>
+          <div class="home-sip-card">
+            <div class="home-sip-header">
+              <div class="home-sip-title">SIP Calculator</div>
+              <span class="home-sip-badge">QUICK CALCULATOR</span>
+            </div>
+            <div class="home-sip-tabs">
+              <button class="home-sip-tab active" data-mode="forward" onclick="_homeSipMode('forward')">Monthly → Corpus</button>
+              <button class="home-sip-tab" data-mode="reverse" onclick="_homeSipMode('reverse')">Target → Monthly</button>
+            </div>
+            <span class="home-sip-field-lbl" id="homeSipAmtLbl">MONTHLY INVESTMENT</span>
+            <div class="home-sip-inp-wrap">
+              <span class="home-sip-rupee">₹</span>
+              <input class="home-sip-inp" id="homeSipAmt" type="text" inputmode="numeric" value="5,000" oninput="_homeSipOnInput(this)">
+            </div>
+            <div class="home-sip-pills-row">
+              <span class="home-sip-field-lbl">Investment period</span>
+              <div class="home-sip-pills" id="homeSipYearPills"></div>
+            </div>
+            <div class="home-sip-pills-row">
+              <span class="home-sip-field-lbl">Expected annual return</span>
+              <div class="home-sip-pills" id="homeSipRatePills"></div>
+            </div>
+            <div class="home-sip-result" id="homeSipResult">
+              <div class="home-sip-result-lbl">ESTIMATED MATURITY VALUE</div>
+              <div class="home-sip-result-val" id="homeSipCorpus">₹—</div>
+              <div class="home-sip-breakdown">
+                <div class="home-sip-brow"><span class="lbl">Invested amount</span><span class="val" id="homeSipInvested">—</span></div>
+                <div class="home-sip-brow"><span class="lbl">Estimated returns</span><span class="val green" id="homeSipReturns">—</span></div>
+              </div>
+              <div class="home-sip-progress"><div class="home-sip-prog-invested" id="homeSipProgI" style="width:50%"></div><div class="home-sip-prog-returns" id="homeSipProgR" style="width:50%"></div></div>
+              <div class="home-sip-prog-labels"><span>Invested</span><span>Returns</span></div>
+              <button class="home-sip-cta" onclick="showSIPCalc()">View detailed calculation →</button>
+            </div>
           </div>
-          <span class="home-sip-field-lbl" id="homeSipAmtLbl">Monthly Investment</span>
-          <div class="home-sip-inp-wrap">
-            <span class="home-sip-rupee">₹</span>
-            <input class="home-sip-inp" id="homeSipAmt" type="text" inputmode="numeric" value="5,000" oninput="_homeSipOnInput(this)">
-          </div>
-          <div class="home-sip-pills-row">
-            <span class="home-sip-field-lbl">Duration</span>
-            <div class="home-sip-pills" id="homeSipYearPills"></div>
-          </div>
-          <div class="home-sip-pills-row">
-            <span class="home-sip-field-lbl">Expected return / yr</span>
-            <div class="home-sip-pills" id="homeSipRatePills"></div>
-          </div>
-          <div class="home-sip-divider"></div>
-          <div class="home-sip-result" id="homeSipResult"></div>
-          <button class="home-sip-fullbtn" onclick="showSIPCalc()">Open full calculator with Step-Up SIP →</button>
-        </div>
       </div>
 
-      <!-- Right: Markets + AI Picks + Screener -->
+      <!-- Right: AI Market Insights -->
       <div class="home-grid-right">
         <div class="home-section">
-          <div class="home-section-hdr">Markets</div>
-          <div class="sugg-grid">
-            <div class="sugg-card" onclick="ask('market overview')">
-              <span class="sugg-icon">📊</span>
-              <div><div class="sugg-label">Market Overview</div><div class="sugg-sub">Nifty 50 &amp; Sensex snapshot</div></div>
-            </div>
-            <div class="sugg-card" onclick="ask('market sentiment')">
-              <span class="sugg-icon">🧭</span>
-              <div><div class="sugg-label">Market Sentiment</div><div class="sugg-sub">Fear &amp; greed · bull/bear mood</div></div>
-            </div>
+          <div class="home-section-hdr" style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+            <span>AI Market Insights</span>
+            <span class="ai-powered-badge">AI POWERED</span>
           </div>
-        </div>
-        <div class="home-section">
-          <div class="home-section-hdr">AI Picks</div>
-          <div class="sugg-grid">
-            <div class="sugg-card ai-pick-card" onclick="ask('top 5 stocks to buy today')">
-              <span class="sugg-icon">🚀</span>
-              <div>
-                <div class="sugg-label">Top Picks Today</div>
-                <div class="sugg-sub">AI-scored BUY signals · RSI + MACD + SMA</div>
-                <div class="ai-pick-meta"><span class="ai-tag buy">BUY</span><span class="ai-tag-lbl">Nifty 50 · live scan</span></div>
-              </div>
+          <div class="ai-insight-card buy" onclick="ask('top 5 stocks to buy today')">
+            <div style="display:flex;justify-content:space-between;align-items:flex-start">
+              <div class="ai-ic-title">Top Picks Today</div>
+              <span class="ai-signal-badge buy">Bullish signals</span>
             </div>
-            <div class="sugg-card ai-pick-card avoid" onclick="ask('worst stocks to avoid')">
-              <span class="sugg-icon">⚠️</span>
-              <div>
-                <div class="sugg-label">Stocks to Avoid</div>
-                <div class="sugg-sub">Bearish signals · overextended or weak</div>
-                <div class="ai-pick-meta"><span class="ai-tag avoid">AVOID</span><span class="ai-tag-lbl">Nifty 50 · live scan</span></div>
-              </div>
-            </div>
+            <div class="ai-ic-headline">Market opportunities</div>
+            <div class="ai-ic-desc">Stocks matching strong technical buy signals — RSI, MACD, SMA.</div>
+            <div class="ai-ic-link">Explore AI insights →</div>
           </div>
-        </div>
-        <div class="home-section">
-          <div class="home-section-hdr">Stock Screener</div>
-          <div class="sugg-grid" style="grid-template-columns:1fr">
-            <div class="sugg-card tool-card" onclick="ask('screener: stocks with RSI below 35 above SMA50')">
-              <span class="sugg-icon">🔬</span>
-              <div><div class="sugg-label">Filter Stocks by Signals</div><div class="sugg-sub">RSI · MACD · SMA50 · Buy/Avoid scores — Nifty 50 &amp; 100</div></div>
+          <div class="ai-insight-card avoid" onclick="ask('worst stocks to avoid')">
+            <div style="display:flex;justify-content:space-between;align-items:flex-start">
+              <div class="ai-ic-title">Stocks to Avoid</div>
+              <span class="ai-signal-badge avoid">Bearish signals</span>
             </div>
+            <div class="ai-ic-headline">Risk watchlist</div>
+            <div class="ai-ic-desc">Stocks showing weak technical signals — potential downside.</div>
+            <div class="ai-ic-link avoid">View risk analysis →</div>
           </div>
+          <div class="ai-insight-disclaimer">⚠️ Technical signals only — not investment recommendations.</div>
         </div>
       </div>
     </div>
@@ -770,30 +829,39 @@
       </div>
     </div>
 
-    <!-- Market Breadth -->
-    <div class="home-section-full" style="margin-top:14px">
-      <div class="home-section-hdr">Market Pulse</div>
-      <div class="breadth-row" id="breadthRow">
-        <div class="breadth-tile" onclick="ask('market overview today')">
-          <div class="breadth-icon">📊</div>
-          <div class="breadth-label">Market Overview</div>
-          <div class="breadth-sub">Nifty 50 · Sensex · indices</div>
+    <!-- Market Stats -->
+    <div class="stats-grid" style="margin-top:0">
+      <div class="stat-card" onclick="ask('market overview today')">
+        <div class="stat-icon" style="background:rgba(6,182,212,0.12);border-color:rgba(6,182,212,0.2)">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#06b6d4" stroke-width="2"><polyline points="22 7 13.5 15.5 8.5 10.5 2 17"/></svg>
         </div>
-        <div class="breadth-tile" onclick="ask('top 5 stocks to buy today')">
-          <div class="breadth-icon">🚀</div>
-          <div class="breadth-label">AI Top Picks</div>
-          <div class="breadth-sub">Live BUY signals · scored</div>
+        <div class="stat-label">Market Breadth</div>
+        <div class="stat-value" id="statBreadth">—</div>
+        <div class="stat-sub" id="statBreadthSub">Stocks advancing</div>
+      </div>
+      <div class="stat-card" onclick="showTopMovers()">
+        <div class="stat-icon" style="background:rgba(16,185,129,0.12);border-color:rgba(16,185,129,0.2)">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#10b981" stroke-width="2"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg>
         </div>
-        <div class="breadth-tile" onclick="ask('market sentiment')">
-          <div class="breadth-icon">🧭</div>
-          <div class="breadth-label">Fear &amp; Greed</div>
-          <div class="breadth-sub">Nifty 50 sentiment score</div>
+        <div class="stat-label">Top Gainers</div>
+        <div class="stat-value green" id="statGainer">—</div>
+        <div class="stat-sub">Today's best movers</div>
+      </div>
+      <div class="stat-card" onclick="ask('FII DII activity today')">
+        <div class="stat-icon" style="background:rgba(139,92,246,0.12);border-color:rgba(139,92,246,0.2)">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#8b5cf6" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg>
         </div>
-        <div class="breadth-tile" onclick="ask('compare reliance vs tcs')">
-          <div class="breadth-icon">⚖️</div>
-          <div class="breadth-label">Compare Stocks</div>
-          <div class="breadth-sub">Side-by-side analysis</div>
+        <div class="stat-label">FII / DII Activity</div>
+        <div class="stat-value" id="statFII">Flows</div>
+        <div class="stat-sub">Institutional activity</div>
+      </div>
+      <div class="stat-card" onclick="ask('upcoming market events this week')">
+        <div class="stat-icon" style="background:rgba(245,158,11,0.12);border-color:rgba(245,158,11,0.2)">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#f59e0b" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
         </div>
+        <div class="stat-label">Market Events</div>
+        <div class="stat-value" id="statEvents">Today</div>
+        <div class="stat-sub">Upcoming announcements</div>
       </div>
     </div>
   </div>
@@ -2223,43 +2291,61 @@ function newChat() {
   var w = document.createElement('div');
   w.id = 'welcome';
   w.className = 'welcome';
-  w.innerHTML = document.querySelector('.welcome')
-    ? ''  // already removed, just rebuild
-    : '';
-  // Rebuild welcome HTML
   w.innerHTML =
-    '<div class="welcome-hero-strip">' +
-      '<span class="welcome-icon">📈</span>' +
-      '<div><h2>Dalal Street</h2><p class="welcome-sub">Powered by AI · NSE / BSE · Live data</p></div>' +
-      '<div class="welcome-badges"><span class="welcome-badge live">● LIVE</span><span class="welcome-badge free">FREE</span><span class="welcome-badge ai">AI-POWERED</span></div>' +
-      '<div class="sys-status" id="serverStatusBar"><div class="sys-dot" id="serverDot"></div><span class="sys-label" id="serverLabel">Connecting…</span></div>' +
+    '<div class="dash-hero">' +
+      '<div class="dash-hero-hdr">' +
+        '<div><div class="dash-title">Market Dashboard</div><div class="dash-sub">Your Indian market intelligence hub</div></div>' +
+        '<div style="display:flex;align-items:center;gap:10px">' +
+          '<div class="sys-status" id="serverStatusBar"><div class="sys-dot" id="serverDot"></div><span class="sys-label" id="serverLabel">Connecting…</span></div>' +
+          '<div class="mkt-live-badge" id="mktLiveBadge">● MARKET LIVE</div>' +
+        '</div>' +
+      '</div>' +
+      '<div class="dash-index-row">' +
+        '<div class="dash-index-card" id="dashNifty" onclick="ask(\'nifty 50\')"><div class="dash-idx-label">NIFTY 50</div><div class="dash-idx-price" id="dashNiftyPrice">—</div><div class="dash-idx-chg" id="dashNiftyChg">—</div></div>' +
+        '<div class="dash-index-card" id="dashSensex" onclick="ask(\'sensex\')"><div class="dash-idx-label">SENSEX</div><div class="dash-idx-price" id="dashSensexPrice">—</div><div class="dash-idx-chg" id="dashSensexChg">—</div></div>' +
+        '<div class="dash-index-card" id="dashBankNifty" onclick="ask(\'bank nifty\')"><div class="dash-idx-label">BANK NIFTY</div><div class="dash-idx-price" id="dashBankNiftyPrice">—</div><div class="dash-idx-chg" id="dashBankNiftyChg">—</div></div>' +
+      '</div>' +
     '</div>' +
     '<div class="home-grid">' +
       '<div>' +
         '<div class="home-section-hdr">SIP Calculator</div>' +
         '<div class="home-sip-card">' +
+          '<div class="home-sip-header"><div class="home-sip-title">SIP Calculator</div><span class="home-sip-badge">QUICK CALCULATOR</span></div>' +
           '<div class="home-sip-tabs"><button class="home-sip-tab active" data-mode="forward" onclick="_homeSipMode(\'forward\')">Monthly → Corpus</button><button class="home-sip-tab" data-mode="reverse" onclick="_homeSipMode(\'reverse\')">Target → Monthly</button></div>' +
-          '<span class="home-sip-field-lbl" id="homeSipAmtLbl">Monthly Investment</span>' +
+          '<span class="home-sip-field-lbl" id="homeSipAmtLbl">MONTHLY INVESTMENT</span>' +
           '<div class="home-sip-inp-wrap"><span class="home-sip-rupee">₹</span><input class="home-sip-inp" id="homeSipAmt" type="text" inputmode="numeric" value="5,000" oninput="_homeSipOnInput(this)"></div>' +
-          '<div class="home-sip-pills-row"><span class="home-sip-field-lbl">Duration</span><div class="home-sip-pills" id="homeSipYearPills"></div></div>' +
-          '<div class="home-sip-pills-row"><span class="home-sip-field-lbl">Expected return / yr</span><div class="home-sip-pills" id="homeSipRatePills"></div></div>' +
-          '<div class="home-sip-divider"></div>' +
-          '<div class="home-sip-result" id="homeSipResult"></div>' +
-          '<button class="home-sip-fullbtn" onclick="showSIPCalc()">Open full calculator with Step-Up SIP →</button>' +
+          '<div class="home-sip-pills-row"><span class="home-sip-field-lbl">Investment period</span><div class="home-sip-pills" id="homeSipYearPills"></div></div>' +
+          '<div class="home-sip-pills-row"><span class="home-sip-field-lbl">Expected annual return</span><div class="home-sip-pills" id="homeSipRatePills"></div></div>' +
+          '<div class="home-sip-result" id="homeSipResult">' +
+            '<div class="home-sip-result-lbl">ESTIMATED MATURITY VALUE</div>' +
+            '<div class="home-sip-result-val" id="homeSipCorpus">₹—</div>' +
+            '<div class="home-sip-breakdown">' +
+              '<div class="home-sip-brow"><span class="lbl">Invested amount</span><span class="val" id="homeSipInvested">—</span></div>' +
+              '<div class="home-sip-brow"><span class="lbl">Estimated returns</span><span class="val green" id="homeSipReturns">—</span></div>' +
+            '</div>' +
+            '<div class="home-sip-progress"><div class="home-sip-prog-invested" id="homeSipProgI" style="width:50%"></div><div class="home-sip-prog-returns" id="homeSipProgR" style="width:50%"></div></div>' +
+            '<div class="home-sip-prog-labels"><span>Invested</span><span>Returns</span></div>' +
+            '<button class="home-sip-cta" onclick="showSIPCalc()">View detailed calculation →</button>' +
+          '</div>' +
         '</div>' +
       '</div>' +
       '<div class="home-grid-right">' +
-        '<div class="home-section"><div class="home-section-hdr">Markets</div><div class="sugg-grid">' +
-          '<div class="sugg-card" onclick="ask(\'market overview\')"><span class="sugg-icon">📊</span><div><div class="sugg-label">Market Overview</div><div class="sugg-sub">Nifty 50 &amp; Sensex snapshot</div></div></div>' +
-          '<div class="sugg-card" onclick="ask(\'market sentiment\')"><span class="sugg-icon">🧭</span><div><div class="sugg-label">Market Sentiment</div><div class="sugg-sub">Fear &amp; greed · bull/bear mood</div></div></div>' +
-        '</div></div>' +
-        '<div class="home-section"><div class="home-section-hdr">AI Picks</div><div class="sugg-grid">' +
-          '<div class="sugg-card" onclick="ask(\'top 5 stocks to buy today\')"><span class="sugg-icon">🚀</span><div><div class="sugg-label">Top Picks Today</div><div class="sugg-sub">Best BUY signals right now</div></div></div>' +
-          '<div class="sugg-card" onclick="ask(\'worst stocks to avoid\')"><span class="sugg-icon">⚠️</span><div><div class="sugg-label">Stocks to Avoid</div><div class="sugg-sub">Bearish signals &amp; weak picks</div></div></div>' +
-        '</div></div>' +
-        '<div class="home-section"><div class="home-section-hdr">Stock Screener</div><div class="sugg-grid" style="grid-template-columns:1fr">' +
-          '<div class="sugg-card tool-card" onclick="ask(\'screener: stocks with RSI below 35 above SMA50\')"><span class="sugg-icon">🔬</span><div><div class="sugg-label">Filter Stocks by Signals</div><div class="sugg-sub">RSI · MACD · SMA50 · Buy/Avoid scores — Nifty 50 &amp; 100</div></div></div>' +
-        '</div></div>' +
+        '<div class="home-section">' +
+          '<div class="home-section-hdr" style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px"><span>AI Market Insights</span><span class="ai-powered-badge">AI POWERED</span></div>' +
+          '<div class="ai-insight-card buy" onclick="ask(\'top 5 stocks to buy today\')">' +
+            '<div style="display:flex;justify-content:space-between;align-items:flex-start"><div class="ai-ic-title">Top Picks Today</div><span class="ai-signal-badge buy">Bullish signals</span></div>' +
+            '<div class="ai-ic-headline">Market opportunities</div>' +
+            '<div class="ai-ic-desc">Stocks matching strong technical buy signals — RSI, MACD, SMA.</div>' +
+            '<div class="ai-ic-link">Explore AI insights →</div>' +
+          '</div>' +
+          '<div class="ai-insight-card avoid" onclick="ask(\'worst stocks to avoid\')">' +
+            '<div style="display:flex;justify-content:space-between;align-items:flex-start"><div class="ai-ic-title">Stocks to Avoid</div><span class="ai-signal-badge avoid">Bearish signals</span></div>' +
+            '<div class="ai-ic-headline">Risk watchlist</div>' +
+            '<div class="ai-ic-desc">Stocks showing weak technical signals — potential downside.</div>' +
+            '<div class="ai-ic-link avoid">View risk analysis →</div>' +
+          '</div>' +
+          '<div class="ai-insight-disclaimer">⚠️ Technical signals only — not investment recommendations.</div>' +
+        '</div>' +
       '</div>' +
     '</div>' +
     '<div class="home-section-full"><div class="home-section-hdr">Sectors</div><div class="sector-pills">' +
@@ -2273,11 +2359,20 @@ function newChat() {
       '<div class="sector-pill" onclick="ask(\'metal sector stocks\')">⚙️ Metals</div>' +
       '<div class="sector-pill" onclick="ask(\'realty sector stocks\')">🏗️ Realty</div>' +
       '<div class="sector-pill" onclick="ask(\'manufacturing sector stocks\')">🏭 Mfg</div>' +
-    '</div></div>';
+    '</div></div>' +
+    '<div class="stats-grid" style="margin-top:14px">' +
+      '<div class="stat-card" onclick="ask(\'market overview today\')"><div class="stat-icon" style="background:rgba(6,182,212,0.12);border-color:rgba(6,182,212,0.2)"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#06b6d4" stroke-width="2"><polyline points="22 7 13.5 15.5 8.5 10.5 2 17"/></svg></div><div class="stat-label">Market Breadth</div><div class="stat-value" id="statBreadth">—</div><div class="stat-sub" id="statBreadthSub">Stocks advancing</div></div>' +
+      '<div class="stat-card" onclick="showTopMovers()"><div class="stat-icon" style="background:rgba(16,185,129,0.12);border-color:rgba(16,185,129,0.2)"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#10b981" stroke-width="2"><polyline points="23 6 13.5 15.5 8.5 10.5 1 18"/><polyline points="17 6 23 6 23 12"/></svg></div><div class="stat-label">Top Gainers</div><div class="stat-value green" id="statGainer">—</div><div class="stat-sub">Today\'s best movers</div></div>' +
+      '<div class="stat-card" onclick="ask(\'FII DII activity today\')"><div class="stat-icon" style="background:rgba(139,92,246,0.12);border-color:rgba(139,92,246,0.2)"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#8b5cf6" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg></div><div class="stat-label">FII / DII Activity</div><div class="stat-value" id="statFII">Flows</div><div class="stat-sub">Institutional activity</div></div>' +
+      '<div class="stat-card" onclick="ask(\'upcoming market events this week\')"><div class="stat-icon" style="background:rgba(245,158,11,0.12);border-color:rgba(245,158,11,0.2)"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#f59e0b" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg></div><div class="stat-label">Market Events</div><div class="stat-value" id="statEvents">Today</div><div class="stat-sub">Upcoming announcements</div></div>' +
+    '</div>';
   chat.appendChild(w);
   _homeSipInit();
+  loadDashboardIndices();
   _ctx.stocks = []; _ctx.sector = null;
   inp.value = ''; inp.style.height = 'auto'; inp.focus();
+  var qr = document.getElementById("askQuickRow");
+  if (qr) qr.style.display = "";
 }
 
 // ── Streaming-reveal: animate response elements in progressively ───────────
@@ -2725,22 +2820,26 @@ async function wakeServer() {
 
   window._homeSipRender = function() {
     var inp = document.getElementById('homeSipAmt');
-    var res = document.getElementById('homeSipResult');
-    if (!res) return;
+    var corpEl = document.getElementById('homeSipCorpus');
+    var invEl  = document.getElementById('homeSipInvested');
+    var retEl  = document.getElementById('homeSipReturns');
+    var progI  = document.getElementById('homeSipProgI');
+    var progR  = document.getElementById('homeSipProgR');
+    if (!corpEl) return;
     var val = parseFloat((inp && inp.value || '').replace(/,/g, '')) || 0;
-    if (!val) { res.innerHTML = ''; return; }
+    if (!val) { if (corpEl) corpEl.textContent = '₹—'; return; }
     if (_selMode === 'forward') {
       var c = _calc(val, _selY, _selR);
-      res.innerHTML =
-        '<div class="home-sip-stat"><div class="home-sip-stat-lbl">Invested</div><div class="home-sip-stat-val">' + _fmt(c.invested) + '</div></div>' +
-        '<div class="home-sip-stat"><div class="home-sip-stat-lbl">Returns</div><div class="home-sip-stat-val pos">+' + _fmt(c.returns) + '</div></div>' +
-        '<div class="home-sip-stat"><div class="home-sip-stat-lbl">Corpus</div><div class="home-sip-stat-val corpus">' + _fmt(c.corpus) + '</div></div>';
+      if (corpEl) corpEl.textContent = _fmt(c.corpus);
+      if (invEl)  invEl.textContent  = _fmt(c.invested);
+      if (retEl)  retEl.textContent  = '+' + _fmt(c.returns);
+      if (progI && c.corpus > 0) { var pct = Math.round(c.invested/c.corpus*100); progI.style.width = pct + '%'; if (progR) progR.style.width = (100-pct) + '%'; }
     } else {
       var rv = _calcRev(val, _selY, _selR);
-      res.innerHTML =
-        '<div class="home-sip-stat" style="flex:1.3"><div class="home-sip-stat-lbl">SIP needed/mo</div><div class="home-sip-stat-val corpus">' + _fmt(rv.monthly) + '</div></div>' +
-        '<div class="home-sip-stat"><div class="home-sip-stat-lbl">Total invested</div><div class="home-sip-stat-val">' + _fmt(rv.invested) + '</div></div>' +
-        '<div class="home-sip-stat"><div class="home-sip-stat-lbl">Returns</div><div class="home-sip-stat-val pos">+' + _fmt(rv.returns) + '</div></div>';
+      if (corpEl) corpEl.textContent = _fmt(rv.monthly) + '/mo';
+      if (invEl)  invEl.textContent  = _fmt(rv.invested);
+      if (retEl)  retEl.textContent  = '+' + _fmt(rv.returns);
+      if (progI && rv.corpus > 0) { var pct2 = Math.round(rv.invested/rv.corpus*100); progI.style.width = pct2 + '%'; if (progR) progR.style.width = (100-pct2) + '%'; }
     }
   };
 
@@ -2779,6 +2878,8 @@ async function wakeServer() {
     rp.innerHTML = _RATES.map(function(r) {
       return '<button class="home-sip-pill' + (r===_selR?' active':'') + '" data-v="'+r+'" onclick="_homeSipPickR('+r+')">' + r + '%</button>';
     }).join('');
+    yp.style.gridTemplateColumns = 'repeat(6,1fr)';
+    rp.style.gridTemplateColumns = 'repeat(5,1fr)';
     window._homeSipRender();
   };
 })();
@@ -3384,6 +3485,27 @@ loadMarketSummary();
 loadTrendingChips();
 setInterval(loadMarketSummary, 60000);
 setInterval(loadTrendingChips, 300000);
+
+async function loadDashboardIndices() {
+  try {
+    var backend = BACKEND_URL || "http://localhost:5050";
+    var res = await fetchWithRetry(backend + "/recommendations", { signal: AbortSignal.timeout(20000) });
+    var data = await res.json();
+    if (data && data.length > 0) {
+      var advancing = data.filter(function(s){ return s.change_pct >= 0; }).length;
+      var pct = Math.round(advancing / data.length * 100);
+      var bEl = document.getElementById("statBreadth");
+      var bsEl = document.getElementById("statBreadthSub");
+      if (bEl) { bEl.textContent = pct + "%"; bEl.className = "stat-value " + (pct >= 50 ? "green" : "red"); }
+      if (bsEl) bsEl.textContent = "Stocks advancing (" + advancing + "/" + data.length + ")";
+      var sorted = data.slice().sort(function(a,b){ return b.change_pct - a.change_pct; });
+      var g = sorted[0];
+      var gEl = document.getElementById("statGainer");
+      if (gEl && g) { gEl.textContent = (g.change_pct >= 0 ? "+" : "") + g.change_pct.toFixed(2) + "%"; gEl.className = "stat-value green"; }
+    }
+  } catch(e) {}
+}
+loadDashboardIndices();
 
 // ── Watchlist ─────────────────────────────────────────────────────────────────
 function _wlGet() { try { return JSON.parse(localStorage.getItem("ds_watchlist") || "[]"); } catch(e) { return []; } }
