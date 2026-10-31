@@ -110,6 +110,8 @@
       background:var(--surf); border:1px solid var(--border); color:var(--muted);
     }
     .chip:hover { border-color:rgba(0,229,255,0.4); color:var(--cyan); background:rgba(0,229,255,0.06); }
+    .home-chip { color:var(--text) !important; border-color:rgba(255,255,255,0.15) !important; }
+    .home-chip:hover { border-color:rgba(255,255,255,0.35) !important; color:#fff !important; background:rgba(255,255,255,0.07) !important; }
     .chip.primary {
       background:rgba(0,229,255,0.07); border-color:rgba(0,229,255,0.2); color:rgba(0,229,255,0.85);
     }
@@ -609,6 +611,8 @@
 </div>
 
 <div class="chips" id="chipsBar">
+  <div class="chip home-chip" onclick="newChat()" title="Back to home screen">🏠 Home</div>
+  <div class="chip-divider"></div>
   <div class="chip primary" onclick="showLiveMarket()">📡 Live Market</div>
   <div class="chip primary" onclick="showTopMovers()">📈 Top Movers</div>
   <div class="chip primary" onclick="showSectorHeatmap()">🌡️ Sectors</div>
