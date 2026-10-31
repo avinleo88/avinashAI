@@ -46,17 +46,6 @@
     }
     .logo-sub { font-size:.74rem; color:var(--muted); letter-spacing:0.08em; }
     .topbar-right { display:flex; align-items:center; gap:12px; }
-    .topbar-indices {
-      display:flex; align-items:center; gap:0; flex:1; justify-content:center; max-width:520px;
-    }
-    .ti-item { display:flex; flex-direction:column; align-items:center; padding:0 16px; }
-    .ti-name  { font-size:.65rem; font-weight:700; letter-spacing:.08em; color:var(--muted); text-transform:uppercase; }
-    .ti-price { font-size:.94rem; font-weight:700; color:var(--text); font-variant-numeric:tabular-nums; margin-top:1px; }
-    .ti-chg   { font-size:.76rem; font-weight:600; font-variant-numeric:tabular-nums; }
-    .ti-chg.up   { color:var(--green); }
-    .ti-chg.down { color:var(--red); }
-    .ti-sep   { width:1px; height:28px; background:var(--border); flex-shrink:0; }
-    @media (max-width:640px) { .topbar-indices { display:none; } }
     .market-time { font-size:.82rem; color:var(--muted); font-variant-numeric:tabular-nums; display:flex; align-items:center; gap:8px; }
     .nse-badge { font-size:.78rem; font-weight:600; padding:2px 8px; border-radius:10px; white-space:nowrap; }
     .nse-badge.open   { color:var(--green); background:rgba(0,255,163,.08); border:1px solid rgba(0,255,163,.2); }
@@ -109,15 +98,11 @@
 
     /* ── Chips ────────────────────────────────────────────────────────────── */
     .chips {
-      display:flex; align-items:center; gap:8px; padding:7px 24px;
+      display:flex; align-items:center; gap:6px; padding:6px 20px;
       border-bottom:1px solid var(--border);
       overflow-x:auto; flex-shrink:0; scrollbar-width:none;
     }
     .chips::-webkit-scrollbar { display:none; }
-    .nav-group-label {
-      font-size:.62rem; font-weight:700; letter-spacing:1.4px; color:var(--muted);
-      text-transform:uppercase; padding:0 4px; flex-shrink:0; align-self:center;
-    }
     .chip {
       display:inline-flex; align-items:center; gap:5px;
       padding:5px 12px; border-radius:20px; font-size:.88rem;
@@ -642,25 +627,6 @@
       <div class="logo-sub">AI · NSE/BSE · Live</div>
     </div>
   </div>
-  <div class="topbar-indices" id="topbarIndices">
-    <div class="ti-item" id="ti-nifty">
-      <span class="ti-name">NIFTY 50</span>
-      <span class="ti-price" id="ti-nifty-price">—</span>
-      <span class="ti-chg" id="ti-nifty-chg">—</span>
-    </div>
-    <div class="ti-sep"></div>
-    <div class="ti-item" id="ti-sensex">
-      <span class="ti-name">SENSEX</span>
-      <span class="ti-price" id="ti-sensex-price">—</span>
-      <span class="ti-chg" id="ti-sensex-chg">—</span>
-    </div>
-    <div class="ti-sep"></div>
-    <div class="ti-item" id="ti-banknifty">
-      <span class="ti-name">BANK NIFTY</span>
-      <span class="ti-price" id="ti-banknifty-price">—</span>
-      <span class="ti-chg" id="ti-banknifty-chg">—</span>
-    </div>
-  </div>
   <div class="topbar-right">
     <div class="market-time" id="istTime"></div>
     <button class="new-chat-btn" onclick="newChat()" title="Start a new conversation">
@@ -678,19 +644,14 @@
 <div class="chips" id="chipsBar">
   <div class="chip home-chip" onclick="newChat()" title="Home">🏠</div>
   <div class="chip-divider"></div>
-  <div class="nav-group-label">MARKETS</div>
   <div class="chip primary" onclick="showLiveMarket()">📡 Live</div>
   <div class="chip primary" onclick="showTopMovers()">📈 Movers</div>
   <div class="chip primary" onclick="showSectorHeatmap()">🌡️ Sectors</div>
   <div class="chip-divider"></div>
-  <div class="nav-group-label">ANALYSIS</div>
-  <div class="chip" onclick="ask('market overview today')">📊 Overview</div>
   <div class="chip" onclick="ask('market sentiment')">🧭 Sentiment</div>
   <div class="chip" onclick="ask('screener: stocks with RSI below 35 above SMA50')">🔬 Screener</div>
-  <div class="chip" onclick="ask('nifty100 screener: buy signals above SMA50')">🔬 Nifty 100</div>
   <div class="chip-divider"></div>
-  <div class="nav-group-label">TOOLS</div>
-  <div class="chip" onclick="showSIPCalc()">🧮 SIP Calc</div>
+  <div class="chip" onclick="showSIPCalc()">🧮 SIP</div>
   <div class="chip" onclick="showWatchlist()">⭐ Watchlist</div>
   <span id="dynamicChips"></span>
 </div>
@@ -3423,29 +3384,6 @@ loadMarketSummary();
 loadTrendingChips();
 setInterval(loadMarketSummary, 60000);
 setInterval(loadTrendingChips, 300000);
-
-async function loadTopbarIndices() {
-  var syms = [
-    { sym:"%5ENSEI", priceId:"ti-nifty-price", chgId:"ti-nifty-chg" },
-    { sym:"%5EBSESN", priceId:"ti-sensex-price", chgId:"ti-sensex-chg" },
-    { sym:"%5ENSEBANK", priceId:"ti-banknifty-price", chgId:"ti-banknifty-chg" },
-  ];
-  var results = await fetchAll(syms.map(function(s){return s.sym;}), "5d");
-  results.forEach(function(r, i) {
-    var d = parseResult(r.result);
-    if (!d) return;
-    var pEl = document.getElementById(syms[i].priceId);
-    var cEl = document.getElementById(syms[i].chgId);
-    if (pEl) pEl.textContent = d.current.toLocaleString("en-IN");
-    if (cEl) {
-      var sign = d.changePct >= 0 ? "▲" : "▼";
-      cEl.textContent = sign + " " + Math.abs(d.changePct) + "%";
-      cEl.className = "ti-chg " + (d.changePct >= 0 ? "up" : "down");
-    }
-  });
-}
-loadTopbarIndices();
-setInterval(loadTopbarIndices, 60000);
 
 // ── Watchlist ─────────────────────────────────────────────────────────────────
 function _wlGet() { try { return JSON.parse(localStorage.getItem("ds_watchlist") || "[]"); } catch(e) { return []; } }
