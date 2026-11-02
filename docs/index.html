@@ -3610,23 +3610,50 @@ function loadMarketSummary() {
 }
 
 loadMarketSummary();
-loadTrendingChips();
 setInterval(loadMarketSummary, 60000);
-setInterval(loadTrendingChips, 300000);
 
 async function loadDashboardIndices() {
+  // Populate NIFTY/SENSEX/BANK NIFTY tiles from /market-summary
   try {
     var backend = BACKEND_URL || "http://localhost:5050";
-    var res = await fetchWithRetry(backend + "/recommendations", { signal: AbortSignal.timeout(20000) });
+    var res = await fetchWithRetry(backend + "/market-summary", { signal: AbortSignal.timeout(20000) });
     var data = await res.json();
-    if (data && data.length > 0) {
-      var advancing = data.filter(function(s){ return s.change_pct >= 0; }).length;
-      var pct = Math.round(advancing / data.length * 100);
+    if (data && data.length) {
+      var labelMap = {
+        "NIFTY 50":   { price:"dashNiftyPrice",     chg:"dashNiftyChg" },
+        "NIFTY":      { price:"dashNiftyPrice",     chg:"dashNiftyChg" },
+        "SENSEX":     { price:"dashSensexPrice",    chg:"dashSensexChg" },
+        "BANK NIFTY": { price:"dashBankNiftyPrice", chg:"dashBankNiftyChg" },
+        "BANKNIFTY":  { price:"dashBankNiftyPrice", chg:"dashBankNiftyChg" },
+      };
+      data.forEach(function(d) {
+        var ids = labelMap[d.label ? d.label.toUpperCase() : ""];
+        if (!ids) return;
+        var pEl = document.getElementById(ids.price);
+        var cEl = document.getElementById(ids.chg);
+        if (pEl) pEl.textContent = d.price.toLocaleString("en-IN", {maximumFractionDigits:2});
+        if (cEl) {
+          var isUp = d.change_pct >= 0;
+          cEl.textContent = (isUp ? "▲ +" : "▼ ") + Math.abs(d.change_pct).toFixed(2) + "%";
+          cEl.className = "dash-idx-chg " + (isUp ? "up" : "down");
+        }
+      });
+    }
+  } catch(e) {}
+
+  // Populate Market Breadth + Top Gainer stat tiles from /recommendations
+  try {
+    var backend = BACKEND_URL || "http://localhost:5050";
+    var res2 = await fetchWithRetry(backend + "/recommendations", { signal: AbortSignal.timeout(20000) });
+    var recs = await res2.json();
+    if (recs && recs.length > 0) {
+      var advancing = recs.filter(function(s){ return s.change_pct >= 0; }).length;
+      var pct = Math.round(advancing / recs.length * 100);
       var bEl = document.getElementById("statBreadth");
       var bsEl = document.getElementById("statBreadthSub");
       if (bEl) { bEl.textContent = pct + "%"; bEl.className = "stat-value " + (pct >= 50 ? "green" : "red"); }
-      if (bsEl) bsEl.textContent = "Stocks advancing (" + advancing + "/" + data.length + ")";
-      var sorted = data.slice().sort(function(a,b){ return b.change_pct - a.change_pct; });
+      if (bsEl) bsEl.textContent = "Stocks advancing (" + advancing + "/" + recs.length + ")";
+      var sorted = recs.slice().sort(function(a,b){ return b.change_pct - a.change_pct; });
       var g = sorted[0];
       var gEl = document.getElementById("statGainer");
       if (gEl && g) { gEl.textContent = (g.change_pct >= 0 ? "+" : "") + g.change_pct.toFixed(2) + "%"; gEl.className = "stat-value green"; }
