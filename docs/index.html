@@ -706,7 +706,7 @@
     .chart-price-chg.down { color:var(--red); }
     .chart-name-lbl { font-size:.7rem; font-weight:700; letter-spacing:.1em; color:var(--muted); text-transform:uppercase; align-self:flex-start; margin-top:4px; }
     .chart-canvas-wrap { position:relative; }
-    .chart-canvas-wrap canvas { width:100%; height:200px; display:block; cursor:crosshair; border-radius:6px; }
+    .chart-canvas-wrap canvas { width:100%; height:140px; display:block; cursor:crosshair; border-radius:6px; }
     .chart-loading {
       position:absolute; inset:0; display:flex; align-items:center; justify-content:center;
       font-size:.86rem; color:var(--muted); background:var(--surf); border-radius:6px;
@@ -3794,7 +3794,7 @@ function _drawMainChart(prices, isUp) {
   canvas.parentNode.replaceChild(fresh, canvas);
   canvas = fresh; canvas.id = 'mainIndexCanvas';
   var DPR = window.devicePixelRatio || 1;
-  var W = canvas.offsetWidth || 600, H = 200;
+  var W = canvas.offsetWidth || 600, H = 140;
   canvas.width = W * DPR; canvas.height = H * DPR;
   canvas.style.width = W + 'px'; canvas.style.height = H + 'px';
   var ctx = canvas.getContext('2d');
