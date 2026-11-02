@@ -3625,6 +3625,7 @@ async function loadDashboardIndices() {
         "SENSEX":     { price:"dashSensexPrice",    chg:"dashSensexChg" },
         "BANK NIFTY": { price:"dashBankNiftyPrice", chg:"dashBankNiftyChg" },
         "BANKNIFTY":  { price:"dashBankNiftyPrice", chg:"dashBankNiftyChg" },
+        "NIFTY BANK": { price:"dashBankNiftyPrice", chg:"dashBankNiftyChg" },
       };
       data.forEach(function(d) {
         var ids = labelMap[d.label ? d.label.toUpperCase() : ""];
