@@ -748,6 +748,37 @@
     .hm-cell-name { font-size:.72rem; font-weight:700; color:rgba(255,255,255,0.85); letter-spacing:.02em; line-height:1.3; }
     .hm-cell-chg  { font-size:.78rem; font-weight:800; color:#fff; margin-top:4px; font-variant-numeric:tabular-nums; }
     /* ── /Charts Section ─────────────────────────────────────────────────── */
+
+    /* ── 52W Screener / FII-DII / Bulk Deals ─────────────────────────────── */
+    .screener-tabs { display:flex; gap:4px; margin-bottom:12px; }
+    .screener-tab  { padding:5px 14px; border-radius:20px; border:1px solid rgba(255,255,255,0.1);
+                     background:transparent; color:var(--muted); font-size:.8rem; font-weight:600;
+                     cursor:pointer; font-family:inherit; transition:all .15s; }
+    .screener-tab.active { background:rgba(16,185,129,0.12); color:var(--green); border-color:rgba(16,185,129,0.3); }
+    .data-table { width:100%; border-collapse:collapse; font-size:.84rem; }
+    .data-table th { text-align:left; color:var(--muted); font-size:.72rem; font-weight:700;
+                     letter-spacing:1.2px; text-transform:uppercase; padding:4px 8px 8px; }
+    .data-table td { padding:7px 8px; border-bottom:1px solid rgba(255,255,255,0.05);
+                     font-variant-numeric:tabular-nums; }
+    .data-table tr:last-child td { border-bottom:none; }
+    .data-table tr:hover td { background:rgba(255,255,255,0.03); }
+    .td-name  { color:var(--text); font-weight:600; font-size:.83rem; }
+    .td-sym   { color:var(--muted); font-size:.75rem; }
+    .td-near  { font-weight:700; font-size:.82rem; }
+    .fii-dii-grid { display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-bottom:14px; }
+    .fii-dii-card { background:var(--surf2); border-radius:10px; padding:12px 14px; }
+    .fii-dii-card-hdr { font-size:.7rem; font-weight:700; letter-spacing:1.5px; color:var(--muted);
+                        text-transform:uppercase; margin-bottom:10px; }
+    .fii-dii-row { display:flex; justify-content:space-between; align-items:center;
+                   font-size:.82rem; padding:4px 0; border-bottom:1px solid rgba(255,255,255,0.05); }
+    .fii-dii-row:last-child { border-bottom:none; }
+    .fii-dii-label { color:var(--muted); }
+    .fii-dii-val { font-weight:600; font-variant-numeric:tabular-nums; }
+    .deal-badge { display:inline-block; padding:2px 8px; border-radius:4px; font-size:.72rem;
+                  font-weight:700; letter-spacing:.5px; }
+    .deal-badge.buy  { background:rgba(16,185,129,0.15); color:var(--green); }
+    .deal-badge.sell { background:rgba(239,68,68,0.15);  color:var(--red);   }
+    /* ── /52W Screener / FII-DII / Bulk Deals ────────────────────────────── */
   </style>
 </head>
 <body>
@@ -779,6 +810,9 @@
   <div class="chip" onclick="showSectorHeatmap()">Sectors</div>
   <div class="chip" onclick="ask('screener: stocks with RSI below 35 above SMA50')">Screener</div>
   <div class="chip" onclick="showWatchlist()">Watchlist</div>
+  <div class="chip" onclick="show52wScreener()">52W Screener</div>
+  <div class="chip" onclick="showFIIDII()">FII / DII</div>
+  <div class="chip" onclick="showBulkDeals()">Bulk Deals</div>
   <div class="chip-divider"></div>
   <div class="chip" onclick="ask('market sentiment')">Sentiment</div>
   <div class="chip" onclick="showSIPCalc()">SIP Calc</div>
@@ -3731,6 +3765,235 @@ async function showWatchlist() {
   html += '</div><p style="font-size:.78rem;color:var(--muted);margin-top:12px">Click any name for full analysis · ✕ to remove.</p>';
   wlBubble.innerHTML = html;
   scrollBottom();
+}
+
+// ── 52W Screener ────────────────────────────────────────────────────────────
+
+function show52wScreener() {
+  var backend = BACKEND_URL || "http://localhost:5050";
+  var chat = document.getElementById("chat");
+  var welcome = chat.querySelector(".welcome");
+  if (welcome) welcome.remove();
+
+  var userRow = document.createElement("div");
+  userRow.className = "row";
+  userRow.innerHTML = '<div style="margin-left:auto;max-width:70%"><div class="bubble user">📊 52-Week High / Low Screener</div></div>';
+  chat.appendChild(userRow);
+
+  var uid = "w52Bubble_" + Date.now();
+  var botRow = document.createElement("div");
+  botRow.className = "row";
+  botRow.innerHTML = '<div class="avatar">A</div><div class="bubble bot" id="' + uid + '"><span class="muted">Scanning Nifty 100 stocks…</span></div>';
+  chat.appendChild(botRow);
+  chat.scrollTop = chat.scrollHeight;
+
+  fetch(backend + "/52w-screener")
+    .then(function(r) { return r.json(); })
+    .then(function(d) {
+      var el = document.getElementById(uid);
+      if (!d || d.error) { el.innerHTML = "⚠️ Could not fetch 52W data."; return; }
+
+      var activeTab = "high";
+
+      function pctBadge(pct, mode) {
+        var color = mode === "high" ? "var(--green)" : "var(--cyan)";
+        return '<span style="color:' + color + ';font-weight:700">' + pct.toFixed(2) + '% ' + (mode === "high" ? "below high" : "above low") + '</span>';
+      }
+
+      function renderTable(list, mode) {
+        if (!list || !list.length) return '<div style="color:var(--muted);padding:10px 0">No stocks found within ' + d.threshold + '% threshold.</div>';
+        var h = '<table class="data-table"><thead><tr><th>Stock</th><th>Price</th><th>Day Chg</th><th>' + (mode === "high" ? "% from 52W High" : "% from 52W Low") + '</th><th>52W ' + (mode === "high" ? "High" : "Low") + '</th></tr></thead><tbody>';
+        list.forEach(function(s) {
+          var chgColor = s.change_pct >= 0 ? "var(--green)" : "var(--red)";
+          var chgSign  = s.change_pct >= 0 ? "▲" : "▼";
+          var nearColor = mode === "high" ? "var(--green)" : "var(--cyan)";
+          var pct = mode === "high" ? s.pct_from_high : s.pct_from_low;
+          var ref = mode === "high" ? s.high52 : s.low52;
+          h += '<tr>' +
+            '<td><div class="td-name">' + s.name + '</div><div class="td-sym">' + s.symbol.replace(".NS","") + '</div></td>' +
+            '<td>₹' + s.price.toLocaleString("en-IN") + '</td>' +
+            '<td style="color:' + chgColor + '">' + chgSign + ' ' + Math.abs(s.change_pct).toFixed(2) + '%</td>' +
+            '<td><span class="td-near" style="color:' + nearColor + '">' + pct.toFixed(2) + '%</span></td>' +
+            '<td style="color:var(--muted)">₹' + ref.toLocaleString("en-IN") + '</td>' +
+          '</tr>';
+        });
+        return h + '</tbody></table>';
+      }
+
+      function render() {
+        var list = activeTab === "high" ? d.near_high : d.near_low;
+        el.innerHTML =
+          '<div style="font-weight:700;font-size:1.08rem;margin-bottom:12px">📊 52-Week High / Low Screener <span style="font-size:.78rem;font-weight:400;color:var(--muted);margin-left:6px">Nifty 100 · within ' + d.threshold + '%</span></div>' +
+          '<div class="screener-tabs">' +
+            '<button class="screener-tab' + (activeTab === "high" ? " active" : "") + '" id="tab52High">Near 52W High (' + d.near_high.length + ')</button>' +
+            '<button class="screener-tab' + (activeTab === "low"  ? " active" : "") + '" id="tab52Low" >Near 52W Low ('  + d.near_low.length  + ')</button>' +
+          '</div>' +
+          '<div id="w52TableWrap">' + renderTable(list, activeTab) + '</div>' +
+          '<div style="margin-top:8px;font-size:.78rem;color:var(--muted)">Momentum: near 52W high · Value hunt: near 52W low · Live data via yfinance</div>';
+
+        document.getElementById("tab52High").onclick = function() { activeTab = "high"; render(); };
+        document.getElementById("tab52Low" ).onclick = function() { activeTab = "low";  render(); };
+        chat.scrollTop = chat.scrollHeight;
+      }
+      render();
+    })
+    .catch(function() {
+      var b = document.getElementById(uid);
+      if (b) b.innerHTML = "⚠️ Could not fetch 52W screener data.";
+    });
+}
+
+// ── FII / DII Flow ───────────────────────────────────────────────────────────
+
+function showFIIDII() {
+  var backend = BACKEND_URL || "http://localhost:5050";
+  var chat = document.getElementById("chat");
+  var welcome = chat.querySelector(".welcome");
+  if (welcome) welcome.remove();
+
+  var userRow = document.createElement("div");
+  userRow.className = "row";
+  userRow.innerHTML = '<div style="margin-left:auto;max-width:70%"><div class="bubble user">🏦 FII / DII Institutional Flows</div></div>';
+  chat.appendChild(userRow);
+
+  var uid = "fiiDiiBubble_" + Date.now();
+  var botRow = document.createElement("div");
+  botRow.className = "row";
+  botRow.innerHTML = '<div class="avatar">A</div><div class="bubble bot" id="' + uid + '"><span class="muted">Fetching NSE institutional flow data…</span></div>';
+  chat.appendChild(botRow);
+  chat.scrollTop = chat.scrollHeight;
+
+  fetch(backend + "/fii-dii")
+    .then(function(r) { return r.json(); })
+    .then(function(rows) {
+      var el = document.getElementById(uid);
+      if (!rows || rows.error || !rows.length) { el.innerHTML = "⚠️ FII/DII data unavailable from NSE right now."; return; }
+
+      function crColor(v) { return v === null ? "var(--muted)" : v >= 0 ? "var(--green)" : "var(--red)"; }
+      function fmt(v) {
+        if (v === null || v === undefined) return "—";
+        var s = v >= 0 ? "+" : "";
+        return s + "₹" + Math.abs(v / 100).toFixed(0) + "Cr"; // NSE values are in crores * 100
+      }
+      function fmtBig(v) {
+        if (v === null || v === undefined) return "—";
+        return "₹" + Math.abs(v / 100).toFixed(0) + "Cr";
+      }
+
+      var latest = rows[0];
+      var html = '<div style="font-weight:700;font-size:1.08rem;margin-bottom:14px">🏦 FII / DII Institutional Flows <span style="font-size:.78rem;font-weight:400;color:var(--muted);margin-left:6px">NSE Cash Market</span></div>';
+
+      // Summary cards for latest day
+      html += '<div class="fii-dii-grid">';
+      html += '<div class="fii-dii-card"><div class="fii-dii-card-hdr">FII / FPI · ' + (latest.date || "Latest") + '</div>';
+      html += '<div class="fii-dii-row"><span class="fii-dii-label">Buy</span><span class="fii-dii-val">' + fmtBig(latest.fii_buy) + '</span></div>';
+      html += '<div class="fii-dii-row"><span class="fii-dii-label">Sell</span><span class="fii-dii-val">' + fmtBig(latest.fii_sell) + '</span></div>';
+      html += '<div class="fii-dii-row"><span class="fii-dii-label">Net</span><span class="fii-dii-val" style="color:' + crColor(latest.fii_net) + '">' + fmt(latest.fii_net) + '</span></div>';
+      html += '</div>';
+      html += '<div class="fii-dii-card"><div class="fii-dii-card-hdr">DII · ' + (latest.date || "Latest") + '</div>';
+      html += '<div class="fii-dii-row"><span class="fii-dii-label">Buy</span><span class="fii-dii-val">' + fmtBig(latest.dii_buy) + '</span></div>';
+      html += '<div class="fii-dii-row"><span class="fii-dii-label">Sell</span><span class="fii-dii-val">' + fmtBig(latest.dii_sell) + '</span></div>';
+      html += '<div class="fii-dii-row"><span class="fii-dii-label">Net</span><span class="fii-dii-val" style="color:' + crColor(latest.dii_net) + '">' + fmt(latest.dii_net) + '</span></div>';
+      html += '</div></div>';
+
+      // Historical table
+      html += '<table class="data-table"><thead><tr><th>Date</th><th>FII Net</th><th>DII Net</th><th>Combined</th></tr></thead><tbody>';
+      rows.forEach(function(r) {
+        var combined = (r.fii_net || 0) + (r.dii_net || 0);
+        html += '<tr>' +
+          '<td style="color:var(--muted)">' + (r.date || "—") + '</td>' +
+          '<td style="color:' + crColor(r.fii_net) + '">' + fmt(r.fii_net) + '</td>' +
+          '<td style="color:' + crColor(r.dii_net) + '">' + fmt(r.dii_net) + '</td>' +
+          '<td style="color:' + crColor(combined) + '">' + fmt(combined) + '</td>' +
+        '</tr>';
+      });
+      html += '</tbody></table>';
+      html += '<div style="margin-top:8px;font-size:.78rem;color:var(--muted)">Source: NSE India · Cash market segment · Values in Crores INR</div>';
+      el.innerHTML = html;
+      chat.scrollTop = chat.scrollHeight;
+    })
+    .catch(function() {
+      var b = document.getElementById(uid);
+      if (b) b.innerHTML = "⚠️ Could not fetch FII/DII data. NSE API may be unavailable.";
+    });
+}
+
+// ── Bulk / Block Deals ───────────────────────────────────────────────────────
+
+function showBulkDeals() {
+  var backend = BACKEND_URL || "http://localhost:5050";
+  var chat = document.getElementById("chat");
+  var welcome = chat.querySelector(".welcome");
+  if (welcome) welcome.remove();
+
+  var userRow = document.createElement("div");
+  userRow.className = "row";
+  userRow.innerHTML = '<div style="margin-left:auto;max-width:70%"><div class="bubble user">📋 Bulk &amp; Block Deals</div></div>';
+  chat.appendChild(userRow);
+
+  var uid = "bulkDealsBubble_" + Date.now();
+  var botRow = document.createElement("div");
+  botRow.className = "row";
+  botRow.innerHTML = '<div class="avatar">A</div><div class="bubble bot" id="' + uid + '"><span class="muted">Fetching NSE deal data…</span></div>';
+  chat.appendChild(botRow);
+  chat.scrollTop = chat.scrollHeight;
+
+  var activeType = "bulk";
+
+  function loadDeals(type) {
+    fetch(backend + "/bulk-deals?type=" + type)
+      .then(function(r) { return r.json(); })
+      .then(function(deals) {
+        var el = document.getElementById(uid);
+        function render(deals) {
+          var html =
+            '<div style="font-weight:700;font-size:1.08rem;margin-bottom:12px">📋 Bulk &amp; Block Deals <span style="font-size:.78rem;font-weight:400;color:var(--muted);margin-left:6px">NSE</span></div>' +
+            '<div class="screener-tabs">' +
+              '<button class="screener-tab' + (activeType === "bulk"  ? " active" : "") + '" id="tabBulk">Bulk Deals</button>' +
+              '<button class="screener-tab' + (activeType === "block" ? " active" : "") + '" id="tabBlock">Block Deals</button>' +
+            '</div>';
+
+          if (!deals || deals.error || !deals.length) {
+            html += '<div style="color:var(--muted);padding:10px 0">No ' + activeType + ' deals found for today.</div>';
+          } else {
+            html += '<table class="data-table"><thead><tr><th>Date</th><th>Symbol</th><th>Client</th><th>Side</th><th>Qty</th><th>Price</th></tr></thead><tbody>';
+            deals.forEach(function(d) {
+              var side = (d.side || "").toUpperCase();
+              var badgeCls = side === "BUY" ? "buy" : "sell";
+              var qty = d.qty ? parseInt(d.qty, 10).toLocaleString("en-IN") : "—";
+              var price = d.price ? "₹" + parseFloat(d.price).toLocaleString("en-IN", {minimumFractionDigits:2, maximumFractionDigits:2}) : "—";
+              html += '<tr>' +
+                '<td style="color:var(--muted);font-size:.78rem">' + (d.date || "—") + '</td>' +
+                '<td><div class="td-name">' + (d.symbol || "—") + '</div></td>' +
+                '<td style="font-size:.78rem;max-width:140px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + (d.client || "—") + '</td>' +
+                '<td><span class="deal-badge ' + badgeCls + '">' + (side || "—") + '</span></td>' +
+                '<td style="color:var(--muted)">' + qty + '</td>' +
+                '<td>' + price + '</td>' +
+              '</tr>';
+            });
+            html += '</tbody></table>';
+          }
+          html += '<div style="margin-top:8px;font-size:.78rem;color:var(--muted)">Source: NSE India · ' + activeType.charAt(0).toUpperCase() + activeType.slice(1) + ' deals ≥ 0.5% of equity or ₹5 Cr+</div>';
+          el.innerHTML = html;
+
+          document.getElementById("tabBulk").onclick = function() {
+            if (activeType === "bulk") return;
+            activeType = "bulk"; el.innerHTML = '<span class="muted">Loading bulk deals…</span>'; loadDeals("bulk");
+          };
+          document.getElementById("tabBlock").onclick = function() {
+            if (activeType === "block") return;
+            activeType = "block"; el.innerHTML = '<span class="muted">Loading block deals…</span>'; loadDeals("block");
+          };
+          chat.scrollTop = chat.scrollHeight;
+        }
+        render(deals);
+      })
+      .catch(function() {
+        var b = document.getElementById(uid);
+        if (b) b.innerHTML = "⚠️ Could not fetch deal data. NSE API may be unavailable.";
+      });
+  }
+  loadDeals(activeType);
 }
 
 // ── Charts ────────────────────────────────────────────────────────────

@@ -1007,6 +1007,141 @@ def screener():
         return json.dumps({"error": str(e)}), 502, {"Access-Control-Allow-Origin": "*"}
 
 
+@app.route("/52w-screener")
+def w52_screener():
+    """Nifty100 stocks near 52-week highs or lows (within threshold %)."""
+    try:
+        cached = _cache_get("52w_screener")
+        if cached:
+            return Response(json.dumps(cached), content_type="application/json",
+                            headers={"Access-Control-Allow-Origin": "*"})
+        threshold = float(request.args.get("threshold", 5))
+        universe  = request.args.get("universe", "nifty100").lower()
+        syms = NIFTY100_SYMS if universe == "nifty100" else NIFTY50_SYMS
+
+        data    = yf.download(syms, period="1y", progress=False, auto_adjust=True)
+        closes  = data["Close"]
+        near_high, near_low = [], []
+
+        for sym in syms:
+            try:
+                c = closes[sym].dropna()
+                if len(c) < 50:
+                    continue
+                current   = float(c.iloc[-1])
+                prev      = float(c.iloc[-2])
+                high52    = float(c.max())
+                low52     = float(c.min())
+                pct_from_high = round(((high52 - current) / high52) * 100, 2)
+                pct_from_low  = round(((current - low52)  / low52)  * 100, 2)
+                chg_pct   = round(((current - prev) / prev) * 100, 2) if prev else 0
+                entry = {
+                    "symbol": sym, "name": NAME_MAP.get(sym, sym.replace(".NS", "")),
+                    "price": round(current, 2), "change_pct": chg_pct,
+                    "high52": round(high52, 2), "low52": round(low52, 2),
+                    "pct_from_high": pct_from_high, "pct_from_low": pct_from_low,
+                }
+                if pct_from_high <= threshold:
+                    near_high.append(entry)
+                if pct_from_low <= threshold:
+                    near_low.append(entry)
+            except Exception:
+                continue
+
+        near_high.sort(key=lambda x: x["pct_from_high"])
+        near_low.sort(key=lambda x: x["pct_from_low"])
+        result = {"near_high": near_high[:15], "near_low": near_low[:15],
+                  "universe": universe, "threshold": threshold}
+        _cache_set("52w_screener", result)
+        return Response(json.dumps(result), content_type="application/json",
+                        headers={"Access-Control-Allow-Origin": "*"})
+    except Exception as e:
+        return json.dumps({"error": str(e)}), 502, {"Access-Control-Allow-Origin": "*"}
+
+
+def _nse_fetch(url):
+    """Fetch NSE API with a session (handles cookie requirement)."""
+    s = requests.Session()
+    hdrs = {
+        "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+        "Accept": "*/*",
+        "Accept-Language": "en-US,en;q=0.9",
+        "Referer": "https://www.nseindia.com/",
+    }
+    s.get("https://www.nseindia.com", headers=hdrs, timeout=15)
+    r = s.get(url, headers=hdrs, timeout=15)
+    r.raise_for_status()
+    return r.json()
+
+
+@app.route("/fii-dii")
+def fii_dii():
+    """Last 10 days of FII/DII cash market flows from NSE."""
+    try:
+        cached = _cache_get("fii_dii")
+        if cached:
+            return Response(json.dumps(cached), content_type="application/json",
+                            headers={"Access-Control-Allow-Origin": "*"})
+        raw = _nse_fetch("https://www.nseindia.com/api/fiidiiTradeReact")
+        # NSE returns list of {date, fiiDii:[{category, buyValue, sellValue, netValue}]}
+        rows = []
+        for item in (raw or [])[:10]:
+            date = item.get("date") or item.get("tradedDate", "")
+            fii_net = dii_net = fii_buy = fii_sell = dii_buy = dii_sell = None
+            for cat in (item.get("fiiDii") or item.get("data") or []):
+                label = (cat.get("category") or cat.get("cat") or "").upper()
+                buy  = cat.get("buyValue")  or cat.get("buyVal")  or 0
+                sell = cat.get("sellValue") or cat.get("saleVal") or 0
+                net  = cat.get("netValue")  or cat.get("netVal")  or 0
+                try: buy, sell, net = float(buy), float(sell), float(net)
+                except (ValueError, TypeError): buy = sell = net = 0
+                if "FII" in label or "FPI" in label:
+                    fii_buy, fii_sell, fii_net = round(buy, 2), round(sell, 2), round(net, 2)
+                elif "DII" in label:
+                    dii_buy, dii_sell, dii_net = round(buy, 2), round(sell, 2), round(net, 2)
+            rows.append({"date": date, "fii_buy": fii_buy, "fii_sell": fii_sell, "fii_net": fii_net,
+                         "dii_buy": dii_buy, "dii_sell": dii_sell, "dii_net": dii_net})
+        _cache_set("fii_dii", rows)
+        return Response(json.dumps(rows), content_type="application/json",
+                        headers={"Access-Control-Allow-Origin": "*"})
+    except Exception as e:
+        return json.dumps({"error": str(e)}), 502, {"Access-Control-Allow-Origin": "*"}
+
+
+@app.route("/bulk-deals")
+def bulk_deals():
+    """Today's bulk and block deals from NSE."""
+    try:
+        deal_type = request.args.get("type", "bulk").lower()
+        cache_key = f"deals_{deal_type}"
+        cached = _cache_get(cache_key)
+        if cached:
+            return Response(json.dumps(cached), content_type="application/json",
+                            headers={"Access-Control-Allow-Origin": "*"})
+        url = ("https://www.nseindia.com/api/bulk-deal-list"
+               if deal_type == "bulk" else
+               "https://www.nseindia.com/api/block-deal-list")
+        raw = _nse_fetch(url)
+        # NSE returns {"data": [...]} or a list directly
+        items = raw.get("data", raw) if isinstance(raw, dict) else raw
+        deals = []
+        for d in (items or [])[:30]:
+            deals.append({
+                "date":   d.get("BD_DT_DATE") or d.get("date", ""),
+                "symbol": d.get("BD_SYMBOL")  or d.get("symbol", ""),
+                "name":   d.get("BD_SCRIP_NAME") or d.get("name", ""),
+                "client": d.get("BD_CLIENT_NAME") or d.get("clientName", ""),
+                "side":   d.get("BD_BUY_SELL")   or d.get("buySell", ""),
+                "qty":    d.get("BD_QTY_TRD")    or d.get("quantity", ""),
+                "price":  d.get("BD_TP_WATP")    or d.get("tradePrice", ""),
+            })
+        _cache_set(cache_key, deals)
+        return Response(json.dumps(deals), content_type="application/json",
+                        headers={"Access-Control-Allow-Origin": "*"})
+    except Exception as e:
+        return json.dumps({"error": str(e)}), 502, {"Access-Control-Allow-Origin": "*"}
+
+
 @app.route("/news")
 def news():
     symbol = request.args.get("symbol", "").upper().strip()
